@@ -22,7 +22,7 @@ const OVERLAY_MAX = 1279;
 
 /**
  * Columna principal: [topbar fijo] + [contenido con scroll].
- * TEO a la derecha (push) o overlay en ventana estrecha.
+ * Aurelia a la derecha (push) o overlay en ventana estrecha.
  */
 export function AgentDrawerShell({
   open,
@@ -81,7 +81,7 @@ export function AgentDrawerShell({
       {/* Columna de app: topbar fijo + scroll solo abajo */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {header ? (
-          <div className="relative z-30 shrink-0 border-b border-linea bg-nara-blanco">
+          <div className="relative z-40 shrink-0">
             {header}
           </div>
         ) : null}

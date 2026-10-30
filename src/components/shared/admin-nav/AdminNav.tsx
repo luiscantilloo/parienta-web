@@ -13,9 +13,9 @@ const MS = 480;
 
 type Props = {
   active?: string;
-  /** Ancho útil del topbar (no el de la ventana). Si TEO empuja, baja. */
+  /** Ancho útil del topbar (no el de la ventana). Si Aurelia empuja, baja. */
   barWidth?: number;
-  /** Forzar menú compacto (p. ej. TEO abierto en overlay). */
+  /** Forzar menú compacto (p. ej. Aurelia abierto en overlay). */
   forceCompact?: boolean;
 };
 
@@ -110,8 +110,8 @@ export function AdminNav({ active = "", barWidth = 0, forceCompact = false }: Pr
                   className="flex min-w-0 items-center text-nara-tinta"
                 >
                   <img
-                    src="/nara/marca/logo/nara-logo.svg"
-                    alt="NARA"
+                    src="/parienta/logo/parienta-horizontal-principal.svg"
+                    alt="Parienta"
                     className="block h-8 w-auto"
                   />
                 </Link>
@@ -132,8 +132,8 @@ export function AdminNav({ active = "", barWidth = 0, forceCompact = false }: Pr
                     onClick={() => setMobileOpen(false)}
                     className={`flex min-h-12 items-center rounded-xl px-3.5 font-texto text-[15px] text-nara-tinta ${
                       k === active
-                        ? "bg-[#FFF4CC] font-semibold"
-                        : "bg-transparent font-medium hover:bg-[#F0ECE6]"
+                        ? "bg-pl-menta font-semibold"
+                        : "bg-transparent font-medium hover:bg-pl-crema-sol/60"
                     }`}
                   >
                     {label}
@@ -195,7 +195,7 @@ export function AdminNav({ active = "", barWidth = 0, forceCompact = false }: Pr
               href={item.href}
               onClick={() => setMore(false)}
               className={`flex min-h-11 items-center gap-2 rounded-lg px-3 text-nara-tinta ${
-                item.active ? "bg-[#FFF4CC] font-semibold" : "bg-nara-blanco font-medium"
+                item.active ? "bg-[#FDF2B3] font-semibold" : "bg-nara-blanco font-medium"
               }`}
             >
               {item.label}

@@ -1,12 +1,34 @@
-/** Medios de la landing (public/landing/assets). */
+/** Medios de la landing Parienta. */
 const A = "/landing/assets";
+const M = "/parienta";
 
 export const landingAssets = {
-  logo: `${A}/0c8c880b-74e9-432d-982c-c3c56ace4f15.svg`,
-  logoPrivacidad: `${A}/2f28caa3-de93-4cdc-97a5-f33f5823b515.svg`,
-  teoEnergia: `${A}/89a7bcba-42e5-4476-a1f1-8d4390b5a986.svg`,
-  naraDuda: `${A}/fca5c1a9-ac36-4bd3-a4f1-ea953c07a817.svg`,
-  teoDuda: `${A}/8a721f45-5edf-489b-b407-5dbef7f9e2b1.svg`,
+  logo: `${M}/logo/parienta-horizontal-principal.svg`,
+  logoClaro: `${M}/logo/parienta-horizontal-una-tinta-hueso.svg`,
+  logoSobreVerde: `${M}/logo/parienta-horizontal-sobre-verde.svg`,
+  logoSobreCrema: `${M}/logo/parienta-horizontal-sobre-crema.svg`,
+  logoSobreNaranja: `${M}/logo/parienta-horizontal-sobre-naranja.svg`,
+  logoVertical: `${M}/logo/parienta-vertical-principal.svg`,
+  logoVerticalSobreVerde: `${M}/logo/parienta-vertical-sobre-verde.svg`,
+  favicon: `${M}/favicon.svg`,
+  simbolo: `${M}/logo/parienta-simbolo-naranja.svg`,
+  simboloLima: `${M}/logo/parienta-simbolo-lima.svg`,
+  simboloHueso: `${M}/logo/parienta-simbolo-hueso.svg`,
+  aurelia: {
+    base: `${M}/aurelia/aurelia-base.svg`,
+    escucha: `${M}/aurelia/aurelia-escucha.svg`,
+    piensa: `${M}/aurelia/aurelia-piensa.svg`,
+    responde: `${M}/aurelia/aurelia-responde.svg`,
+    celebra: `${M}/aurelia/aurelia-celebra.svg`,
+  },
+  aureliaVerde: {
+    base: `${M}/aurelia/aurelia-base-verde.svg`,
+    escucha: `${M}/aurelia/aurelia-escucha-verde.svg`,
+    piensa: `${M}/aurelia/aurelia-piensa-verde.svg`,
+    responde: `${M}/aurelia/aurelia-responde-verde.svg`,
+    celebra: `${M}/aurelia/aurelia-celebra-verde.svg`,
+  },
+  // Fotografía de atmósfera (filtro cálido en UI)
   heroWebp: `${A}/951e5ac2-7818-4892-9a76-cf6364c63061.webp`,
   heroJpg: `${A}/e9a86c2d-acc9-4e38-ae8b-4dfa9e0da5ba.jpg`,
   canal1Webp: `${A}/55c82448-3dec-4678-8ea1-6bc7c28a6b6f.webp`,
@@ -17,9 +39,6 @@ export const landingAssets = {
   canal3Jpg: `${A}/2d176a9f-8c34-4825-a114-2373c4210844.jpg`,
   cierreWebp: `${A}/1958d976-d319-404d-a5c0-b3e6e9ebea05.webp`,
   cierreJpg: `${A}/33fed17c-b45a-4adb-9e26-17cdb99e2339.jpg`,
-  char1: `${A}/141de07d-3cde-43e8-9958-5a64be4d5d5a.svg`,
-  char2: `${A}/5bf7f91c-d9c7-49d3-87dc-177babd37c17.svg`,
-  char3: `${A}/58279cb0-2cf4-451c-b4fd-491b2767c747.svg`,
   video: `${A}/90d02e6b-69f5-485c-ae14-0839d5a582de.mp4`,
   videoPoster: `${A}/eede2ae8-ed57-4dd2-ab8d-d4f197de46c0.jpg`,
 } as const;

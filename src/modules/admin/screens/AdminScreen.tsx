@@ -22,10 +22,10 @@ export function AdminScreen() {
       onClose={() => (v.closeAgent as () => void)()}
       style={{
         minWidth: 0,
-        fontFamily: "Figtree, system-ui, sans-serif",
-        color: "#161413",
+        fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+        color: "#27683A",
         fontSize: 15,
-        background: "#F0ECE6",
+        background: "#FBFAF3",
       }}
       drawer={
         <AgentPanel

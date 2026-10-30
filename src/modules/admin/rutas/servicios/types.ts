@@ -14,7 +14,6 @@ export type PathServiceRowModel = {
   swBg: string;
   x: string;
   cur: string;
-  /** tech / revisit / cursos: no se puede activar ni desactivar. */
   locked?: boolean;
   lockHint?: string;
   toggle: () => void;

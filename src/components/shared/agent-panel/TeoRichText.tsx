@@ -27,7 +27,7 @@ export function TeoRichText({ text }: { text: string }) {
             <ol key={i} className="m-0 flex list-none flex-col gap-1.5 p-0">
               {block.items.map((item, j) => (
                 <li key={j} className="flex gap-2">
-                  <span className="w-5 shrink-0 font-medium text-[#5E5750]">
+                  <span className="w-5 shrink-0 font-medium text-[#5A5A52]">
                     {j + 1}.
                   </span>
                   <span>{renderInline(item)}</span>

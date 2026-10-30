@@ -179,8 +179,8 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                     gridTemplateColumns: "minmax(0,2fr) minmax(0,1fr) 130px minmax(0,1fr) 250px",
                     gap: 12,
                     padding: "10px 20px",
-                    background: "#F0ECE6",
-                    color: "#5E5750",
+                    background: "#FBFAF3",
+                    color: "#5A5A52",
                     fontSize: 13,
                     fontWeight: 500,
                   }}
@@ -192,7 +192,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   <span />
                 </div>
                 {v.lib?.map((r: any) => (
-                  <div key={r.key} style={{ borderTop: "1px solid #E6E1D9" }}>
+                  <div key={r.key} style={{ borderTop: "1px solid #C0DFC8" }}>
                     <div
                       style={{
                         display: "grid",
@@ -205,7 +205,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                     >
                       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                         <span style={{ fontWeight: 500 }}>{r.name}</span>
-                        <span style={{ fontSize: 12, color: "#5E5750" }}>{r.scope}</span>
+                        <span style={{ fontSize: 12, color: "#5A5A52" }}>{r.scope}</span>
                       </div>
                       <span>{r.type}</span>
                       <span>{r.date}</span>
@@ -219,7 +219,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                             height: 36,
                             padding: "0 12px",
                             borderRadius: 8,
-                            background: "#161413",
+                            background: "#27683A",
                             color: "#fff",
                             fontWeight: 500,
                           }}
@@ -230,15 +230,15 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                           type="button"
                           onClick={() => r.toggleShare()}
                           style={{
-                            fontFamily: "Figtree,system-ui,sans-serif",
+                            fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                             fontSize: 14,
                             fontWeight: 500,
                             height: 36,
                             padding: "0 12px",
                             borderRadius: 8,
-                            border: "1.5px solid #161413",
+                            border: "1.5px solid #27683A",
                             background: "#fff",
-                            color: "#161413",
+                            color: "#27683A",
                             cursor: "pointer",
                           }}
                         >
@@ -249,7 +249,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   </div>
                 ))}
                 {v.noLib ? (
-                  <span style={{ display: "block", padding: 20, color: "#5E5750" }}>
+                  <span style={{ display: "block", padding: 20, color: "#5A5A52" }}>
                     No hay informes con ese filtro.
                   </span>
                 ) : null}
@@ -267,7 +267,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
               className="nara-form-grid-3"
               style={{
                 background: "#fff",
-                border: "1px solid #DCD6CD",
+                border: "1px solid #C0DFC8",
                 borderRadius: 20,
                 padding: "18px 20px",
                 alignItems: "start",
@@ -275,7 +275,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
             >
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <span style={{ fontWeight: 500, fontSize: 17 }}>{s.name}</span>
-                <span style={{ fontSize: 14, color: "#5E5750" }}>Próximo envío: {s.next}</span>
+                <span style={{ fontSize: 14, color: "#5A5A52" }}>Próximo envío: {s.next}</span>
                 <Link href={s.href} style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
                   Ver el último →
                 </Link>
@@ -288,7 +288,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   style={{
                     height: 42,
                     borderRadius: 9,
-                    border: "1.5px solid #DCD6CD",
+                    border: "1.5px solid #C0DFC8",
                     padding: "0 10px",
                     fontSize: 15,
                     background: "#fff",
@@ -314,7 +314,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                         fontSize: 13,
                         padding: "5px 6px 5px 10px",
                         borderRadius: 999,
-                        background: "#FFF4CC",
+                        background: "#FDF2B3",
                       }}
                     >
                       {t.name}
@@ -327,7 +327,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                           background: "none",
                           cursor: "pointer",
                           fontSize: 14,
-                          color: "#161413",
+                          color: "#27683A",
                           padding: "0 4px",
                         }}
                       >
@@ -345,7 +345,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                       minWidth: 0,
                       height: 38,
                       borderRadius: 9,
-                      border: "1.5px solid #DCD6CD",
+                      border: "1.5px solid #C0DFC8",
                       padding: "0 8px",
                       fontSize: 14,
                       background: "#fff",
@@ -362,22 +362,22 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                     type="button"
                     onClick={() => s.add()}
                     style={{
-                      fontFamily: "Figtree,system-ui,sans-serif",
+                      fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                       fontSize: 14,
                       fontWeight: 500,
                       height: 38,
                       padding: "0 12px",
                       borderRadius: 9,
-                      border: "1.5px solid #161413",
+                      border: "1.5px solid #27683A",
                       background: "#fff",
-                      color: "#161413",
+                      color: "#27683A",
                       cursor: "pointer",
                     }}
                   >
                     Agregar
                   </button>
                 </div>
-                <span style={{ fontSize: 12, color: "#5E5750" }}>{s.note}</span>
+                <span style={{ fontSize: 12, color: "#5A5A52" }}>{s.note}</span>
               </div>
             </div>
           ))}
@@ -413,7 +413,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
           <div
             style={{
               background: "#fff",
-              border: "1px solid #DCD6CD",
+              border: "1px solid #C0DFC8",
               borderRadius: 20,
               padding: "20px 22px",
               display: "flex",
@@ -430,7 +430,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                 style={{
                   height: 44,
                   borderRadius: 9,
-                  border: "1.5px solid #DCD6CD",
+                  border: "1.5px solid #C0DFC8",
                   padding: "0 12px",
                   fontSize: 15,
                   width: "100%",
@@ -447,7 +447,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   style={{
                     height: 44,
                     borderRadius: 9,
-                    border: "1.5px solid #DCD6CD",
+                    border: "1.5px solid #C0DFC8",
                     padding: "0 10px",
                     fontSize: 15,
                     background: "#fff",
@@ -467,7 +467,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   style={{
                     height: 44,
                     borderRadius: 9,
-                    border: "1.5px solid #DCD6CD",
+                    border: "1.5px solid #C0DFC8",
                     padding: "0 10px",
                     fontSize: 15,
                     background: "#fff",
@@ -486,7 +486,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   style={{
                     height: 44,
                     borderRadius: 9,
-                    border: "1.5px solid #DCD6CD",
+                    border: "1.5px solid #C0DFC8",
                     padding: "0 10px",
                     fontSize: 15,
                     background: "#fff",
@@ -525,7 +525,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                 display: "flex",
                 gap: 10,
                 flexWrap: "wrap",
-                borderTop: "1px solid #E6E1D9",
+                borderTop: "1px solid #C0DFC8",
                 paddingTop: 14,
               }}
             >
@@ -537,7 +537,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   height: 44,
                   padding: "0 18px",
                   borderRadius: 10,
-                  border: "1.5px solid #161413",
+                  border: "1.5px solid #27683A",
                   fontWeight: 500,
                 }}
               >
@@ -551,7 +551,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   height: 44,
                   padding: "0 16px",
                   borderRadius: 10,
-                  border: "1.5px solid #161413",
+                  border: "1.5px solid #27683A",
                   fontWeight: 500,
                 }}
               >
@@ -561,15 +561,15 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                 type="button"
                 onClick={() => v.excel()}
                 style={{
-                  fontFamily: "Figtree,system-ui,sans-serif",
+                  fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                   fontSize: 15,
                   fontWeight: 500,
                   height: 44,
                   padding: "0 16px",
                   borderRadius: 10,
-                  border: "1.5px solid #161413",
+                  border: "1.5px solid #27683A",
                   background: "#fff",
-                  color: "#161413",
+                  color: "#27683A",
                   cursor: "pointer",
                 }}
               >
@@ -580,7 +580,7 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
           <div
             style={{
               background: "#fff",
-              border: "1px solid #DCD6CD",
+              border: "1px solid #C0DFC8",
               borderRadius: 20,
               padding: "18px 20px",
               display: "flex",
@@ -596,19 +596,19 @@ export function AdminInformesContent({ v }: { v: Record<string, any> }) {
                   display: "flex",
                   flexDirection: "column",
                   gap: 2,
-                  borderTop: "1px solid #E6E1D9",
+                  borderTop: "1px solid #C0DFC8",
                   paddingTop: 8,
                 }}
               >
                 <span style={{ fontWeight: 500 }}>{o.t}</span>
-                <span style={{ fontSize: 14, color: "#5E5750", lineHeight: 1.4 }}>{o.x}</span>
+                <span style={{ fontSize: 14, color: "#5A5A52", lineHeight: 1.4 }}>{o.x}</span>
               </div>
             ))}
             <span
               style={{
                 fontSize: 13,
-                color: "#5E5750",
-                borderTop: "1px solid #E6E1D9",
+                color: "#5A5A52",
+                borderTop: "1px solid #C0DFC8",
                 paddingTop: 8,
               }}
             >

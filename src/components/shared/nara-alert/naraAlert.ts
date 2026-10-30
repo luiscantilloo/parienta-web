@@ -43,7 +43,7 @@ function guessIcon(msg: string): SweetAlertIcon {
   return "info";
 }
 
-/** Alerta / confirmación NARA con SweetAlert2. */
+/** Alerta / confirmación Parienta con SweetAlert2. */
 export function naraAlert(
   msg: string,
   actions: NaraAlertAction[] = [],

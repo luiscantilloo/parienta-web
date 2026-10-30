@@ -8,7 +8,7 @@ export function PathServiceRow({ s }: { s: PathServiceRowModel }) {
   const locked = !!s.locked;
   return (
     <div
-      style={ix`display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:10px 0;border-top:1px solid #E6E1D9;opacity:${s.op}`}
+      style={ix`display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:10px 0;border-top:1px solid #C0DFC8;opacity:${s.op}`}
       title={s.lockHint || undefined}
     >
       <div
@@ -48,7 +48,7 @@ export function PathServiceRow({ s }: { s: PathServiceRowModel }) {
             </span>
           ) : null}
         </span>
-        <span style={{ fontSize: 13, color: "#5E5750" }}>{s.note}</span>
+        <span style={{ fontSize: 13, color: "#5A5A52" }}>{s.note}</span>
       </div>
       <div
         style={{
@@ -64,7 +64,7 @@ export function PathServiceRow({ s }: { s: PathServiceRowModel }) {
             type="button"
             disabled={locked}
             onClick={() => q.pick()}
-            style={ix`font-family:Figtree,system-ui,sans-serif;font-size:14px;height:38px;padding:0 12px;border-radius:8px;border:1.5px solid ${q.bd};background:${q.bg};color:${q.fg};cursor:${locked ? "not-allowed" : "pointer"};opacity:${locked ? 0.5 : 1}`}
+            style={ix`font-family:Bricolage Grotesque, system-ui, sans-serif;font-size:14px;height:38px;padding:0 12px;border-radius:8px;border:1.5px solid ${q.bd};background:${q.bg};color:${q.fg};cursor:${locked ? "not-allowed" : "pointer"};opacity:${locked ? 0.5 : 1}`}
           >
             {q.label}
           </button>
@@ -73,7 +73,7 @@ export function PathServiceRow({ s }: { s: PathServiceRowModel }) {
           <button
             type="button"
             onClick={() => s.libBtn!.go()}
-            style={ix`font-family:Figtree,system-ui,sans-serif;font-size:14px;font-weight:500;height:38px;padding:0 14px;border-radius:8px;border:1.5px solid #161413;background:#FDCD22;color:#161413;cursor:pointer`}
+            style={ix`font-family:Bricolage Grotesque, system-ui, sans-serif;font-size:14px;font-weight:500;height:38px;padding:0 14px;border-radius:8px;border:1.5px solid #27683A;background:#F26B3A;color:#27683A;cursor:pointer`}
           >
             {s.libBtn.label}
           </button>

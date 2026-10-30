@@ -1,31 +1,71 @@
 import { apiFetch } from "@/lib/api/client";
 import { hydrateAppState, pausePersist } from "@/lib/store/persist";
 
-/** Marca Crisis en fichas con alerta de crisis abierta (fuente de verdad operativa). */
+/** Marca Crisis en fichas con alerta abierta o esperando «estoy bien». */
 function applyOpenCrisisToPatients(store: Store) {
   const S = store.get() as {
     alerts?: Array<{ sev?: string; status?: string; pid?: string }>;
+    closedToday?: Array<{
+      sev?: string;
+      pid?: string;
+      status?: string;
+      patientConfirmedAt?: number | null;
+      closedAt?: number | null;
+    }>;
     patients?: Record<string, Record<string, unknown>>;
     people?: Array<Record<string, unknown> & { id?: string }>;
   };
-  const openPids = new Set(
-    (S.alerts || [])
+  const confirmedPids = new Set(
+    (S.closedToday || [])
       .filter(
-        (a) =>
-          a.sev === "crisis" &&
-          a.status !== "closed" &&
-          a.pid,
+        (c) =>
+          c.sev === "crisis" &&
+          c.pid &&
+          (c.patientConfirmedAt || c.status === "closed"),
       )
-      .map((a) => String(a.pid)),
+      .map((c) => String(c.pid)),
   );
+  const openPids = new Set<string>();
+  (S.alerts || []).forEach((a) => {
+    if (a.sev !== "crisis" || !a.pid) return;
+    const st = String(a.status || "");
+    if (st !== "new" && st !== "mine" && st !== "retry" && st !== "other") {
+      return;
+    }
+    if (confirmedPids.has(String(a.pid))) return;
+    openPids.add(String(a.pid));
+  });
+  // Gestionada por clínico, aún sin «estoy bien»: el badge izquierdo sigue en Crisis.
+  (S.closedToday || []).forEach((c) => {
+    if (c.sev !== "crisis" || !c.pid || c.patientConfirmedAt) return;
+    if (confirmedPids.has(String(c.pid))) return;
+    const st = String(c.status || "");
+    if (st === "awaiting_patient" || (!c.closedAt && st !== "closed")) {
+      openPids.add(String(c.pid));
+    }
+  });
   if (!openPids.size) return;
   store.set((s: typeof S) => {
     s.patients = s.patients || {};
     openPids.forEach((pid) => {
-      if (s.patients![pid]) {
-        s.patients![pid].status = "Crisis";
-        s.patients![pid].signal = "Crisis";
-        s.patients![pid].crisisLock = true;
+      const mark = (row: Record<string, unknown> | undefined) => {
+        if (!row) return;
+        row.status = "Crisis";
+        row.signal = "Crisis";
+        row.crisisLock = true;
+      };
+      mark(s.patients![pid]);
+      // Alias por accountId / id embebido (la app del paciente a veces lee por sesión).
+      for (const row of Object.values(s.patients || {})) {
+        if (!row || typeof row !== "object") continue;
+        const r = row as Record<string, unknown>;
+        if (
+          String(r.id || "") === pid ||
+          String(r.accountId || "") === pid ||
+          String(r.code || "") === pid
+        ) {
+          mark(r);
+        }
       }
       const pe = (s.people || []).find((p) => String(p.id) === pid);
       if (pe) pe.status = "Crisis";
@@ -132,6 +172,8 @@ function staffPayloadSig(input: {
     p.phq,
     p.crisisLock === true,
     p.crisisAttendedAt ?? null,
+    p.crisisPromptAt ?? null,
+    (p.crisisPromptLoc as { at?: number } | null | undefined)?.at ?? null,
   ]);
   return JSON.stringify({
     pe,
@@ -245,7 +287,14 @@ async function hydratePeopleFlagsWorklists(store: Store) {
             if (!isProfile(merged.profile) && isProfile(pe.profile)) {
               merged.profile = String(pe.profile);
             }
-            if (
+            // Crisis en people o crisisLock en patients gana sobre Activo obsoleto.
+            const peCrisis = /^crisis$/i.test(String(pe.status || ""));
+            const lockCrisis = merged.crisisLock === true;
+            if (peCrisis || lockCrisis) {
+              merged.status = "Crisis";
+              merged.signal = "Crisis";
+              merged.crisisLock = true;
+            } else if (
               (!merged.status || /^(nueva|activo|activa)$/i.test(String(merged.status))) &&
               pe.status
             ) {
@@ -276,6 +325,13 @@ async function hydratePeopleFlagsWorklists(store: Store) {
             if (pe.evalDig != null && merged.evalDig == null) merged.evalDig = pe.evalDig;
             if (pe.code && !merged.code) merged.code = pe.code;
             if (pe.expert && !merged.expert) merged.expert = pe.expert;
+            if (pe.caregiverAccountId && !merged.caregiverAccountId) {
+              merged.caregiverAccountId = pe.caregiverAccountId;
+            }
+            if (pe.caregiverId && !merged.caregiverId) {
+              merged.caregiverId = pe.caregiverId;
+            }
+            if (pe.tieneCuidador === true) merged.tieneCuidador = true;
           }
           s.patients[merged.id] = {
             ...(s.patients[merged.id] || {}),
@@ -359,6 +415,9 @@ function patientLiveSig(p: Record<string, unknown> | undefined | null): string {
     crisisAttendedAt: p.crisisAttendedAt ?? null,
     crisisAttendedOutcome: p.crisisAttendedOutcome ?? null,
     crisisBtnReady: p.crisisBtnReady === true,
+    crisisPromptAt: p.crisisPromptAt ?? null,
+    crisisPromptLocAt:
+      (p.crisisPromptLoc as { at?: number } | null | undefined)?.at ?? null,
   });
 }
 
@@ -381,6 +440,16 @@ async function hydratePatientSelf(store: Store) {
         const n = Number(merged.crisisAttendedAt);
         merged.crisisAttendedAt = Number.isFinite(n) && n > 0 ? n : null;
       }
+      const closedToday = (
+        store.get() as {
+          closedToday?: Array<{
+            sev?: string;
+            pid?: string;
+            status?: string;
+            patientConfirmedAt?: number | null;
+          }>;
+        }
+      ).closedToday || [];
       const openCrisis = (
         (store.get() as { alerts?: Array<{ sev?: string; status?: string; pid?: string }> })
           .alerts || []
@@ -391,20 +460,34 @@ async function hydratePatientSelf(store: Store) {
           a.status !== "awaiting_patient" &&
           (a.pid === id || a.pid === accountId || String(a.pid) === id),
       );
-      const patientConfirmed = (
-        (store.get() as {
-          closedToday?: Array<{
-            sev?: string;
-            pid?: string;
-            patientConfirmedAt?: number | null;
-          }>;
-        }).closedToday || []
-      ).some(
+      // Episodio actual esperando «estoy bien» (no historial cerrado).
+      const awaitingWell = closedToday.some(
         (c) =>
           c.sev === "crisis" &&
-          !!c.patientConfirmedAt &&
-          (c.pid === id || c.pid === accountId),
+          (c.pid === id || c.pid === accountId) &&
+          c.status === "awaiting_patient" &&
+          !c.patientConfirmedAt,
       );
+      const remoteAttendedAt = (() => {
+        const n = Number(data.patient.crisisAttendedAt);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      })();
+      const remoteInCrisis =
+        data.patient.crisisLock === true ||
+        /^crisis$/i.test(String(data.patient.status || "")) ||
+        remoteAttendedAt > 0 ||
+        awaitingWell ||
+        openCrisis;
+      // Solo «confirmó bien» del episodio actual: no usar cierres viejos del mismo día
+      // (si no, al recargar se fuerza Activo y desaparece «estoy bien»).
+      const patientConfirmed =
+        !remoteInCrisis &&
+        closedToday.some(
+          (c) =>
+            c.sev === "crisis" &&
+            !!c.patientConfirmedAt &&
+            (c.pid === id || c.pid === accountId),
+        );
       let sessionWell = false;
       try {
         if (typeof window !== "undefined") {
@@ -423,9 +506,25 @@ async function hydratePatientSelf(store: Store) {
       } catch {
         /* private mode */
       }
+      // Si hay crisis activa en servidor/cola, ignorar well local y borrar el flag
+      // (si no, la app del paciente no vuelve a pintar la pantalla roja).
+      if (remoteInCrisis) {
+        sessionWell = false;
+        try {
+          if (typeof window !== "undefined") {
+            for (const key of [id, accountId].filter(Boolean)) {
+              window.sessionStorage.removeItem("nara:well-confirmed:" + key);
+            }
+          }
+        } catch {
+          /* private mode */
+        }
+      }
       const remoteCleared =
         data.patient.crisisLock === false &&
-        /^activo$/i.test(String(data.patient.status || ""));
+        /^activo$/i.test(String(data.patient.status || "")) &&
+        !awaitingWell &&
+        remoteAttendedAt <= 0;
       // Tras «estoy bien» local: no dejar que un /me obsoleto vuelva a Crisis.
       const localJustCleared =
         (Date.now() < suppressLiveUntil || sessionWell || patientConfirmed) &&
@@ -433,7 +532,11 @@ async function hydratePatientSelf(store: Store) {
         (/^activo$/i.test(String(prev?.status || "")) ||
           sessionWell ||
           patientConfirmed);
-      if ((localJustCleared || sessionWell || patientConfirmed) && !remoteCleared) {
+      if (
+        (localJustCleared || sessionWell || patientConfirmed) &&
+        !remoteCleared &&
+        !remoteInCrisis
+      ) {
         merged.status = "Activo";
         merged.signal = "Activo";
         merged.crisisLock = false;
@@ -443,7 +546,9 @@ async function hydratePatientSelf(store: Store) {
       } else if (!remoteCleared) {
         const stillLocked =
           openCrisis ||
+          awaitingWell ||
           merged.crisisLock === true ||
+          remoteAttendedAt > 0 ||
           (prev?.crisisLock === true && data.patient.crisisLock !== false);
         if (stillLocked && !sessionWell && !patientConfirmed) {
           merged.status = "Crisis";
@@ -451,13 +556,10 @@ async function hydratePatientSelf(store: Store) {
           merged.crisisLock = true;
         }
         // Remoto gana si ya marcó atendido; si no, conservar local.
-        if (data.patient.crisisAttendedAt != null) {
-          const n = Number(data.patient.crisisAttendedAt);
-          if (Number.isFinite(n) && n > 0) {
-            merged.crisisAttendedAt = n;
-            merged.crisisAttendedOutcome =
-              data.patient.crisisAttendedOutcome ?? merged.crisisAttendedOutcome;
-          }
+        if (remoteAttendedAt > 0) {
+          merged.crisisAttendedAt = remoteAttendedAt;
+          merged.crisisAttendedOutcome =
+            data.patient.crisisAttendedOutcome ?? merged.crisisAttendedOutcome;
         } else if (prev?.crisisAttendedAt && stillLocked) {
           merged.crisisAttendedAt = prev.crisisAttendedAt;
           merged.crisisAttendedOutcome = prev.crisisAttendedOutcome ?? null;
@@ -490,7 +592,7 @@ export function pauseLiveHydrate(ms = 3_000) {
   lastStaffLiveSig = "";
 }
 
-const PATH_LOCKED_HEAL = new Set(["tech", "revisit", "cursos"]);
+const PATH_RETIRADO = new Set(["tech", "revisit", "cursos"]);
 
 /**
  * Activo + modules vacíos (legado experto «Por aprobar») → copiar ids de la ruta.
@@ -509,9 +611,6 @@ function healActivoModulesFromPath(store: Store) {
     if (!/^activo$/i.test(String(p.status || p.signal || ""))) return;
     const en = p.modulesEnabled;
     const vis = p.modulesVisible;
-    const enEmpty = !Array.isArray(en) || en.length === 0;
-    const visEmpty = !Array.isArray(vis) || vis.length === 0;
-    if (!enEmpty && !visEmpty) return;
     const profile = String(p.profile || "");
     if (!/^P\d+$/i.test(profile)) return;
     try {
@@ -527,8 +626,16 @@ function healActivoModulesFromPath(store: Store) {
           : ((store.pathList(r, d, null, ctx) || []) as { id: string }[]).map(
               (x) => x.id,
             )
-      ).filter((id) => id && !PATH_LOCKED_HEAL.has(id));
+      ).filter((id) => id && !PATH_RETIRADO.has(id));
       if (!mods.length) return;
+      const enArr = Array.isArray(en) ? en.map(String) : [];
+      const visArr = Array.isArray(vis) ? vis.map(String) : [];
+      const enEmpty = enArr.length === 0;
+      const visEmpty = visArr.length === 0;
+      const enMissing = mods.some((id) => !enArr.includes(id));
+      const visMissing = mods.some((id) => !visArr.includes(id));
+      // Vacío (legado) o snapshot viejo sin servicios nuevos de la ruta (p. ej. juegos).
+      if (!enEmpty && !visEmpty && !enMissing && !visMissing) return;
       patches.push({ key, mods });
     } catch {
       /* ignore */
@@ -540,23 +647,29 @@ function healActivoModulesFromPath(store: Store) {
     patches.forEach(({ key, mods }) => {
       const p = s.patients![key];
       if (!p) return;
-      if (!Array.isArray(p.modulesEnabled) || p.modulesEnabled.length === 0) {
-        p.modulesEnabled = mods.slice();
-      }
-      if (!Array.isArray(p.modulesVisible) || p.modulesVisible.length === 0) {
-        p.modulesVisible = (
-          Array.isArray(p.modulesEnabled) && p.modulesEnabled.length
-            ? p.modulesEnabled
-            : mods
-        ).slice();
-      }
+      const enArr = Array.isArray(p.modulesEnabled)
+        ? (p.modulesEnabled as string[]).map(String)
+        : [];
+      const visArr = Array.isArray(p.modulesVisible)
+        ? (p.modulesVisible as string[]).map(String)
+        : [];
+      p.modulesEnabled = Array.from(new Set([...enArr, ...mods]));
+      p.modulesVisible = Array.from(
+        new Set([...(visArr.length ? visArr : enArr), ...mods]),
+      );
     });
   });
   // Persistir en API en segundo plano (un paciente canónico).
   const seen = new Set<string>();
   patches.forEach(({ key, mods }) => {
     const p = store.get().patients?.[key] as
-      | { id?: string; code?: string; accountId?: string }
+      | {
+          id?: string;
+          code?: string;
+          accountId?: string;
+          modulesEnabled?: string[];
+          modulesVisible?: string[];
+        }
       | undefined;
     const id = String(p?.id || key);
     if (!id || seen.has(id)) return;
@@ -568,17 +681,26 @@ function healActivoModulesFromPath(store: Store) {
         id,
         code: p?.code,
         accountId: p?.accountId,
-        modulesEnabled: mods,
-        modulesVisible: mods,
+        modulesEnabled: p?.modulesEnabled || mods,
+        modulesVisible: p?.modulesVisible || mods,
       }),
     }).catch(() => {});
   });
 }
 
+/** Partes opcionales: pantallas activas piden solo lo que usan. */
+export type HydratePart =
+  | "territories"
+  | "experts"
+  | "accounts"
+  | "staff"
+  | "appState"
+  | "patientSelf";
+
 /** Carga territorios, expertos, personas, etc. según el rol de la sesión activa. */
 export async function hydrateProgramData(
   store: Store,
-  opts?: { force?: boolean },
+  opts?: { force?: boolean; parts?: HydratePart[] },
 ): Promise<void> {
   const session = store.session() as { id?: string; roleId?: string | null } | null;
   if (!session?.id) {
@@ -594,36 +716,54 @@ export async function hydrateProgramData(
     await inFlight;
   }
 
+  const want = (p: HydratePart) => !opts?.parts || opts.parts.includes(p);
+
   inFlight = (async () => {
     pausePersist(true);
     try {
       const roleId = session.roleId || null;
 
       if (roleId === "paciente") {
-        await hydratePatientSelf(store);
-        await hydrateAppState(store);
+        if (want("patientSelf")) await hydratePatientSelf(store);
+        if (want("appState")) await hydrateAppState(store);
+        // Alerta del cuidador/clínico → crisisLock en la ficha local (pinta pantalla roja).
+        applyOpenCrisisToPatients(store);
         healActivoModulesFromPath(store);
         lastHydratedSessionId = session.id!;
         return;
       }
 
-      const programJobs: Promise<unknown>[] = [
-        hydrateTerritories(store),
-        hydrateExperts(store),
-        hydrateAppState(store),
-      ];
+      const programJobs: Promise<unknown>[] = [];
+      if (want("territories")) programJobs.push(hydrateTerritories(store));
+      if (want("experts")) programJobs.push(hydrateExperts(store));
+      if (want("appState")) programJobs.push(hydrateAppState(store));
 
-      if (roleId === "admin" || roleId === "clinico") {
+      if (
+        want("accounts") &&
+        (roleId === "admin" || roleId === "clinico")
+      ) {
         programJobs.push(hydrateAccounts(store));
       }
 
-      if (roleId === "admin" || roleId === "experto" || roleId === "clinico") {
+      if (
+        want("staff") &&
+        (roleId === "admin" ||
+          roleId === "experto" ||
+          roleId === "clinico" ||
+          roleId === "cuidador")
+      ) {
         programJobs.push(hydratePeopleFlagsWorklists(store));
       }
       // H-004: el observador no carga personas en el store; su tablero pide el resumen agregado.
 
       await Promise.all(programJobs);
-      if (roleId === "admin" || roleId === "experto" || roleId === "clinico") {
+      if (
+        want("staff") &&
+        (roleId === "admin" ||
+          roleId === "experto" ||
+          roleId === "clinico" ||
+          roleId === "cuidador")
+      ) {
         applyOpenCrisisToPatients(store);
       }
       lastHydratedSessionId = session.id!;

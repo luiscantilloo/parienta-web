@@ -41,7 +41,7 @@ export function Resumen({ vm }: { vm: AgendaVM }) {
     <section className="flex h-full min-h-0 flex-col gap-3 rounded-[20px] border border-linea bg-nara-blanco p-4" aria-label="Resumen de todos sus pacientes">
       <div className="flex items-center gap-2">
         <img
-          src={naraAsset("marca/personajes/nara-energia.svg")}
+          src={naraAsset("marca/teo/teo-energia.svg")}
           alt=""
           className="h-8 w-auto shrink-0"
         />

@@ -2,22 +2,18 @@
 export const PATIENT_APP_MODULES = [
   { id: "mood", name: "Estado de ánimo", desc: "Check-in «¿Cómo se siente hoy?»" },
   { id: "clin", name: "Psicólogo clínico", desc: "Servicio principal · citas clínicas" },
-  { id: "ia", name: "Acompañante con IA (TEO)", desc: "Botón TEO en la app" },
-  { id: "tech", name: "Técnicas guiadas", desc: "Respiración, sueño, anclaje" },
-  { id: "revisit", name: "Revisita del experto", desc: "Ventana de revisita en la app" },
-  { id: "cursos", name: "Cursos y cuentos", desc: "Mi curso + biblioteca" },
+  { id: "ia", name: "Acompañante con IA (Aurelia)", desc: "Botón Aurelia en la app del paciente" },
+  { id: "juegos", name: "Juegos", desc: "Sudoku en la app · 2h, 8h o diario" },
 ] as const;
 
 export type PatientModuleId = (typeof PATIENT_APP_MODULES)[number]["id"];
 
-/** Por ahora: los 6 servicios de ruta, activos por defecto. */
+/** Servicios de ruta activos por defecto. */
 export const DEFAULT_PATIENT_MODULES: PatientModuleId[] = [
   "mood",
   "clin",
   "ia",
-  "tech",
-  "revisit",
-  "cursos",
+  "juegos",
 ];
 
 const ALLOWED = new Set<string>(PATIENT_APP_MODULES.map((m) => m.id));

@@ -41,7 +41,7 @@ export function DetalleCita({ vm }: { vm: AgendaVM }) {
     const sig = fijas.find((x) => x.fecha > selDia);
     return (
       <section className="flex h-full min-h-0 flex-col items-center justify-center gap-2 rounded-[20px] border border-linea bg-nara-blanco px-6 py-8 text-center" aria-label="Detalle">
-        <img src={naraAsset("marca/logo/nara-isotipo.svg")} alt="" className="h-14 w-auto" />
+        <img src={naraAsset("marca/logo/plateado-isotipo.svg")} alt="" className="h-14 w-auto" />
         <h2 className="m-0 font-titulos text-[18px] font-semibold first-letter:uppercase">{larga(selDia)}</h2>
         <p className="m-0 max-w-[32ch] text-sm text-texto-secundario">
           Este día no tiene ninguna cita.{fest ? ` Es festivo (${fest}).` : finde ? " Las citas se agendan de lunes a viernes." : ""}
@@ -55,8 +55,8 @@ export function DetalleCita({ vm }: { vm: AgendaVM }) {
     );
   }
   if (!c && vm.conBorrador)
-    return <Vacio img="marca/personajes/teo-curiosidad.svg" titulo="Revise la propuesta de TEO" texto="Las fechas en verde son un borrador. Al aceptarlas aparece aquí el detalle de la próxima cita." extra="border-[1.5px] border-dashed border-teo-curiosidad bg-ia-borrador/50" />;
-  if (!c) return <Vacio img="marca/personajes/nara-curiosidad.svg" titulo="Aún no hay citas" texto="Use «Organizar con IA» para proponer las citas de todos sus pacientes, sin cruces." />;
+    return <Vacio img="marca/personajes/teo-curiosidad.svg" titulo="Revise la propuesta de Aurelia" texto="Las fechas en verde son un borrador. Al aceptarlas aparece aquí el detalle de la próxima cita." extra="border-[1.5px] border-dashed border-teo-curiosidad bg-ia-borrador/50" />;
+  if (!c) return <Vacio img="marca/teo/teo-curiosidad.svg" titulo="Aún no hay citas" texto="Use «Organizar con IA» para proponer las citas de todos sus pacientes, sin cruces." />;
 
   const p = vm.P(c.patientId);
   const n = fijas.indexOf(c) + 1;
@@ -81,7 +81,7 @@ export function DetalleCita({ vm }: { vm: AgendaVM }) {
     <section className="flex h-full min-h-0 flex-col gap-3 rounded-[20px] border border-linea bg-nara-blanco p-4" aria-label="Detalle de la cita">
       <div className="flex items-center gap-2 text-[12px]">
         <img
-          src={naraAsset("marca/personajes/nara-curiosidad.svg")}
+          src={naraAsset("marca/teo/teo-curiosidad.svg")}
           alt=""
           className="h-7 w-auto shrink-0"
         />

@@ -1,7 +1,31 @@
 @import "tailwindcss";
 @import "./nara-tokens.css";
+@import "./plateado-tokens.css";
 
 @theme inline {
+  /* Paleta oficial Parienta (campo y casa) */
+  --color-pl-verde-raiz: #27683a;
+  --color-pl-verde-vivo: #359a54;
+  --color-pl-menta: #c0dfc8;
+  --color-pl-naranja: #f26b3a;
+  --color-pl-lima: #e0db55;
+  --color-pl-crema-sol: #fdf2b3;
+  --color-pl-hueso: #fbfaf3;
+  --color-pl-tinta: #222220;
+  --color-pl-texto2: #5a5a52;
+  --color-pl-linea: #e3dfcf;
+  --color-pl-blanco: #ffffff;
+  --color-pl-rojo: #b42318;
+  /* Alias legacy */
+  --color-pl-noche: #27683a;
+  --color-pl-niebla: #fbfaf3;
+  --color-pl-plata: #8a9a8c;
+  --color-pl-plata-oscura: #5c6b5e;
+  --color-pl-azul: #27683a;
+  --color-pl-azul-claro: #359a54;
+  --color-pl-teal: #359a54;
+  --color-pl-ambar: #f26b3a;
+
   --color-nara-amarillo: var(--nara-amarillo);
   --color-nara-rosa: var(--nara-rosa);
   --color-nara-crema: var(--nara-crema);
@@ -38,81 +62,159 @@
   --color-exito-suave: var(--exito-suave);
   --color-estado-bajo-meta: var(--estado-bajo-meta);
   --color-estado-revisar: var(--estado-revisar);
-  --font-titulos: var(--fuente-titulos);
-  --font-texto: var(--fuente-texto);
+  /* Tipografías oficiales Parienta (Branding/fuentes via next/font) */
+  --font-titulos: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-texto: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), "DM Mono", ui-monospace, monospace;
 }
 
+/* Bricolage Grotesque — titulares ExtraBold, texto Regular (manual de marca) */
 @font-face {
-  font-family: "Fredoka";
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/parienta/fuentes/Bricolage_Grotesque_Variable.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/nara/marca/fuentes/Fredoka-Regular.woff2") format("woff2");
+  src: url("/parienta/fuentes/BricolageGrotesque-Regular.ttf") format("truetype");
 }
 @font-face {
-  font-family: "Fredoka";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/nara/marca/fuentes/Fredoka-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Fredoka";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/nara/marca/fuentes/Fredoka-SemiBold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Fredoka";
+  font-family: "Bricolage Grotesque";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/nara/marca/fuentes/Fredoka-Bold.woff2") format("woff2");
+  src: url("/parienta/fuentes/BricolageGrotesque-Bold.ttf") format("truetype");
 }
 @font-face {
-  font-family: "Figtree";
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/parienta/fuentes/BricolageGrotesque-ExtraBold.ttf") format("truetype");
+}
+
+/* DM Mono — voz, datos y acentos */
+@font-face {
+  font-family: "DM Mono";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/nara/marca/fuentes/Figtree-Regular.woff2") format("woff2");
+  src: url("/parienta/fuentes/DM_Mono-Regular.ttf") format("truetype");
 }
 @font-face {
-  font-family: "Figtree";
+  font-family: "DM Mono";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/nara/marca/fuentes/Figtree-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Figtree";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/nara/marca/fuentes/Figtree-SemiBold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Figtree";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/nara/marca/fuentes/Figtree-Bold.woff2") format("woff2");
+  src: url("/parienta/fuentes/DM_Mono-Medium.ttf") format("truetype");
 }
 
 html,
 body {
   margin: 0;
   min-height: 100%;
-  background: var(--nara-crema, #f0ece6);
-  color: var(--nara-tinta, #161413);
-  font-family: Figtree, system-ui, sans-serif;
+  background: var(--pl-hueso, #fbfaf3);
+  color: var(--pl-tinta, #222220);
+  font-family: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  font-weight: 400;
   overflow-x: clip;
 }
 
-/* Scroll amarillo solo en zonas de contenido (bajo el topbar), no en toda la ventana */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-weight: inherit;
+}
+
+/* Manual de marca: titulares ExtraBold · cuerpo Regular */
+h1,
+h2,
+h3 {
+  font-family: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  font-weight: 800;
+}
+
+h4,
+h5,
+h6,
+.font-titulos {
+  font-family: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: var(--font-dm-mono), "DM Mono", ui-monospace, monospace;
+}
+
+/* Eyebrows / datos / voz (DM Mono) */
+.pl-eyebrow {
+  font-family: var(--font-dm-mono), "DM Mono", ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@keyframes pl-drift {
+  from {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.12) translate3d(-1.5%, 1%, 0);
+  }
+}
+
+@keyframes pl-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+/* CTAs heredados: acento naranja Parienta con texto claro */
+.bg-nara-amarillo {
+  color: var(--pl-hueso, #fbfaf3);
+}
+
+/**
+ * Topbar global Parienta — nunca scrollea con el contenido.
+ * Debe vivir FUERA del área `.nara-scroll` (columna: topbar shrink-0 + scroll flex-1).
+ */
+.nara-topbar {
+  position: relative;
+  z-index: 40;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  height: 4rem; /* h-16 */
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid #c0dfc8;
+  background: #fbfaf3;
+}
+
+/* Scroll acento Parienta solo en zonas de contenido (bajo el topbar) */
 .nara-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--nara-amarillo, #fdcd22) transparent;
+  scrollbar-color: var(--nara-amarillo, #f26b3a) transparent;
 }
 
 .nara-scroll::-webkit-scrollbar {
@@ -125,14 +227,14 @@ body {
 }
 
 .nara-scroll::-webkit-scrollbar-thumb {
-  background: var(--nara-amarillo, #fdcd22);
+  background: var(--nara-amarillo, #f26b3a);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .nara-scroll::-webkit-scrollbar-thumb:hover {
-  background: #e0b41a;
+  background: #e05a2a;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -140,19 +242,115 @@ body {
 /* H-011 (reporte TRL 2026-10-10, WCAG 2.4.7): el foco del teclado siempre se ve.
    Antes `outline: none` lo ocultaba en toda la app. */
 :focus-visible {
-  outline: 3px solid #161413;
+  outline: 3px solid #27683a;
   outline-offset: 2px;
 }
 
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #161413;
+  outline: 2px solid #27683a;
   outline-offset: 1px;
-  box-shadow: 0 0 0 4px rgba(253, 205, 34, 0.6);
+  box-shadow: 0 0 0 4px rgba(242, 107, 58, 0.35);
 }
 
-a {
+/* Composer chat (Aurelia): un solo borde en el contenedor; el input no lleva outline propio. */
+.pl-composer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  border: 1.5px solid #c0dfc8;
+  background: #fff;
+  padding: 4px 6px 4px 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pl-composer:focus-within {
+  border-color: #27683a;
+  box-shadow: 0 0 0 3px rgba(242, 107, 58, 0.28);
+}
+.pl-composer input,
+.pl-composer input:focus,
+.pl-composer input:focus-visible {
+  flex: 1;
+  min-width: 0;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 16px;
+  color: #27683a;
+}
+.pl-composer input::placeholder {
+  color: rgba(90, 90, 82, 0.7);
+}
+.pl-composer__send {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.pl-composer__send:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(242, 107, 58, 0.4) !important;
+}
+.pl-composer__send--on {
+  background: #f26b3a;
+  color: #fbfaf3;
+  cursor: pointer;
+}
+.pl-composer__send--on:hover {
+  background: #e05a2a;
+}
+.pl-composer__send--on:active {
+  transform: scale(0.95);
+}
+.pl-composer__send--off {
+  background: #c0dfc8;
+  color: rgba(90, 90, 82, 0.6);
+  cursor: not-allowed;
+}
+
+/* Campos de ingreso / formularios: borde menta único; sin outline cuadrado ni autofill azul. */
+.pl-field {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  border-radius: 10px;
+  border: 1.5px solid #c0dfc8;
+  background: #fff;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 17px;
+  color: #27683a;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pl-field:focus,
+.pl-field:focus-visible {
+  outline: none !important;
+  border-color: #27683a;
+  box-shadow: 0 0 0 3px rgba(242, 107, 58, 0.28) !important;
+}
+.pl-field::placeholder {
+  color: rgba(90, 90, 82, 0.65);
+}
+.pl-field:-webkit-autofill,
+.pl-field:-webkit-autofill:hover,
+.pl-field:-webkit-autofill:focus {
+  -webkit-text-fill-color: #27683a;
+  box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 99999s ease-out;
+}
+
+/* No forzar color en <a>: anula text-* de Tailwind (botones/CTAs invisibles). */
+a:not([class*="text-"]) {
   color: inherit;
 }
 
@@ -189,9 +387,17 @@ a {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: var(--nara-crema, #f0ece6);
+  /* Mismo hueso que el shell — sin bloque crema distinto */
+  background: #fbfaf3;
   padding: var(--nara-page-pad-y) 0 12px;
   margin-bottom: 4px;
+  font-family: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+.nara-page-head h1,
+.nara-page-head h2,
+.nara-page-head .font-titulos {
+  font-weight: 800;
 }
 
 .nara-page-head .nara-tabs-scroll {
@@ -405,25 +611,25 @@ a {
   }
 }
 
-/* SweetAlert2 · marca NARA */
+/* SweetAlert2 · marca Parienta */
 .nara-swal-popup {
-  font-family: Figtree, system-ui, sans-serif !important;
-  color: var(--nara-tinta, #161413) !important;
+  font-family: var(--font-bricolage), Bricolage Grotesque, system-ui, sans-serif !important;
+  color: var(--nara-tinta, #27683A) !important;
   border-radius: 20px !important;
-  border: 1px solid var(--linea, #dcd6cd) !important;
+  border: 1px solid var(--linea, #c0dfc8) !important;
   padding: 1.5rem 1.25rem 1.25rem !important;
   box-shadow: 0 24px 60px rgba(22, 20, 19, 0.22) !important;
 }
 
 .nara-swal-title {
-  font-family: Fredoka, Figtree, system-ui, sans-serif !important;
-  font-weight: 600 !important;
-  color: var(--nara-tinta, #161413) !important;
+  font-family: var(--font-bricolage), Bricolage Grotesque, system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  color: var(--nara-tinta, #27683A) !important;
 }
 
 .nara-swal-html {
   font-size: 16px !important;
-  color: var(--nara-tinta, #161413) !important;
+  color: var(--nara-tinta, #27683A) !important;
   line-height: 1.45 !important;
 }
 
@@ -436,9 +642,9 @@ a {
 .nara-swal-confirm,
 .nara-swal-deny,
 .nara-swal-cancel {
-  font-family: Figtree, system-ui, sans-serif !important;
+  font-family: var(--font-bricolage), Bricolage Grotesque, system-ui, sans-serif !important;
   font-size: 15px !important;
-  font-weight: 500 !important;
+  font-weight: 700 !important;
   height: 44px !important;
   padding: 0 18px !important;
   border-radius: 14px !important;
@@ -448,35 +654,35 @@ a {
 }
 
 .nara-swal-confirm {
-  background: var(--nara-amarillo, #fdcd22) !important;
-  color: var(--nara-tinta, #161413) !important;
+  background: var(--nara-amarillo, #f26b3a) !important;
+  color: #fbfaf3 !important;
   border: none !important;
 }
 
 .nara-swal-deny {
   background: #fff !important;
-  color: var(--nara-tinta, #161413) !important;
-  border: 1.5px solid var(--nara-tinta, #161413) !important;
+  color: var(--nara-tinta, #27683A) !important;
+  border: 1.5px solid var(--nara-tinta, #27683A) !important;
 }
 
 .nara-swal-cancel {
   background: #fff !important;
-  color: var(--nara-tinta, #161413) !important;
+  color: var(--nara-tinta, #27683A) !important;
   border: 1.5px solid var(--linea, #dcd6cd) !important;
 }
 
 .swal2-icon.swal2-success .swal2-success-ring {
-  border-color: rgba(253, 205, 34, 0.45) !important;
+  border-color: rgba(53, 154, 84, 0.45) !important;
 }
 
 .swal2-icon.swal2-success [class^="swal2-success-line"] {
-  background-color: var(--nara-tinta, #161413) !important;
+  background-color: var(--nara-tinta, #27683A) !important;
 }
 
 .swal2-icon.swal2-info,
 .swal2-icon.swal2-warning {
-  border-color: var(--nara-amarillo, #fdcd22) !important;
-  color: var(--nara-tinta, #161413) !important;
+  border-color: var(--nara-amarillo, #F26B3A) !important;
+  color: var(--nara-tinta, #27683A) !important;
 }
 
 @keyframes nara-kenburns {

@@ -28,7 +28,16 @@ export function isPersistPaused() {
 
 // Lo que cada rol puede escribir en app-state (misma política que nara-api, app-state.policy.ts).
 // El navegador no envía lo que la API rechazaría: así un cambio local de otra porción no produce un 403.
-const PACIENTE_ESCRIBE = ["alerts", "crisisLog", "closedToday", "notifs", "consents"];
+/** moodLogs/gameLogs: el paciente escribe solo su historial para que el clínico lo vea. */
+const PACIENTE_ESCRIBE = [
+  "alerts",
+  "crisisLog",
+  "closedToday",
+  "notifs",
+  "consents",
+  "moodLogs",
+  "gameLogs",
+];
 const NO_ESCRIBE = {
   experto: ["rules", "pathOverrides", "pathRequests", "recursos", "terrOv", "expertOv", "personOv", "assetOv", "assets", "weekBase", "reports", "customReports", "schedules"],
   clinico: ["terrOv", "expertOv", "personOv", "assetOv", "assets", "weekBase"],
@@ -42,10 +51,17 @@ function puedeEscribir(roleId, key) {
   return !(NO_ESCRIBE[roleId] || []).includes(key);
 }
 
-/** Del paciente solo salen sus propias entradas (la API filtra igual por patientId y por id de cuenta). */
+/** Del paciente solo salen sus propias entradas (patientId y/o id de cuenta). */
 function soloDelPaciente(out, user) {
   const pid = user?.patientId || "";
-  const propio = (arr) => (Array.isArray(arr) ? arr.filter((x) => String(x?.pid ?? x?.personId ?? x?.patientId ?? "") === pid) : []);
+  const aid = user?.id || "";
+  const own = new Set([pid, aid].filter(Boolean).map(String));
+  const propio = (arr) =>
+    Array.isArray(arr)
+      ? arr.filter((x) =>
+          own.has(String(x?.pid ?? x?.personId ?? x?.patientId ?? "")),
+        )
+      : [];
   for (const k of ["alerts", "crisisLog", "closedToday"]) {
     const v = propio(out[k]);
     if (v.length) out[k] = v;
@@ -55,6 +71,20 @@ function soloDelPaciente(out, user) {
   else delete out.notifs;
   if (out.consents && pid && out.consents[pid] !== undefined) out.consents = { [pid]: out.consents[pid] };
   else delete out.consents;
+  // Mapas { patientId|accountId: [...] }: solo claves propias.
+  for (const k of ["moodLogs", "gameLogs"]) {
+    const map = out[k];
+    if (!map || typeof map !== "object" || Array.isArray(map)) {
+      delete out[k];
+      continue;
+    }
+    const filtered = {};
+    Object.keys(map).forEach((key) => {
+      if (own.has(String(key))) filtered[key] = map[key];
+    });
+    if (Object.keys(filtered).length) out[k] = filtered;
+    else delete out[k];
+  }
   return out;
 }
 
@@ -73,6 +103,16 @@ function pickSlices(s, roleId, user) {
   return roleId === "paciente" ? soloDelPaciente(out, user) : out;
 }
 
+function alertStatusRank(st) {
+  const s = String(st || "");
+  if (s === "closed") return 5;
+  if (s === "awaiting_patient") return 4;
+  if (s === "retry" || s === "mine" || s === "other") return 3;
+  if (s === "new") return 2;
+  if (s === "open") return 1;
+  return 0;
+}
+
 function mergeAlertsById(local, remote) {
   const map = new Map();
   const put = (a) => {
@@ -80,7 +120,34 @@ function mergeAlertsById(local, remote) {
     const id = String(a.id || "");
     if (!id) return;
     const prev = map.get(id);
-    if (!prev || Number(a.at || 0) >= Number(prev.at || 0)) map.set(id, a);
+    if (!prev) {
+      map.set(id, a);
+      return;
+    }
+    // Misma alerta: unir campos; estado más avanzado + ubicación más reciente.
+    const base =
+      Number(a.at || 0) >= Number(prev.at || 0)
+        ? Object.assign({}, prev, a)
+        : Object.assign({}, a, prev);
+    if (alertStatusRank(a.status) > alertStatusRank(prev.status)) {
+      base.status = a.status;
+      if (a.takenAt) base.takenAt = a.takenAt;
+      if (a.takenBy) base.takenBy = a.takenBy;
+      if (a.outcome) base.outcome = a.outcome;
+      if (a.attendedAt) base.attendedAt = a.attendedAt;
+    } else if (alertStatusRank(prev.status) > alertStatusRank(a.status)) {
+      base.status = prev.status;
+      if (prev.takenAt) base.takenAt = prev.takenAt;
+      if (prev.takenBy) base.takenBy = prev.takenBy;
+      if (prev.outcome) base.outcome = prev.outcome;
+      if (prev.attendedAt) base.attendedAt = prev.attendedAt;
+    }
+    const aLocAt = Number(a.loc && a.loc.at) || 0;
+    const pLocAt = Number(prev.loc && prev.loc.at) || 0;
+    if (aLocAt > 0 || pLocAt > 0) {
+      base.loc = aLocAt >= pLocAt ? a.loc : prev.loc;
+    }
+    map.set(id, base);
   };
   (Array.isArray(local) ? local : []).forEach(put);
   (Array.isArray(remote) ? remote : []).forEach(put);
@@ -98,12 +165,63 @@ export async function hydrateAppState(store) {
     // ¿Había un cambio local sin enviar antes de traer lo del servidor?
     const pendienteAntes = !!timer || flushing;
     store.set((s) => {
+      // closedToday ANTES que alerts: si el clínico ya pasó a awaiting_patient,
+      // hay que verlo al filtrar alertas locales stale (si no, «estoy bien» no aparece).
+      // Reemplazar (no merge): si el servidor quedó vacío tras limpiar BD, el local
+      // no debe seguir mostrando «Gestionadas hoy».
+      if (slices.closedToday !== undefined) {
+        try {
+          s.closedToday = Array.isArray(slices.closedToday)
+            ? JSON.parse(JSON.stringify(slices.closedToday))
+            : [];
+        } catch {
+          s.closedToday = Array.isArray(slices.closedToday)
+            ? slices.closedToday.slice()
+            : [];
+        }
+      }
+      const purgeAlertsAgainstClosed = () => {
+        const closed = Array.isArray(s.closedToday) ? s.closedToday : [];
+        const doneIds = new Set();
+        const awaitingById = new Map();
+        closed.forEach((c) => {
+          if (!c || c.sev !== "crisis") return;
+          const st = String(c.status || "");
+          const id = c.id ? String(c.id) : "";
+          if (!id) return;
+          if (c.patientConfirmedAt || st === "closed") {
+            doneIds.add(id);
+            return;
+          }
+          if (st === "awaiting_patient") {
+            const attended = Number(c.attendedAt || c.at || 0);
+            const prev = awaitingById.get(id);
+            if (prev == null || attended >= prev) awaitingById.set(id, attended);
+          }
+        });
+        s.alerts = (s.alerts || []).filter((a) => {
+          if (!a || a.sev !== "crisis") return true;
+          const aid = String(a.id || "");
+          if (doneIds.has(aid)) return false;
+          if (awaitingById.has(aid)) {
+            const alertAt = Number(a.at || 0);
+            const attendedAt = Number(awaitingById.get(aid) || 0);
+            // Misma alerta ya gestionada → fuera de cola. Episodio más nuevo → se queda.
+            if (alertAt > 0 && attendedAt > 0) return alertAt > attendedAt;
+            // Sin timestamps: si está en awaiting, la local ya no es cola abierta.
+            return false;
+          }
+          return true;
+        });
+      };
       Object.keys(slices).forEach((k) => {
         if (slices[k] === undefined) return;
+        if (k === "closedToday") return; // ya fusionado arriba
         // Alertas: unir por id para que crisis del paciente llegue al clínico
         // sin que un persist viejo las borre.
         if (k === "alerts") {
           s.alerts = mergeAlertsById(s.alerts, slices.alerts);
+          purgeAlertsAgainstClosed();
           return;
         }
         if (k === "crisisLog") {
@@ -169,10 +287,23 @@ export async function hydrateAppState(store) {
           return;
         }
         if (k === "pathOverrides" && slices.pathOverrides && typeof slices.pathOverrides === "object") {
-          s.pathOverrides = {
-            ...(s.pathOverrides && typeof s.pathOverrides === "object" ? s.pathOverrides : {}),
-            ...slices.pathOverrides,
-          };
+          // Fusionar `s` por servicio: no perder '' (apagado) con parciales.
+          const local =
+            s.pathOverrides && typeof s.pathOverrides === "object" ? s.pathOverrides : {};
+          const remote = slices.pathOverrides;
+          const out = { ...local };
+          Object.keys(remote).forEach((pk) => {
+            const prev =
+              local[pk] && typeof local[pk] === "object" ? local[pk] : {};
+            const next =
+              remote[pk] && typeof remote[pk] === "object" ? remote[pk] : {};
+            const prevS =
+              prev.s && typeof prev.s === "object" ? prev.s : {};
+            const nextS =
+              next.s && typeof next.s === "object" ? next.s : {};
+            out[pk] = { ...prev, ...next, s: { ...prevS, ...nextS } };
+          });
+          s.pathOverrides = out;
           return;
         }
         // consents: no pisar appAt local con {} remoto (poll mientras el PUT aún no refleja).
@@ -222,6 +353,37 @@ export async function hydrateAppState(store) {
           s.moodLogs = out;
           return;
         }
+        // gameLogs: unir partidas por paciente (puzzleId + startedAt + status).
+        if (k === "gameLogs" && slices.gameLogs && typeof slices.gameLogs === "object") {
+          const local =
+            s.gameLogs && typeof s.gameLogs === "object" ? s.gameLogs : {};
+          const remote = slices.gameLogs;
+          const out = { ...local };
+          Object.keys(remote).forEach((pid) => {
+            const map = new Map();
+            const put = (row) => {
+              if (!row || typeof row !== "object") return;
+              const startedAt = Number(row.startedAt || row.at || 0);
+              const puzzleId = String(row.puzzleId || row.id || "");
+              const status = String(row.status || "");
+              const id = `${puzzleId}:${startedAt}:${status}`;
+              const prev = map.get(id);
+              const at = Number(row.at || row.completedAt || startedAt || 0);
+              if (!prev || at >= Number(prev.at || prev.completedAt || prev.startedAt || 0)) {
+                map.set(id, row);
+              }
+            };
+            (Array.isArray(local[pid]) ? local[pid] : []).forEach(put);
+            (Array.isArray(remote[pid]) ? remote[pid] : []).forEach(put);
+            out[pid] = Array.from(map.values()).sort(
+              (a, b) =>
+                Number(b.at || b.completedAt || b.startedAt || 0) -
+                Number(a.at || a.completedAt || a.startedAt || 0),
+            );
+          });
+          s.gameLogs = out;
+          return;
+        }
         if (k === "rules" && slices.rules && typeof slices.rules === "object") {
           const local = s.rules && typeof s.rules === "object" ? s.rules : {};
           const remote = slices.rules;
@@ -248,6 +410,10 @@ export async function hydrateAppState(store) {
         }
         s[k] = slices[k];
       });
+      // Por si alerts llegó antes en el payload o no venía en este poll.
+      if (slices.closedToday !== undefined || slices.alerts !== undefined) {
+        purgeAlertsAgainstClosed();
+      }
     });
     // Lo recién traído del servidor no es un cambio local: no se reenvía. Si había un cambio local
     // pendiente, se deja que su guardado siga su curso.

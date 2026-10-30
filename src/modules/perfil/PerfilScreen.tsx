@@ -105,15 +105,15 @@ function PerfilTopbar({
       : [];
 
   return (
-    <header className="box-border flex h-16 shrink-0 items-center justify-between gap-2 border-b border-linea bg-nara-blanco px-3 sm:gap-4 sm:px-6">
+    <header className="nara-topbar gap-2 border-linea bg-nara-blanco px-3 sm:gap-4 sm:px-6">
       <div className="flex h-full min-w-0 flex-1 items-stretch gap-2 sm:gap-4">
         <Link
           href={home}
           className="flex shrink-0 items-center text-nara-tinta"
         >
           <img
-            src="/nara/marca/logo/nara-logo.svg"
-            alt="NARA"
+            src="/parienta/logo/parienta-horizontal-principal.svg"
+            alt="Parienta"
             className="block h-7 w-auto sm:h-[34px]"
           />
         </Link>
@@ -133,15 +133,20 @@ function PerfilTopbar({
           <button
             type="button"
             onClick={onOpenAgent}
-            aria-label="Abrir TEO"
+            aria-label="Abrir Aurelia, asistente de Parienta"
             className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-nara-tinta bg-nara-blanco px-2.5 font-texto text-sm font-medium text-nara-tinta sm:h-11 sm:px-3.5 sm:text-[15px]"
           >
             <img
-              src="/nara/marca/logo/teo-isotipo.svg"
+              src="/parienta/aurelia/aurelia-base.svg"
               alt=""
               className="block h-7 w-7 sm:-ml-1.5 sm:h-8 sm:w-8"
             />
-            <span className="hidden sm:inline">TEO</span>
+            <span className="hidden flex-col items-start leading-none sm:flex">
+              <span>Aurelia</span>
+              <span className="mt-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-[#5A5A52]">
+                asistente
+              </span>
+            </span>
           </button>
         ) : null}
         <UserMenu
@@ -336,7 +341,7 @@ export function PerfilScreen() {
               Actualice sus datos de contacto. El rol y el ámbito del programa
               los define la administración; no se editan aquí.
             </p>
-            <dl className="mt-1 flex flex-col gap-2.5 border-t border-[#E6E1D9] pt-3">
+            <dl className="mt-1 flex flex-col gap-2.5 border-t border-[#C0DFC8] pt-3">
               <div className="flex flex-col gap-0.5">
                 <dt className="text-xs text-texto-secundario">Rol</dt>
                 <dd className="text-sm font-medium">{role}</dd>
@@ -396,7 +401,7 @@ export function PerfilScreen() {
               />
             </label>
 
-            <div className="flex flex-col gap-2 border-t border-[#E6E1D9] pt-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 border-t border-[#C0DFC8] pt-4 sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={save}
@@ -426,7 +431,7 @@ export function PerfilScreen() {
             </div>
 
             {kind === "patient" ? (
-              <div className="mt-2 flex flex-col gap-3 border-t border-[#E6E1D9] pt-4">
+              <div className="mt-2 flex flex-col gap-3 border-t border-[#C0DFC8] pt-4">
                 <div className="flex flex-col gap-0.5">
                   <h2 className="font-titulos text-lg font-semibold">Qué veo en mi app</h2>
                   <p className="text-sm text-texto-secundario">
@@ -450,7 +455,7 @@ export function PerfilScreen() {
                         setModsDirty(true);
                         setErr("");
                       }}
-                      className="grid cursor-pointer grid-cols-[52px_minmax(0,1fr)] items-center gap-2.5 border-t border-[#F0ECE6] py-2 text-left"
+                      className="grid cursor-pointer grid-cols-[52px_minmax(0,1fr)] items-center gap-2.5 border-t border-[#C0DFC8] py-2 text-left"
                     >
                       <span
                         className="relative h-[26px] w-11 rounded-full"

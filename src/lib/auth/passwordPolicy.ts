@@ -39,7 +39,10 @@ function isPrivilegedRole(role: string) {
     r === "admin" ||
     r === "clinico" ||
     r === "clínico" ||
+    r === "clinica" ||
     r === "experto de campo" ||
+    r === "gestor de campo" ||
+    r === "gestor" ||
     r === "experto"
   );
 }
@@ -51,7 +54,8 @@ function needsLongPassword(role: string) {
     r === "administradora" ||
     r === "admin" ||
     r === "clinico" ||
-    r === "clínico"
+    r === "clínico" ||
+    r === "clinica"
   );
 }
 

@@ -13,7 +13,7 @@ export function HerramientasSection({ items, patientId }: Props) {
       <span className="font-texto text-base font-medium text-nara-tinta">
         Herramientas
       </span>
-      <div className="grid w-full grid-cols-6 gap-2">
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {items.map((item) => {
           const Card = resolveHerramientaCard(item.id);
           return (

@@ -5,8 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useRouteLoading } from "@/components/shared/nara-loading/RouteLoadingProvider";
 import { needsClosingEval } from "@/lib/clinical/patientStates";
+import {
+  generateAccessPassword,
+  generateParientaEmail,
+} from "@/lib/auth/generateCredentials";
 import { useRequireSession } from "@/hooks/useRequireSession";
 import { pauseLiveHydrate } from "@/lib/store/hydrateProgram";
+import { LIVE_EXPERTO, useLiveProgramSync } from "@/lib/store/liveSync";
 import {
   isBrowserOnline,
   pendingOfflineCount,
@@ -56,7 +61,7 @@ function saveNfDraft(draft: Record<string, string> | null) {
 
 const blank = (n: number) =>
   Array.from({ length: n }, () => ({ v: null as number | null, st: "none" as const }));
-const OK_BG = "#FFF4CC";
+const OK_BG = "#FDF2B3";
 
 const GENERO_OPTS = ["Femenino", "Masculino", "No binario", "Otro", "Prefiere no decir"];
 const CIVIL_OPTS = ["Soltero/a", "Casado/a", "Unión libre", "Separado/a", "Divorciado/a", "Viudo/a"];
@@ -98,6 +103,7 @@ function emptyPersonForm(partial: Record<string, string> = {}) {
     age: "",
     phone: "",
     email: "",
+    password: "",
     place: "",
     terr: "",
     genero: "",
@@ -105,6 +111,18 @@ function emptyPersonForm(partial: Record<string, string> = {}) {
     estrato: "",
     expert: "",
     clin: "",
+    tieneCuidador: "",
+    caregiverFirstName: "",
+    caregiverLastName: "",
+    caregiverBirthDate: "",
+    caregiverAge: "",
+    caregiverGenero: "",
+    caregiverEstadoCivil: "",
+    caregiverEstrato: "",
+    caregiverPlace: "",
+    caregiverPhone: "",
+    caregiverEmail: "",
+    caregiverPassword: "",
     ...partial,
   };
 }
@@ -147,6 +165,7 @@ function borrarBorradorVisita(pid: string | null) {
 export function useExpertoScreen() {
   const store = useNaraStore();
   const live = useNaraLive();
+  useLiveProgramSync({ parts: LIVE_EXPERTO });
   const session = useRequireSession(["experto"]);
   const router = useRouter();
   const pathname = usePathname();
@@ -189,12 +208,14 @@ export function useExpertoScreen() {
     witness: "",
     mode: "form",
     sec: "phq",
-    items: { phq: blank(9), dig: blank(6), ctx: blank(2) },
+    items: { phq: blank(store.PHQ.length || 9), dig: blank(store.DIGQ.length || 6), ctx: blank(store.CTX.length || 2) },
     chat: [] as { who: string; text: string; label?: string }[],
     chatInput: "",
     step: 0,
     thinking: false,
     crisis: false,
+    /** Confirmación antes de disparar crisis por PHQ-9 pregunta 9. */
+    crisisConfirm: null as null | { v: number; label: string },
     override: "keep",
     reason: "",
     reasonErr: "",
@@ -444,7 +465,7 @@ export function useExpertoScreen() {
       if (!ctx) return;
       ctx.lineWidth = 2.5;
       ctx.lineCap = "round";
-      ctx.strokeStyle = "#161413";
+      ctx.strokeStyle = "#27683A";
       let down = false;
       const pos = (ev: PointerEvent) => {
         const r = el.getBoundingClientRect();
@@ -484,9 +505,9 @@ export function useExpertoScreen() {
 
 
 const SCRIPT = [
-  { note: 'Dice que casi no duerme desde el sismo; se despierta a las 3 de la mañana con miedo a que vuelva a temblar. Se le agrietó la cocina.',
+  { note: 'Dice que casi no duerme; se despierta a las 3 de la mañana preocupada. Vive a ratos sola porque la hija trabaja fuera.',
     drafts: [['phq', 2, 3], ['ctx', 0, 1]],
-    reply: 'Anoté como borrador:\n· Pregunta 3 (sueño): Casi todos los días\n· Daño en la vivienda: Parcial\n\nSiguiente: pregunte por el interés y la energía. Puede decir: «¿Ha podido seguir haciendo las cosas que le gustan? ¿Cómo anda de energía?»' },
+    reply: 'Anoté como borrador:\n· Pregunta 3 (sueño): Casi todos los días\n· Convivencia: A ratos solo/a\n\nSiguiente: pregunte por el interés y la energía. Puede decir: «¿Ha podido seguir haciendo las cosas que le gustan? ¿Cómo anda de energía?»' },
   { note: 'Dejó de ir a misa y al grupo de costura. Está cansada más de la mitad de los días. Se siente triste, pero dice que no ha perdido la esperanza.',
     drafts: [['phq', 0, 2], ['phq', 1, 2], ['phq', 3, 2]],
     reply: 'Borradores: preguntas 1, 2 y 4 = Más de la mitad de los días.\n\nAhora pregunte por el apetito, cómo se siente consigo misma y la concentración. Cuando llegue a la pregunta 9, léala exactamente así:\n«En las últimas dos semanas, ¿con qué frecuencia ha pensado que estaría mejor muerto o muerta, o en hacerse daño de alguna forma?»' },
@@ -543,63 +564,87 @@ const SCRIPT = [
       setState({ pid: w.id, screen: 'eval', newForm: false, editPid: null, mode: 'form', sec: 'phq', items: { phq, dig, ctx }, consent: { r0: 1, r1: 1, r2: 1, o0: 1, o1: 1, o2: 1 }, signed: true, crisis: false, chat: [], step: 0, override: 'keep', reason: '', startTime: '10:58' });
       return;
     }
-    setState({ pid: w.id, screen: 'consent', newForm: false, editPid: null, gps: null, consent: {}, signed: false, ruego: false, witness: '', mode: 'form', sec: 'phq', items: { phq: blank(9), dig: blank(6), ctx: blank(2) }, crisis: false, step: 0, override: 'keep', reason: '', reasonErr: '', consentMsg: '', startTime: hh,
-      chat: [{ who: 'ai', label: 'TEO sugiere · cómo abrir', text: 'Empiece sin mencionar el cuestionario. Puede decir:\n«¿Cómo ha estado usted y su familia desde el sismo?»' }] });
+    // En Parienta la entrevista no abre con sugerencias de IA: el experto escribe y confirma el cuestionario.
+    setState({ pid: w.id, screen: 'consent', newForm: false, editPid: null, gps: null, consent: {}, signed: false, ruego: false, witness: '', mode: 'form', sec: 'phq', items: { phq: blank(store.PHQ.length || 9), dig: blank(store.DIGQ.length || 6), ctx: blank(store.CTX.length || 2) }, crisis: false, step: 0, override: 'keep', reason: '', reasonErr: '', consentMsg: '', startTime: hh,
+      chat: [] });
   }
-  function setItem(sec: string, i: number, v: number, stItem: string) {
+  function firePhqQ9Crisis(v: number) {
+    if (!st.pid) return;
+    const p = person();
+    const alerta = {
+      id: 'a-' + st.pid,
+      sev: 'crisis',
+      pid: st.pid,
+      name: p.name,
+      age: p.age,
+      place: (p.place || '').split(',')[0] || p.place,
+      profile: (p as { profile?: string }).profile || '',
+      what: 'Respondió ' + v + ' en la pregunta 9 del PHQ-9 durante la visita del experto de campo.',
+      term: 'PHQ-9 pregunta 9 > 0',
+      source: 'Experto de campo · cuestionario',
+      createdByRole: 'experto',
+      phone: (p as { phone?: string }).phone || '',
+    };
+    setState({ crisis: true, crisisConfirm: null });
+    void (async () => {
+      for (let intento = 0; intento < 4; intento++) {
+        if (intento) await new Promise((ok) => setTimeout(ok, 3000 * intento));
+        try {
+          const res = await fetch('/api/alerts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(alerta),
+          });
+          if (res.ok) {
+            const { alert } = (await res.json()) as { alert?: Record<string, unknown> };
+            store.set((s: { alerts: Record<string, unknown>[] }) => {
+              if (!s.alerts.some((x) => x.id === alerta.id)) s.alerts.unshift(alert || { ...alerta, at: Date.now(), status: 'new' });
+            });
+            return;
+          }
+          if (res.status === 403 || res.status === 400) break;
+        } catch {
+          /* sin señal: se reintenta */
+        }
+      }
+      store.addAlert(alerta);
+    })();
+  }
+  function setItem(sec: string, i: number, v: number, stItem: string, opts?: { skipCrisis?: boolean }) {
     const items = JSON.parse(JSON.stringify(st.items));
     items[sec][i] = { v, st: stItem };
     setState({ items });
-    // SPEC-04 (RG-01, matriz v2): la pregunta 9 > 0 avisa de inmediato al clínico del territorio,
-    // sin esperar a cerrar el cuestionario. Mismo mecanismo que «Estoy en crisis» del paciente
-    // (id 'a-<pid>', que es el que muestra la pantalla de resultado). Si después se corrige a 0,
-    // la alerta no se borra: la cierra el clínico.
-    if (sec === 'phq' && i === 8 && Number(v) > 0 && st.pid) {
-      const p = person();
-      const alerta = {
-        id: 'a-' + st.pid,
-        sev: 'crisis',
-        pid: st.pid,
-        name: p.name,
-        age: p.age,
-        place: (p.place || '').split(',')[0] || p.place,
-        profile: (p as { profile?: string }).profile || '',
-        what: 'Respondió ' + v + ' en la pregunta 9 del PHQ-9 durante la visita del experto de campo.',
-        term: 'PHQ-9 pregunta 9 > 0',
-        source: 'Experto de campo · cuestionario',
-        createdByRole: 'experto',
-        phone: (p as { phone?: string }).phone || '',
-      };
-      setState({ crisis: true });
-      // H-002 (SPEC-002 FR-002): el servidor guarda la alerta al momento (POST /api/alerts), aunque la persona
-      // todavía no sea paciente y aunque la visita no se guarde. Antes se escribía en app-state, que la
-      // descartaba, y POST /api/patients respondía 403 al experto.
-      void (async () => {
-        for (let intento = 0; intento < 4; intento++) {
-          if (intento) await new Promise((ok) => setTimeout(ok, 3000 * intento));
-          try {
-            const res = await fetch('/api/alerts', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify(alerta),
-            });
-            if (res.ok) {
-              const { alert } = (await res.json()) as { alert?: Record<string, unknown> };
-              store.set((s: { alerts: Record<string, unknown>[] }) => {
-                if (!s.alerts.some((x) => x.id === alerta.id)) s.alerts.unshift(alert || { ...alerta, at: Date.now(), status: 'new' });
-              });
-              return;
-            }
-            if (res.status === 403 || res.status === 400) break;
-          } catch {
-            /* sin señal: se reintenta */
-          }
-        }
-        // Respaldo: alerta local, que se sincroniza con app-state cuando haya conexión.
-        store.addAlert(alerta);
-      })();
+    // Pregunta 9: crisis solo si el admin dejó el interruptor encendido y el puntaje > 0.
+    // El disparo con confirmación pasa por confirmCrisisPick (skipCrisis en el set previo al modal).
+    if (
+      !opts?.skipCrisis &&
+      sec === 'phq' &&
+      i === 8 &&
+      Number(v) > 0 &&
+      st.pid &&
+      (store.phqQ9CrisisOn ? store.phqQ9CrisisOn(store.get(), terrName) : true)
+    ) {
+      firePhqQ9Crisis(Number(v));
     }
+  }
+  function requestPhqQ9Pick(v: number, label: string) {
+    const pts = store.optionPoints ? store.optionPoints('phq', 8, v) : v;
+    const crisisOn = store.phqQ9CrisisOn ? store.phqQ9CrisisOn(store.get(), terrName) : true;
+    if (pts > 0 && crisisOn) {
+      setState({ crisisConfirm: { v, label } });
+      return;
+    }
+    setItem('phq', 8, v, 'draft');
+  }
+  function confirmCrisisPick() {
+    const pending = st.crisisConfirm;
+    if (!pending) return;
+    setItem('phq', 8, pending.v, 'draft', { skipCrisis: true });
+    firePhqQ9Crisis(pending.v);
+  }
+  function cancelCrisisPick() {
+    setState({ crisisConfirm: null });
   }
   function applyDrafts(list: [string, number, number][]) {
     const items = JSON.parse(JSON.stringify(st.items));
@@ -610,61 +655,46 @@ const SCRIPT = [
     const text = st.chatInput.trim(); if (!text) return;
     const chat = st.chat.concat([{ who: 'exp', text }]);
     const sc = SCRIPT[st.step];
+    // Nota del experto: solo se registra en el diario de la visita (sin burbujas de Aurelia).
     if (sc && text === sc.note) {
       setState({ chat, chatInput: '', thinking: true });
-      setTimeout(() => { applyDrafts(sc.drafts); setState(s => ({ thinking: false, step: s.step + 1, chat: s.chat.concat([{ who: 'ai', label: 'TEO sugiere · sin confirmar', text: sc.reply }]), sec: sc.drafts[0][0] === 'dig' ? 'dig' : s.sec })); }, 700);
+      setTimeout(() => {
+        applyDrafts(sc.drafts);
+        setState((s) => ({
+          thinking: false,
+          step: s.step + 1,
+          sec: sc.drafts[0][0] === 'dig' ? 'dig' : s.sec,
+        }));
+      }, 700);
       return;
     }
     setState({ chat, chatInput: '', thinking: true });
     const S = store;
     const cur = { phq: st.items.phq.map(x => x.v), dig: st.items.dig.map(x => x.v), ctx: st.items.ctx.map(x => x.v) };
-    const prompt = `Eres el asistente de evaluación de NARA, un programa de salud mental post-sismo en el Eje Cafetero (Colombia). Un experto de campo está en una visita y te escribe en lenguaje natural lo que la persona le cuenta. Propones BORRADORES de respuesta para el registro; el experto los confirma.
-Ítems:
-PHQ-9 (sec "phq", i 0-8, v 0-3: 0 Nunca, 1 Varios días, 2 Más de la mitad de los días, 3 Casi todos los días): ${S.PHQ.map((q, i) => i + ': ' + q).join('; ')}.
-Capacidad digital (sec "dig"): 0 Teléfono (0 Ninguno,1 Compartido,2 Smartphone propio); 1 Conexión (0 Sin señal,1 Datos limitados,2 Estable); 2 Uso diario (0 Solo llamadas,1 WhatsApp y audios,2 Apps y videollamadas); 3 Lectura (0 Prefiere voz,1 Básica,2 Cómoda); 4 ¿Hablaría con una app? (0 No,1 Tal vez,2 Sí); 5 Ayuda en casa con el celular (0 No,1 Sí).
-Contexto (sec "ctx"): 0 Daño vivienda (0 Ninguno,1 Parcial,2 Total); 1 Perdió familiar (0 No,1 Sí).
-Valores actuales (null = sin respuesta): ${JSON.stringify(cur)}.
-Nota del experto: "${text}"
-Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de usted, que diga qué borradores propones y sugiera la siguiente pregunta a hacer. Si toca la pregunta 9 da su redacción exacta: «${S.Q9_EXACT}»","drafts":[{"sec":"phq","i":0,"v":0}]}. Solo incluye borradores claramente respaldados por la nota.`;
-    let reply = 'No pude leer la nota. Escríbala de nuevo o complete el formulario directamente.', drafts = [];
+    let drafts = [];
     try {
-      const out = JSON.stringify(window.AlientoAI.interpretNote(text, cur, S.Q9_EXACT)); // motor local siempre: respuestas predecibles en campo
+      const out = JSON.stringify(window.AlientoAI.interpretNote(text, cur, S.Q9_EXACT)); // motor local: llena borradores del cuestionario sin chat de IA
       const j = JSON.parse(out.slice(out.indexOf('{'), out.lastIndexOf('}') + 1));
-      reply = j.reply || reply; drafts = (j.drafts || []).filter(d => ['phq', 'dig', 'ctx'].includes(d.sec)).map(d => [d.sec, +d.i, +d.v]);
+      drafts = (j.drafts || []).filter(d => ['phq', 'dig', 'ctx'].includes(d.sec)).map(d => [d.sec, +d.i, +d.v]);
     } catch (e) { }
     applyDrafts(drafts);
-    setState(s => ({ thinking: false, chat: s.chat.concat([{ who: 'ai', label: 'TEO sugiere · sin confirmar', text: reply }]) }));
+    setState({ thinking: false });
   }
-  function coursePick(res) { const R = store.REC, it = st.items, p = person() || {}; const auto = R.courseFor({ phq: it.phq.map(x => x.v || 0), age: p.age, ctx: { perdida: (it.ctx[1] || {}).v || 0 } }); const sel = st.courseSel; return sel && sel !== auto.id ? { id: sel, motivo: 'elegido por el experto', auto } : Object.assign({ auto }, auto); }
-  function cpVals(A, res) {
-    const R = A.REC, cp = coursePick(res), c = R.curso(cp.id), r = res.r;
-    const courseSub =
-      r >= 3
-        ? 'Solo si la psicóloga lo asigna, como apoyo a la terapia'
-        : r === 2
-          ? 'Con el experto, dentro del grupo de apoyo'
-          : r <= 1 && res.d === 0
-            ? 'Con el experto, en la revisita'
-            : 'Guiado por TEO';
-    return {
-      cover: R.cover(c.mods[0].cuento),
-      title: c.title,
-      motivo: cp.motivo,
-      sel: cp.id,
-      sub: courseSub + ' · ' + R.channel(res.d) + ' · ' + c.weeks + ' semanas',
-      opts: R.CURSOS.map((x) => ({ v: x.id, s: x.id === cp.id, l: x.title + (x.id === cp.auto.id ? ' (propuesto)' : '') })),
-      set: (e) => setState({ courseSel: e.target.value }),
-    };
+  function erVals() {
+    return { erOpen: false, er: {} };
   }
-  function erVals() { const er = st.er; if (!er) return { erOpen: false, er: {} }; const R = store.REC, c = R.cuento(er.slug), n = c.pages || 1, go = d => setState({ er: { slug: er.slug, page: Math.max(1, Math.min(n, er.page + d)) } }); return { erOpen: true, er: { title: c.title, counter: er.page + ' de ' + n, img: c.pages ? R.page(er.slug, er.page) : R.cover(er.slug), alt: c.title + ', página ' + er.page, prev: () => go(-1), next: () => go(1), close: () => setState({ er: null }) } }; }
   function calcResult() {
     const it = st.items;
-    const phqT = it.phq.reduce((a, x) => a + (x.v || 0), 0);
-    const digT = it.dig.reduce((a, x) => a + (x.v || 0), 0);
+    const pts = (sec: 'phq' | 'dig' | 'ctx', i: number, v: number | null | undefined) =>
+      store.optionPoints ? store.optionPoints(sec, i, v) : (v || 0);
+    const phqT = it.phq.reduce((a, x, i) => a + pts('phq', i, x.v), 0);
+    const digT = it.dig.reduce((a, x, i) => a + pts('dig', i, x.v), 0);
     // v2: sin teléfono ⇒ capacidad digital Baja, sin importar el puntaje.
-    const sinTel = it.dig[0].v === 0;
+    const sinTel = it.dig[0] && it.dig[0].v === 0;
+    const helpIdx = Math.max(0, it.dig.length - 1);
+    const helpPts = it.dig[helpIdx] ? pts('dig', helpIdx, it.dig[helpIdx].v) : 0;
     const r = store.riskIdx(phqT), d = sinTel ? 0 : store.digIdx(digT);
-    const dNoHelp = sinTel ? 0 : store.digIdx(digT - (it.dig[5].v || 0));
+    const dNoHelp = sinTel ? 0 : store.digIdx(Math.max(0, digT - helpPts));
     return { phqT, digT, r, d, dNoHelp, sinTel, code: store.code(r, d) };
   }
   function saveVisit() {
@@ -896,25 +926,6 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
           pat.modulesVisible = [];
         }
       }
-      if (!crisis && s.recursos) {
-        const cpk = coursePick(res);
-        s.recursos.people = s.recursos.people || {};
-        if (!s.recursos.people[personId]) {
-          s.recursos.people[personId] = {
-            course: cpk.id,
-            week: 1,
-            channel: ['impreso', 'whatsapp', 'app'][res.d],
-            by: store.cursosMod(res.r, res.d),
-            pending: res.r >= 3,
-            read: {},
-            page: {},
-            tech: {},
-            tech4w: {},
-            doneMods: [],
-            answers: [],
-          };
-        }
-      }
       if (!crisis && !closingEval) {
         s.alerts = s.alerts.filter((a: { id?: string }) => a.id !== 'a-new-' + personId);
         store.pushNotif(
@@ -1129,18 +1140,18 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
     const offline = !browserOnline || offlinePending > 0 || (S.pendingSync[ex] || 0) > 0;
     const pend = Math.max(S.pendingSync[ex] || 0, offlinePending);
     const STATUS: Record<string, [string, string, string]> = {
-      validada: ['Validada', '#E3F1E8', C.tinta],
+      validada: ['Validada', '#C0DFC8', C.tinta],
       por_aprobar: ['Por aprobar', '#F7E2D2', '#7A3A10'],
       siguiente: ['Siguiente', C.verde, '#fff'],
-      curso: ['En curso · falta 1 pregunta', '#E6E1D9', C.azul],
+      curso: ['En curso · falta 1 pregunta', '#C0DFC8', C.azul],
       programada: ['Programada', C.niebla, C.texto2],
       revision: ['En revisión · no cuenta aún', '#F7E2D2', '#7A3A10'],
       rechazada: ['Rechazada · reevaluar', '#EFDCDA', '#9C2F25'],
-      ausente: ['No estaba en casa · reprogramar', '#F9EBC8', '#161413'],
+      ausente: ['No estaba en casa · reprogramar', '#F9EBC8', '#27683A'],
       crisis: ['Crisis · alerta enviada', C.rojoBg, '#8A1C14'],
-      asignada: ['Nueva asignada · por programar', '#E6E1D9', '#161413'],
-      sin_evaluacion: ['Sin evaluación', '#FFF4CC', '#161413'],
-      cierre: ['Terminado blanco · evaluación de cierre', '#F7F5F1', '#161413'],
+      asignada: ['Nueva asignada · por programar', '#C0DFC8', '#27683A'],
+      sin_evaluacion: ['Sin evaluación', '#FDF2B3', '#27683A'],
+      cierre: ['Terminado blanco · evaluación de cierre', '#F7F5F1', '#27683A'],
     };
     const expName = expertName;
     const keys = expertKeys(S);
@@ -1380,12 +1391,12 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
           w.status !== 'sin_evaluacion' &&
           w.status !== 'rechazada' &&
           w.status !== 'cierre',
-        rowBg: primary ? '#FFF9E3' : '#fff',
-        rowShadow: primary ? 'inset 4px 0 0 #161413' : 'none',
+        rowBg: primary ? '#FDF2B3' : '#fff',
+        rowShadow: primary ? 'inset 4px 0 0 #F26B3A' : 'none',
         hasAction: !!act,
         action: act,
-        btnBg: primary ? C.verde : '#fff',
-        btnFg: primary ? '#fff' : C.verde,
+        btnBg: primary ? '#F26B3A' : '#fff',
+        btnFg: primary ? '#FBFAF3' : '#27683A',
         onAction: () => {
           if (w.status === 'asignada') {
             return A.set((s: any) => {
@@ -1447,6 +1458,27 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
                 estrato: String(fromPeople?.estrato || ''),
                 expert: String(fromPeople?.expert || expertName),
                 clin: String(fromPeople?.clin || clinForTerr(terr)),
+                tieneCuidador: fromPeople?.caregiverAccountId || fromPeople?.tieneCuidador
+                  ? 'Sí'
+                  : '',
+                caregiverFirstName: String(
+                  fromPeople?.caregiverFirstName ||
+                    String(fromPeople?.caregiverName || '').split(/\s+/)[0] ||
+                    '',
+                ),
+                caregiverLastName: String(
+                  fromPeople?.caregiverLastName ||
+                    String(fromPeople?.caregiverName || '').split(/\s+/).slice(1).join(' ') ||
+                    '',
+                ),
+                caregiverBirthDate: String(fromPeople?.caregiverBirthDate || ''),
+                caregiverAge: String(fromPeople?.caregiverAge || ''),
+                caregiverGenero: String(fromPeople?.caregiverGenero || ''),
+                caregiverEstadoCivil: String(fromPeople?.caregiverEstadoCivil || ''),
+                caregiverEstrato: String(fromPeople?.caregiverEstrato || ''),
+                caregiverPlace: String(fromPeople?.caregiverPlace || ''),
+                caregiverEmail: String(fromPeople?.caregiverEmail || ''),
+                caregiverPhone: String(fromPeople?.caregiverPhone || ''),
               }),
               dupOk: false,
               newMsg: '',
@@ -1506,22 +1538,61 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
     ];
 
     const it = st.items;
-    const all = [].concat(it.phq, it.dig);
+    const rulesTerr =
+      (p && (p.terr || p.territory)) ||
+      terrName ||
+      '';
+    if (rulesTerr && typeof A.applyRules === 'function') {
+      A.applyRules(S, rulesTerr);
+    }
+    const rulesPack =
+      (rulesTerr && A.getTerrRules && A.getTerrRules(S, rulesTerr)) ||
+      S.rules ||
+      {};
+    const phqOptsFor = (i: number) => {
+      const rq = rulesPack.phq && rulesPack.phq.q && rulesPack.phq.q[i];
+      if (rq && Array.isArray(rq.o) && rq.o.length) return rq.o.map((x: { o: string }) => x.o);
+      return A.PHQ_OPTS;
+    };
+    const digQs = (rulesPack.dig && Array.isArray(rulesPack.dig.q) && rulesPack.dig.q.length)
+      ? rulesPack.dig.q.map((x: { q: string; o: { o: string }[] }) => ({ q: x.q, o: x.o.map((o) => o.o) }))
+      : A.DIGQ;
+    const ctxQs = (rulesPack.ctx && Array.isArray(rulesPack.ctx.q) && rulesPack.ctx.q.length)
+      ? rulesPack.ctx.q.map((x: { q: string; o: { o: string }[] }) => ({ q: x.q, o: x.o.map((o) => o.o) }))
+      : A.CTX;
+    const phqQs = (rulesPack.phq && Array.isArray(rulesPack.phq.q) && rulesPack.phq.q.length)
+      ? rulesPack.phq.q.map((x: { q: string }, i: number) => ({ q: x.q, o: phqOptsFor(i) }))
+      : A.PHQ.map((t: string, i: number) => ({ q: t, o: phqOptsFor(i) }));
+    const secDef = { phq: { qs: phqQs, label: 'Cuestionario PHQ-9' }, dig: { qs: digQs, label: 'Capacidad digital' }, ctx: { qs: ctxQs, label: 'Contexto de vida' } };
+    // Alinea arrays de respuestas con las preguntas vigentes (tras editar reglas).
+    ['phq', 'dig', 'ctx'].forEach((k) => {
+      const need = secDef[k].qs.length;
+      while (it[k].length < need) it[k].push({ v: null, st: 'none' });
+      if (it[k].length > need) it[k].length = need;
+    });
+    const all = [].concat(it.phq, it.dig, it.ctx);
     const okN = all.filter(x => x.st === 'ok').length, drN = all.filter(x => x.st === 'draft').length;
-    const allOk = okN === 15;
-    const secDef = { phq: { qs: A.PHQ.map(t => ({ q: t, o: A.PHQ_OPTS })), label: 'Cuestionario PHQ-9' }, dig: { qs: A.DIGQ, label: 'Capacidad digital' }, ctx: { qs: A.CTX, label: 'Contexto del sismo' } };
-    const tag = s => s === 'ok' ? ['Confirmado', OK_BG, C.verde, '#FDCD22'] : s === 'draft' ? ['Por confirmar', C.ambarBg, C.ambarTx, C.ambar] : ['Sin respuesta', C.niebla, C.texto2, C.lineas];
+    const allOk = okN === all.length && all.length > 0;
+    const q9Idx = Math.max(0, phqQs.length - 1);
+    const tag = s => s === 'ok' ? ['Confirmado', OK_BG, C.verde, '#F26B3A'] : s === 'draft' ? ['Por confirmar', C.ambarBg, C.ambarTx, C.ambar] : ['Sin respuesta', C.niebla, C.texto2, C.lineas];
     const secDraftN = it[st.sec].filter((x) => x.st === 'draft').length;
     const rows = secDef[st.sec].qs.map((qq, i) => {
-      const cell = it[st.sec][i]; const [t, tb, tf, tbd] = tag(cell.st);
+      const cell = it[st.sec][i] || { v: null, st: 'none' }; const [t, tb, tf, tbd] = tag(cell.st);
+      const isQ9 = st.sec === 'phq' && i === q9Idx;
       return {
-        n: i + 1, q: qq.q, tag: t, tagBg: tb, tagFg: tf, tagBd: tbd, isDraft: cell.st === 'draft', sensitive: st.sec === 'phq' && i === 8,
-        bd: st.sec === 'phq' && i === 8 ? C.azul : cell.st === 'draft' ? C.ambar : C.lineas,
+        n: i + 1, q: qq.q, tag: t, tagBg: tb, tagFg: tf, tagBd: tbd, isDraft: cell.st === 'draft', sensitive: isQ9,
+        bd: isQ9 ? C.azul : cell.st === 'draft' ? C.ambar : C.lineas,
         confirm: () => setItem(st.sec, i, cell.v, 'ok'),
         opts: qq.o.map((label, v) => {
           const sel = cell.v === v;
+          const fullLabel = st.sec === 'phq' ? v + ' · ' + label : label;
           // Al elegir queda «por confirmar»; «Confirmar las revisadas» las pasa a Confirmado.
-          return { label: st.sec === 'phq' ? v + ' · ' + label : label, pick: () => setItem(st.sec, i, v, 'draft'), bg: sel ? (cell.st === 'ok' ? C.verde : C.ambarBg) : '#fff', fg: sel ? (cell.st === 'ok' ? '#fff' : C.ambarTx) : C.tinta, bd: sel ? (cell.st === 'ok' ? C.verde : C.ambar) : C.lineas };
+          // Pregunta 9 con crisis activa: modal antes de disparar.
+          const pick = () => {
+            if (st.sec === 'phq' && i === 8) requestPhqQ9Pick(v, fullLabel);
+            else setItem(st.sec, i, v, 'draft');
+          };
+          return { label: fullLabel, pick, bg: sel ? (cell.st === 'ok' ? C.verde : C.ambarBg) : '#fff', fg: sel ? (cell.st === 'ok' ? '#fff' : C.ambarTx) : C.tinta, bd: sel ? (cell.st === 'ok' ? C.verde : C.ambar) : C.lineas };
         })
       };
     });
@@ -1532,15 +1603,19 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
     const alertObj = S.alerts.find(a => a.id === 'a-' + st.pid) || S.closedToday.find(a => a.id === 'a-' + st.pid);
     let alertStatusText = 'Enviando…';
     if (alertObj) alertStatusText = alertObj.status === 'new' ? 'Enviada · esperando que la Dra. Lucía Marín tome el caso (' + A.agoText(alertObj.at) + ')' : alertObj.status === 'mine' || alertObj.status === 'retry' ? 'La Dra. Lucía Marín tomó el caso y está llamando' + (alertObj.status === 'retry' ? ' · no contestó, reintenta en 10 min' : '') : alertObj.status === 'closed' ? 'Atendida · ' + alertObj.outcome : 'En atención';
-    const riskScale = A.RISK.map((r, i) => ({ k: r.k, c: r.c, op: i === res.r ? 1 : 0.28, ol: i === res.r ? '2px solid #161413' : 'none', fg: i === res.r ? C.tinta : C.texto2, fw: i === res.r ? 500 : 400 }));
-    const digScale = A.DIG.map((r, i) => ({ k: r.k, c: r.c, op: i === res.d ? 1 : 0.35, ol: i === res.d ? '2px solid #161413' : 'none', fg: i === res.d ? C.tinta : C.texto2, fw: i === res.d ? 500 : 400 }));
-    const matrix = A.RISK.map((r, ri) => ({ k: r.k, c: r.c, cells: [0, 1, 2].map(di => {
+    const riskScale = A.RISK.map((r, i) => ({ k: r.k, c: r.c, op: i === res.r ? 1 : 0.28, ol: i === res.r ? '2px solid #27683A' : 'none', fg: i === res.r ? C.tinta : C.texto2, fw: i === res.r ? 500 : 400 }));
+    const digScale = A.DIG.map((r, i) => ({ k: r.k, c: r.c, op: i === res.d ? 1 : 0.35, ol: i === res.d ? '2px solid #27683A' : 'none', fg: i === res.d ? C.tinta : C.texto2, fw: i === res.d ? 500 : 400 }));
+    const matrix = A.RISK.map((r, ri) => ({ k: r.k, c: r.c, cells: A.DIG.map((_dg, di) => {
       const hit = ri === res.r && di === res.d; const code = A.code(ri, di);
       if (hit && crisis) return { label: 'Suspendido', bg: '#fff', fg: C.tinta, bd: C.tinta, bs: 'dashed', fw: 500 };
       return { label: code, bg: hit ? C.verde : r.bg, fg: hit ? '#fff' : C.texto2, bd: hit ? C.verde : 'transparent', bs: 'solid', fw: hit ? 600 : 400 };
     }) }));
     const rr = res.r;
-    const vctx = { dano: (st.items && st.items.ctx && st.items.ctx[0] && st.items.ctx[0].v) || 0, perdida: (st.items && st.items.ctx && st.items.ctx[1] && st.items.ctx[1].v) || 0 };
+    const vctx = {
+      dano: (st.items && st.items.ctx && st.items.ctx[0] && st.items.ctx[0].v) || 0,
+      perdida: (st.items && st.items.ctx && st.items.ctx[1] && st.items.ctx[1].v) || 0,
+      terr: rulesTerr || terrName,
+    };
     let path = A.pathList(rr, res.d, null, vctx).map(x => {
         if (x.id !== 'bracelet') return { name: x.name, freq: x.freq, main: x.main, sub: x.channel };
         const tInfo = A.terrInfo(S, terrName) || { brAv: 0 };
@@ -1563,6 +1638,22 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
         if (k === 'birthDate') {
           next.age = value ? String(ageFromBirth(value)) : '';
         }
+        if (k === 'caregiverBirthDate') {
+          next.caregiverAge = value ? String(ageFromBirth(value)) : '';
+        }
+        if (k === 'tieneCuidador' && !/^(sí|si)$/i.test(value)) {
+          next.caregiverFirstName = '';
+          next.caregiverLastName = '';
+          next.caregiverBirthDate = '';
+          next.caregiverAge = '';
+          next.caregiverGenero = '';
+          next.caregiverEstadoCivil = '';
+          next.caregiverEstrato = '';
+          next.caregiverPlace = '';
+          next.caregiverPhone = '';
+          next.caregiverEmail = '';
+          next.caregiverPassword = '';
+        }
         nfRef.current = next;
         if (!prev.editPid) saveNfDraft(next);
         return {
@@ -1577,7 +1668,7 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
 
     return {
       ex, dev: A.devMode(), agentRole: 'expert:' + ex, agentOpen: !!st.agentOpen, drawerW: window.innerWidth < 720 ? '100%' : '460px', briefLine: window.AlientoAgent ? AlientoAgent.briefing(ex, S).text : '', briefSub: (offline ? 'Con los datos de la última sincronización · hoy 7:05' : 'Datos al momento') + ((S.revisits[ex] || []).length ? ' · ' + S.revisits[ex].length + ' revisitas pendientes' : ''), openAgent: () => setState({ agentOpen: true }), closeAgent: () => setState({ agentOpen: false, pendingAsk: '' }), pendingAsk: '', agentCtx: offline ? 'Sin señal · datos de la última sincronización (7:05)' : 'Datos al momento', screenCode: st.newForm ? codes.new : codes[scr], expertName, territory,
-      connText: offline ? 'Sin señal · ' + pend + ' visitas por sincronizar' : 'Sincronizado', connBg: offline ? '#F9EBC8' : '#FFF4CC', connDot: offline ? '#E0A526' : '#4E9A6B',
+      connText: offline ? 'Sin señal · ' + pend + ' visitas por sincronizar' : 'Sincronizado', connBg: offline ? '#F9EBC8' : '#FDF2B3', connDot: offline ? '#E0A526' : '#4E9A6B',
       scrollRef: scrollRef, chatRef: chatRef, sigRef: sigInit,
       goList: () => setState({ screen: 'list', newForm: false, editPid: null }),
       goNew: () => {
@@ -1621,7 +1712,7 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
       isConsent: scr === 'consent', isEval: scr === 'eval', isResult: scr === 'result', inVisit,
       crisisLines: A.crisisLines(ex === 'mj' ? 'Armenia' : 'Salento').map(l => ({ tel: l.tel, label: l.label, sub: l.sub, bg: l.main ? '#B42318' : '#fff', fg: l.main ? '#fff' : '#8A1C14' })),
       notices, worklist, hasGroups: ((S.groupSessions || {})[ex] || []).length > 0,
-      groups: ((S.groupSessions || {})[ex] || []).map(g => { const n = Object.values(g.att).filter(v => v === true).length; const GS = { pm1: ['la-bruja-estresona', 'musculos'], gr1: ['el-ladron-de-suenos', 'resp-dormir'], pm2: ['la-bruja-estresona', '54321'], gr2: ['la-carta-del-abuelo', 'bueno-dia'] }[g.id] || ['la-bruja-estresona', 'resp-46'], R = A.REC, gc = R.cuento(GS[0]), gt = R.tecnica(GS[1]), gv = (st.gTab || {})[g.id] === 'guide'; return { isGuide: gv, isAtt: !gv, attBd: gv ? 'transparent' : '#FDCD22', guideBd: gv ? '#FDCD22' : 'transparent', tabAtt: () => setState({ gTab: Object.assign({}, st.gTab, { [g.id]: 'att' }) }), tabGuide: () => setState({ gTab: Object.assign({}, st.gTab, { [g.id]: 'guide' }) }), cover: R.cover(gc.slug), cuento: gc.title, read: () => setState({ er: { slug: gc.slug, page: 1 } }), qs: gc.preguntas.map((t, i) => ({ n: i + 1, t })), tech: gt.title + ' · ' + gt.min + ' min', time: g.time, kind: g.kind === 'pmplus' ? 'Sesión PM+' : 'Grupo de apoyo', title: g.title, place: g.place, attText: g.closed ? n + ' de ' + g.who.length + ' asistieron' : n + ' de ' + g.who.length + ' marcadas · toque cada nombre', canClose: !g.closed, closed: !!g.closed, close: () => A.set(s => { const x = s.groupSessions[ex].find(y => y.id === g.id); x.closed = true; A.pushNotif(s, 'admin', (g.kind === 'pmplus' ? 'Sesión PM+' : 'Grupo de apoyo') + ' registrado por ' + (ex === 'mj' ? 'María José Vélez' : 'Andrés Ocampo') + ': ' + n + ' de ' + g.who.length + ' asistieron', '/admin/experto?e=' + encodeURIComponent(ex === 'mj' ? 'María José Vélez' : 'Andrés Ocampo')); }), who: g.who.map(([name]) => { const v = g.att[name]; return { name, mark: v === true ? '✓' : v === false ? '✕' : '·', bd: v === true ? C.verde : v === false ? C.texto2 : C.lineas, bg: v === true ? '#FFF4CC' : '#fff', fg: v === false ? C.texto2 : C.tinta, toggle: () => { if (g.closed) return; A.set(s => { const x = s.groupSessions[ex].find(y => y.id === g.id); x.att[name] = v === true ? false : v === false ? undefined : true; }); } }; }) }; }),
+      groups: ((S.groupSessions || {})[ex] || []).map(g => { const n = Object.values(g.att).filter(v => v === true).length; const GS = { pm1: 'musculos', gr1: 'resp-dormir', pm2: '54321', gr2: 'bueno-dia' }[g.id] || 'resp-46', R = A.REC, gt = R.tecnica(GS), gv = (st.gTab || {})[g.id] === 'guide'; return { isGuide: gv, isAtt: !gv, attBd: gv ? 'transparent' : '#F26B3A', guideBd: gv ? '#F26B3A' : 'transparent', tabAtt: () => setState({ gTab: Object.assign({}, st.gTab, { [g.id]: 'att' }) }), tabGuide: () => setState({ gTab: Object.assign({}, st.gTab, { [g.id]: 'guide' }) }), tech: gt.title + ' · ' + gt.min + ' min', time: g.time, kind: g.kind === 'pmplus' ? 'Sesión PM+' : 'Grupo de apoyo', title: g.title, place: g.place, attText: g.closed ? n + ' de ' + g.who.length + ' asistieron' : n + ' de ' + g.who.length + ' marcadas · toque cada nombre', canClose: !g.closed, closed: !!g.closed, close: () => A.set(s => { const x = s.groupSessions[ex].find(y => y.id === g.id); x.closed = true; A.pushNotif(s, 'admin', (g.kind === 'pmplus' ? 'Sesión PM+' : 'Grupo de apoyo') + ' registrado por ' + (ex === 'mj' ? 'María José Vélez' : 'Andrés Ocampo') + ': ' + n + ' de ' + g.who.length + ' asistieron', '/admin/experto?e=' + encodeURIComponent(ex === 'mj' ? 'María José Vélez' : 'Andrés Ocampo')); }), who: g.who.map(([name]) => { const v = g.att[name]; return { name, mark: v === true ? '✓' : v === false ? '✕' : '·', bd: v === true ? C.verde : v === false ? C.texto2 : C.lineas, bg: v === true ? '#FDF2B3' : '#fff', fg: v === false ? C.texto2 : C.tinta, toggle: () => { if (g.closed) return; A.set(s => { const x = s.groupSessions[ex].find(y => y.id === g.id); x.att[name] = v === true ? false : v === false ? undefined : true; }); } }; }) }; }),
       quotaDateLabel: (() => {
         const d = new Date();
         const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -1638,10 +1729,25 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
         { label: 'Cuota 60+ hoy', val: q.sixty, target: q.sixtyT, pct: pct(q.sixty, q.sixtyT) }
       ],
       newSections: (() => {
+        const patchNf = (key: string, value: string) => {
+          setStateRaw((prev) => {
+            const next = Object.assign({}, prev.nf, { [key]: value }) as Record<string, string>;
+            nfRef.current = next;
+            if (!prev.editPid) saveNfDraft(next);
+            return { ...prev, nf: next, newMsg: '' };
+          });
+        };
         const field = (
           label: string,
           key: string,
-          opts?: { kind?: string; ph?: string; options?: string[]; readOnly?: boolean; span?: 1 | 2 },
+          opts?: {
+            kind?: string;
+            ph?: string;
+            options?: string[];
+            readOnly?: boolean;
+            span?: 1 | 2;
+            onGenerate?: () => void;
+          },
         ) => ({
           label,
           key,
@@ -1652,6 +1758,7 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
           options: opts?.options,
           readOnly: !!opts?.readOnly,
           span: opts?.span || 1,
+          onGenerate: opts?.onGenerate,
         });
         return [
           {
@@ -1659,17 +1766,39 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
             fields: [
               field('Nombre', 'firstName', { ph: 'Nombre' }),
               field('Apellido', 'lastName', { ph: 'Apellidos' }),
-              field('Fecha de nacimiento', 'birthDate', { kind: 'date' }),
+              field('Fecha de nacimiento (mín. 60 años)', 'birthDate', { kind: 'date' }),
               field('Edad', 'age', { readOnly: true, ph: 'Se calcula sola' }),
               field('Género', 'genero', { options: GENERO_OPTS }),
               field('Estado civil', 'estadoCivil', { options: CIVIL_OPTS }),
             ],
           },
           {
-            title: 'Contacto',
+            title: 'Contacto y acceso',
             fields: [
               field('Teléfono', 'phone', { kind: 'phone', ph: '3xx xxx xxxx' }),
-              field('Correo', 'email', { ph: 'correo@ejemplo.com', kind: 'email' }),
+              field('Correo', 'email', {
+                ph: 'nombre.apellido@parienta.co',
+                kind: 'email',
+                onGenerate: () => {
+                  const draft = { ...(nfRef.current || st.nf) } as Record<string, string>;
+                  const email = generateParientaEmail(draft.firstName || '', draft.lastName || '');
+                  if (!email) {
+                    setState({ newMsg: 'Escriba nombre y apellido para generar el correo.' });
+                    return;
+                  }
+                  patchNf('email', email);
+                },
+              }),
+              ...(!st.editPid
+                ? [
+                    field('Contraseña de acceso', 'password', {
+                      ph: 'Mínimo 8 caracteres',
+                      span: 2,
+                      kind: 'password',
+                      onGenerate: () => patchNf('password', generateAccessPassword(10)),
+                    }),
+                  ]
+                : []),
             ],
           },
           {
@@ -1678,6 +1807,77 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
               field('Vereda o barrio', 'place', { ph: 'Ej.: Vereda Cocora' }),
               field('Estrato', 'estrato', { options: ESTRATO_OPTS }),
             ],
+          },
+          {
+            title: 'Cuidador',
+            fields: (() => {
+              const linked = !!(st.editPid && String((nf as Record<string, string>).caregiverEmail || '').trim()
+                && /^(sí|si)$/i.test(String((nf as Record<string, string>).tieneCuidador || ''))
+                && !!(A.people ? A.people(S) : S.people || []).find(
+                  (p: any) =>
+                    (p.id === st.editPid || p.code === st.editPid) &&
+                    (p.caregiverAccountId || p.caregiverId),
+                ));
+              if (linked) {
+                const cgName = [
+                  String((nf as Record<string, string>).caregiverFirstName || ''),
+                  String((nf as Record<string, string>).caregiverLastName || ''),
+                ].filter(Boolean).join(' ') || String((nf as Record<string, string>).caregiverEmail || '');
+                return [
+                  {
+                    ...field('Cuidador vinculado', 'caregiverFirstName', { readOnly: true, span: 2 }),
+                    value: cgName,
+                  },
+                  field('Correo del cuidador', 'caregiverEmail', {
+                    readOnly: true,
+                    kind: 'email',
+                    span: 2,
+                  }),
+                ];
+              }
+              const showCg = /^(sí|si)$/i.test(String((nf as Record<string, string>).tieneCuidador || ''));
+              return [
+                field('¿Tiene cuidador?', 'tieneCuidador', {
+                  options: ['No', 'Sí'],
+                  span: 2,
+                }),
+                ...(showCg
+                  ? [
+                      field('Nombre', 'caregiverFirstName', { ph: 'Nombre' }),
+                      field('Apellido', 'caregiverLastName', { ph: 'Apellidos' }),
+                      field('Fecha de nacimiento', 'caregiverBirthDate', { kind: 'date' }),
+                      field('Edad', 'caregiverAge', { readOnly: true, ph: 'Se calcula sola' }),
+                      field('Género', 'caregiverGenero', { options: GENERO_OPTS }),
+                      field('Estado civil', 'caregiverEstadoCivil', { options: CIVIL_OPTS }),
+                      field('Teléfono', 'caregiverPhone', { kind: 'phone', ph: '3xx xxx xxxx' }),
+                      field('Correo', 'caregiverEmail', {
+                        ph: 'nombre.apellido@parienta.co',
+                        kind: 'email',
+                        onGenerate: () => {
+                          const draft = { ...(nfRef.current || st.nf) } as Record<string, string>;
+                          const email = generateParientaEmail(
+                            draft.caregiverFirstName || '',
+                            draft.caregiverLastName || '',
+                          );
+                          if (!email) {
+                            setState({ newMsg: 'Escriba nombre y apellido del cuidador para generar el correo.' });
+                            return;
+                          }
+                          patchNf('caregiverEmail', email);
+                        },
+                      }),
+                      field('Vereda o barrio', 'caregiverPlace', { ph: 'Ej.: Vereda Cocora' }),
+                      field('Estrato', 'caregiverEstrato', { options: ESTRATO_OPTS }),
+                      field('Contraseña de acceso', 'caregiverPassword', {
+                        ph: 'Mínimo 8 caracteres',
+                        span: 2,
+                        kind: 'password',
+                        onGenerate: () => patchNf('caregiverPassword', generateAccessPassword(10)),
+                      }),
+                    ]
+                  : []),
+              ];
+            })(),
           },
         ];
       })(),
@@ -1756,7 +1956,7 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
         if (!nacDate || Number.isNaN(nacDate.getTime())) return setState({ newMsg: 'La fecha de nacimiento no es válida.' });
         if (nacDate.getTime() > Date.now()) return setState({ newMsg: 'La fecha de nacimiento no puede ser futura.' });
         const edadAlta = ageFromBirth(birthDate);
-        if (!(edadAlta >= 18 && edadAlta <= 110)) return setState({ newMsg: 'La edad debe estar entre 18 y 110 años.' });
+        if (!(edadAlta >= 60 && edadAlta <= 110)) return setState({ newMsg: 'La edad debe estar entre 60 y 110 años.' });
         const telAlta = String(draft.phone || '').replace(/[\s-]/g, '');
         if (telAlta && !/^3\d{9}$/.test(telAlta)) {
           return setState({ newMsg: 'El teléfono debe tener 10 dígitos y empezar por 3.' });
@@ -1775,11 +1975,93 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
         const estrato = String(draft.estrato || '').trim();
         const clin = clinForTerr(terr);
         const expName = expertName;
-        const personPayload = {
+        if (!email || !/@/.test(email)) {
+          return setState({ newMsg: 'Escriba un correo válido para el acceso de la persona.' });
+        }
+        const password = String(draft.password || '').trim();
+        if (!editPid) {
+          if (!password) {
+            return setState({ newMsg: 'Defina una contraseña para el acceso de la persona.' });
+          }
+          if (password.length < 8) {
+            return setState({ newMsg: 'La contraseña debe tener al menos 8 caracteres.' });
+          }
+        }
+
+        const alreadyCaregiver = !!(editPid && (() => {
+          const pe = (A.people ? A.people(A.get()) : A.get().people || []).find(
+            (p: any) => p.id === editPid || p.code === editPid,
+          );
+          return pe?.caregiverAccountId || pe?.caregiverId;
+        })());
+        const quiereCuidador = /^(sí|si)$/i.test(String(draft.tieneCuidador || ''));
+        const caregiverFirstName = String(draft.caregiverFirstName || '').trim();
+        const caregiverLastName = String(draft.caregiverLastName || '').trim();
+        const caregiverBirthDate = String(draft.caregiverBirthDate || '').trim();
+        const caregiverAge = caregiverBirthDate
+          ? ageFromBirth(caregiverBirthDate)
+          : Number(draft.caregiverAge) || 0;
+        const caregiverEmail = String(draft.caregiverEmail || '').trim().toLowerCase();
+        const caregiverPhone = String(draft.caregiverPhone || '').trim();
+        const caregiverPassword = String(draft.caregiverPassword || '').trim();
+        const caregiverPlace = String(draft.caregiverPlace || '').trim();
+        const caregiverGenero = String(draft.caregiverGenero || '').trim();
+        const caregiverEstadoCivil = String(draft.caregiverEstadoCivil || '').trim();
+        const caregiverEstrato = String(draft.caregiverEstrato || '').trim();
+        if (quiereCuidador && !alreadyCaregiver) {
+          const cgMissing: string[] = [];
+          if (!caregiverFirstName) cgMissing.push('nombre del cuidador');
+          if (!caregiverLastName) cgMissing.push('apellido del cuidador');
+          if (!caregiverBirthDate) cgMissing.push('fecha de nacimiento del cuidador');
+          if (!caregiverPlace) cgMissing.push('vereda o barrio del cuidador');
+          if (!/@/.test(caregiverEmail)) {
+            return setState({ newMsg: 'Use un correo válido para el cuidador.' });
+          }
+          if (!caregiverPassword) {
+            return setState({ newMsg: 'Defina una contraseña para el acceso del cuidador.' });
+          }
+          if (caregiverPassword.length < 8) {
+            return setState({ newMsg: 'La contraseña del cuidador debe tener al menos 8 caracteres.' });
+          }
+          if (!(caregiverAge >= 18 && caregiverAge <= 110)) {
+            return setState({ newMsg: 'La edad del cuidador debe estar entre 18 y 110 años.' });
+          }
+          const telCg = caregiverPhone.replace(/[\s-]/g, '');
+          if (telCg && !/^3\d{9}$/.test(telCg)) {
+            return setState({ newMsg: 'El celular del cuidador debe tener 10 dígitos y empezar por 3.' });
+          }
+          if (cgMissing.length) {
+            return setState({
+              newMsg:
+                cgMissing.length === 1
+                  ? 'Falta el dato: ' + cgMissing[0] + '.'
+                  : 'Faltan datos: ' + cgMissing.join(', ') + '.',
+            });
+          }
+        }
+        const personPayload: Record<string, unknown> = {
           name, firstName, lastName, age, birthDate, place, rural, phone, email, terr,
           expert: expName, expertId: ex, clin,
           genero, estadoCivil, estrato,
+          tieneCuidador: quiereCuidador || !!alreadyCaregiver,
         };
+        if (!editPid && password) personPayload.password = password;
+        if (quiereCuidador && !alreadyCaregiver) {
+          personPayload.caregiver = {
+            firstName: caregiverFirstName,
+            lastName: caregiverLastName,
+            name: [caregiverFirstName, caregiverLastName].filter(Boolean).join(' '),
+            birthDate: caregiverBirthDate,
+            age: caregiverAge,
+            email: caregiverEmail,
+            phone: caregiverPhone,
+            password: caregiverPassword,
+            place: caregiverPlace,
+            genero: caregiverGenero,
+            estadoCivil: caregiverEstadoCivil,
+            estrato: caregiverEstrato,
+          };
+        }
         nfRef.current = { ...draft, firstName, lastName, birthDate, place, age: String(age) };
 
         // Evaluar persona ya asignada: actualizar datos y abrir visita.
@@ -1842,8 +2124,9 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
           }
           s.people = s.people || [];
           if (!s.people.find((x: any) => x.id === id)) {
+            const { password: _pw, caregiver: _cg, ...safePerson } = personPayload;
             s.people.push({
-              id, code, ...personPayload,
+              id, code, ...safePerson,
               profile: null, week: 0, weeks: 13,
               expertId: ex,
               status: 'Sin evaluación',
@@ -1886,11 +2169,33 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
           setState({ newMsg: OFFLINE_KEEP_MSG, nf: keptNf });
           return;
         }
-        const [peopleRes, wlRes] = await Promise.all([
-          postOrQueue('people', peopleBody),
-          postOrQueue('worklists', wlBody),
-        ]);
-        if (peopleRes !== 'ok' || wlRes !== 'ok') {
+        // Alta con cuenta: fetch directo para mostrar errores (correo/clave/cuidador) y sincronizar Usuarios.
+        let peopleOk = false;
+        let peopleErr = '';
+        let savedPerson: Record<string, unknown> | null = null;
+        try {
+          const res = await fetch('/api/people', {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(peopleBody),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.ok) {
+            peopleOk = true;
+            savedPerson = data.person || null;
+          } else {
+            peopleErr = String(data.error || 'No se pudo guardar la persona.');
+          }
+        } catch {
+          peopleErr = '';
+        }
+        const wlRes = await postOrQueue('worklists', wlBody);
+        if (!peopleOk) {
+          if (peopleErr) {
+            setState({ newMsg: peopleErr, nf: keptNf });
+            return;
+          }
           A.set((s: any) => {
             s.pendingSync = s.pendingSync || {};
             s.pendingSync[ex] = (s.pendingSync[ex] || 0) + 1;
@@ -1898,13 +2203,77 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
           void pendingOfflineCount().then(setOfflinePending);
           setState({
             newMsg:
-              peopleRes === 'error' || wlRes === 'error'
+              wlRes === 'error'
                 ? 'No se pudo guardar. Sus datos siguen en el formulario; revise la señal e intente de nuevo.'
                 : OFFLINE_KEEP_MSG,
             nf: keptNf,
           });
           return;
         }
+        if (wlRes !== 'ok') {
+          A.set((s: any) => {
+            s.pendingSync = s.pendingSync || {};
+            s.pendingSync[ex] = (s.pendingSync[ex] || 0) + 1;
+          });
+        }
+        A.set((s: any) => {
+          s.accounts = Array.isArray(s.accounts) ? s.accounts : [];
+          const pe = (s.people || []).find((p: any) => p.id === id);
+          if (pe && savedPerson) Object.assign(pe, savedPerson);
+          const accId = String(savedPerson?.accountId || '');
+          if (accId && email && !s.accounts.some((a: any) => a.id === accId || a.email === email)) {
+            s.accounts.push({
+              id: accId,
+              name,
+              firstName,
+              lastName,
+              email,
+              contact: email,
+              phone,
+              role: 'Persona acompañada',
+              roleId: 'paciente',
+              terr,
+              org: 'Programa Parienta',
+              status: 'Activo',
+              personId: id,
+              patientId: id,
+              created: true,
+            });
+          }
+          const cgId = String(savedPerson?.caregiverAccountId || '');
+          const cgEmail = String(
+            (personPayload.caregiver as { email?: string } | undefined)?.email ||
+              savedPerson?.caregiverEmail ||
+              '',
+          );
+          if (
+            cgId &&
+            cgEmail &&
+            !s.accounts.some((a: any) => a.id === cgId || a.email === cgEmail)
+          ) {
+            const cg = personPayload.caregiver as {
+              name?: string;
+              phone?: string;
+              firstName?: string;
+              lastName?: string;
+            };
+            s.accounts.push({
+              id: cgId,
+              name: cg?.name || String(savedPerson?.caregiverName || ''),
+              firstName: cg?.firstName || '',
+              lastName: cg?.lastName || '',
+              email: cgEmail,
+              contact: cgEmail,
+              phone: cg?.phone || '',
+              role: 'Cuidadora / familiar',
+              roleId: 'cuidador',
+              terr,
+              org: 'Programa Parienta',
+              status: 'Activo',
+              created: true,
+            });
+          }
+        });
         saveNfDraft(null);
         startVisit({ ...w, status: 'programada' });
         })();
@@ -1926,11 +2295,11 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
       isChat: true,
       modeForm: () => setState({ mode: 'form' }),
       modeChat: () => setState({ mode: 'chat' }),
-      progressOk: okN + ' de 15 preguntas confirmadas', progressDraft: drN ? ' · ' + drN + ' en borrador' : '',
-      calcBg: allOk || crisis ? C.verde : '#DCD6CD', calcFg: allOk || crisis ? '#fff' : '#7A736B',
+      progressOk: okN + ' de ' + all.length + ' preguntas confirmadas', progressDraft: drN ? ' · ' + drN + ' en borrador' : '',
+      calcBg: allOk || crisis ? C.verde : '#C0DFC8', calcFg: allOk || crisis ? '#fff' : '#7A736B',
       calc: () => {
         if (crisis) return go('result');
-        if (!allOk) return flash('Faltan ' + (15 - okN) + ' preguntas por confirmar para calcular el resultado.');
+        if (!allOk) return flash('Faltan ' + (all.length - okN) + ' preguntas por confirmar para calcular el resultado.');
         // v2: «Uso diario» no puede ser mayor que «Teléfono».
         if ((it.dig[2].v || 0) > (it.dig[0].v || 0)) {
           return flash('«Uso diario» no puede ser mayor que «Teléfono». Revise la sección Capacidad digital.');
@@ -1976,8 +2345,12 @@ Responde SOLO con JSON: {"reply":"texto breve en español de Colombia, trato de 
       matrix, profileLine: crisis ? A.code(res.r, res.d) + ' suspendido · Ruta de crisis' : res.code + ' · ' + A.RISK[res.r].k + ' × digital ' + A.DIG[res.d].k.toLowerCase(),
       evidenceEnd, pathTitle: crisis ? 'Ruta de crisis' : 'Ruta asignada', pathDuration: crisis ? 'Reemplaza la ruta del perfil' : 'Duración total: ' + months + ' meses', path,
       reasonErr: '', clearReasonErr: () => setState({ reasonErr: '' }),
-      cp: cpVals(A, res), saveVisit: () => saveVisit(), saveNote: offline ? 'Sin señal: se guarda en la tablet y se sincroniza después.' : 'Se guarda y se sincroniza ahora.',
-      toast: !!st.toast, toastText: st.toast
+      cp: null, saveVisit: () => saveVisit(), saveNote: offline ? 'Sin señal: se guarda en la tablet y se sincroniza después.' : 'Se guarda y se sincroniza ahora.',
+      toast: !!st.toast, toastText: st.toast,
+      crisisConfirmOpen: !!st.crisisConfirm,
+      crisisConfirmLabel: st.crisisConfirm?.label || '',
+      confirmCrisisPick,
+      cancelCrisisPick,
     };
   }
   const v = useMemo(() => {

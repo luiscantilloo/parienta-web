@@ -17,17 +17,47 @@ type Resumen = {
   porRiesgo: Conteos;
 };
 
-function Bloque({ titulo, datos, minGrupo }: { titulo: string; datos: Conteos; minGrupo: number }) {
+function isCrisisLabel(label: string) {
+  return /^crisis$/i.test(label.trim());
+}
+
+function Bloque({
+  titulo,
+  datos,
+  minGrupo,
+}: {
+  titulo: string;
+  datos: Conteos;
+  minGrupo: number;
+}) {
   return (
-    <section className="flex min-w-0 flex-col gap-2 rounded-[16px] border border-linea bg-nara-blanco p-4">
-      <h2 className="font-titulos text-lg font-semibold text-nara-tinta">{titulo}</h2>
-      <ul className="flex flex-col gap-1.5 font-texto text-[15px] text-nara-tinta">
-        {Object.entries(datos).map(([k, v]) => (
-          <li key={k} className="flex justify-between gap-3">
-            <span className="truncate">{k}</span>
-            <span className="font-medium tabular-nums">{v === null ? `menos de ${minGrupo}` : v}</span>
-          </li>
-        ))}
+    <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#C0DFC8] bg-white">
+      <h2 className="border-b border-[#C0DFC8] bg-[#FBFAF3] px-4 py-3 font-titulos text-base font-extrabold text-[#27683A]">
+        {titulo}
+      </h2>
+      <ul className="flex flex-col font-texto text-[15px]">
+        {Object.entries(datos).map(([k, v]) => {
+          const crisis = isCrisisLabel(k);
+          return (
+            <li
+              key={k}
+              className={
+                crisis
+                  ? "flex justify-between gap-3 border-t border-[#B42318]/25 bg-[#B42318] px-4 py-2.5 !text-[#FBFAF3] first:border-t-0"
+                  : "flex justify-between gap-3 border-t border-[#C0DFC8] px-4 py-2.5 text-[#27683A] first:border-t-0"
+              }
+            >
+              <span className={`truncate ${crisis ? "font-semibold" : ""}`}>{k}</span>
+              <span
+                className={`shrink-0 font-mono text-[13px] font-medium tabular-nums ${
+                  crisis ? "!text-[#FBFAF3]" : "text-[#5A5A52]"
+                }`}
+              >
+                {v === null ? `menos de ${minGrupo}` : v}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -39,33 +69,65 @@ export function ObservadorTablero() {
 
   useEffect(() => {
     let vivo = true;
-    fetch("/api/people", { credentials: "same-origin" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!vivo) return;
-        if (d?.ok && d.summary) setResumen(d.summary as Resumen);
-        else setError("No se pudieron cargar los datos.");
-      })
-      .catch(() => vivo && setError("No se pudieron cargar los datos."));
+    const load = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      fetch("/api/people", { credentials: "same-origin" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (!vivo) return;
+          if (d?.ok && d.summary) {
+            setResumen(d.summary as Resumen);
+            setError("");
+          } else setError("No se pudieron cargar los datos.");
+        })
+        .catch(() => vivo && setError("No se pudieron cargar los datos."));
+    };
+    load();
+    const id = setInterval(load, 30_000);
+    const onVis = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVis);
     return () => {
       vivo = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, []);
 
-  if (error) return <p className="font-texto text-sm text-texto-secundario">{error}</p>;
-  if (!resumen) return <p className="font-texto text-sm text-texto-secundario">Cargando datos del programa…</p>;
+  if (error) {
+    return <p className="font-mono text-sm text-[#5A5A52]">{error}</p>;
+  }
+  if (!resumen) {
+    return <p className="font-mono text-sm text-[#5A5A52]">Cargando datos del programa…</p>;
+  }
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-3" data-testid="observador-tablero">
-      <p className="font-titulos text-2xl font-semibold text-nara-tinta">
-        {resumen.total.toLocaleString("es-CO")} personas en el programa
-      </p>
-      <div className="grid min-w-0 gap-3 sm:grid-cols-3">
-        <Bloque titulo="Por territorio" datos={resumen.porTerritorio} minGrupo={resumen.minGrupo} />
-        <Bloque titulo="Por estado" datos={resumen.porEstado} minGrupo={resumen.minGrupo} />
-        <Bloque titulo="Por nivel de riesgo" datos={resumen.porRiesgo} minGrupo={resumen.minGrupo} />
+    <div className="flex w-full min-w-0 flex-col gap-4" data-testid="observador-tablero">
+      <div className="flex flex-col gap-1">
+        <p className="font-mono text-sm font-medium uppercase tracking-[0.14em] text-[#F26B3A]">
+          Resumen agregado
+        </p>
+        <h1 className="m-0 font-titulos text-[clamp(22px,4vw,28px)] font-extrabold leading-tight text-[#27683A]">
+          {resumen.total.toLocaleString("es-CO")} personas en el programa
+        </h1>
       </div>
-      <p className="font-texto text-xs text-texto-secundario">Solo datos agregados. No se muestran datos personales.</p>
+      <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+        <Bloque
+          titulo="Por territorio"
+          datos={resumen.porTerritorio}
+          minGrupo={resumen.minGrupo}
+        />
+        <Bloque titulo="Por estado" datos={resumen.porEstado} minGrupo={resumen.minGrupo} />
+        <Bloque
+          titulo="Por nivel de riesgo"
+          datos={resumen.porRiesgo}
+          minGrupo={resumen.minGrupo}
+        />
+      </div>
+      <p className="font-mono text-[12px] text-[#5A5A52]">
+        Solo datos agregados. No se muestran datos personales.
+      </p>
     </div>
   );
 }

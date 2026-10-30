@@ -4,7 +4,7 @@ import { pageTitle } from "@/lib/page-title";
 export const metadata = pageTitle("Ingresar", {
   index: true,
   description:
-    "Ingreso a NARA, plataforma de acompañamiento en salud mental post-sismo del Eje Cafetero.",
+    "Ingreso a Parienta, plataforma de acompañamiento para personas mayores (Núcleo Care).",
 });
 
 export default function IngresoPage() {

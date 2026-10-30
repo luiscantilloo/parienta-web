@@ -208,7 +208,7 @@ export function useAdminInformesScreen() {
             label: a.name,
             off,
             why: off ? "Solo recibe informes agregados" : "",
-            bg: off ? "#F0ECE6" : "#fff",
+            bg: off ? "#FBFAF3" : "#fff",
             fg: off ? "#8C857C" : C.tinta,
             cur: off ? "not-allowed" : "pointer",
             go: () => {

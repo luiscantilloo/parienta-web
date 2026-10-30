@@ -1,4 +1,4 @@
-// NARA · estado en memoria (sin localStorage). Persistencia: MongoDB vía /api/app-state.
+// Parienta · estado en memoria (sin localStorage). Persistencia: MongoDB vía /api/app-state.
 import { schedulePersist } from './persist.js';
 import { NARA_SERVICES } from '../nara-services/catalog.js';
 
@@ -11,8 +11,8 @@ const KEY = 'nara-memory-v1';
     } catch (e) { /* ignore */ }
   }
   const C = {
-    verde: '#161413', azul: '#161413', amarillo: '#FDCD22', rosa: '#FFA3D0', niebla: '#F0ECE6', blanco: '#FFFFFF', tinta: '#161413',
-    texto2: '#5E5750', lineas: '#DCD6CD', ambar: '#3FEA73', ambarTx: '#161413', ambarBg: '#D8FBE3', crisisTx: '#8A1C14',
+    verde: '#27683A', azul: '#27683A', amarillo: '#F26B3A', rosa: '#359A54', niebla: '#FBFAF3', blanco: '#F7F9FB', tinta: '#27683A',
+    texto2: '#5A5A52', lineas: '#C0DFC8', ambar: '#D4A017', ambarTx: '#27683A', ambarBg: '#D8FBE3', crisisTx: '#8A1C14',
     rojo: '#B42318', rojoBg: '#FDE7E4', alDia: '#4E9A6B', bajoMeta: '#E0A526', revisar: '#D9692B'
   };
   const RISK = [
@@ -22,47 +22,109 @@ const KEY = 'nara-memory-v1';
     { k: 'Moderado-severo', c: '#D9692B', bg: '#F7E2D2', min: 15, max: 19 },
     { k: 'Severo', c: '#9C2F25', bg: '#EFDCDA', min: 20, max: 27 }
   ];
+  // Capacidad digital · 6 preguntas × 0–3 = máx. 18 → Baja / Media / Alta.
   const DIG = [
-    { k: 'Baja', c: '#D8D2C9', bg: '#F0ECE6', min: 0, max: 4 },
-    { k: 'Media', c: '#8C857C', bg: '#E6E1D9', min: 5, max: 8 },
-    { k: 'Alta', c: '#161413', bg: '#DCD6CD', min: 9, max: 11 }
+    { k: 'Baja', c: '#D8D2C9', bg: '#FBFAF3', min: 0, max: 6 },
+    { k: 'Media', c: '#8C857C', bg: '#C0DFC8', min: 7, max: 12 },
+    { k: 'Alta', c: '#27683A', bg: '#C0DFC8', min: 13, max: 18 }
   ];
   const riskIdx = t => RISK.findIndex(r => t >= r.min && t <= r.max);
   const digIdx = t => DIG.findIndex(r => t >= r.min && t <= r.max);
-  const code = (r, d) => 'P' + String(r * 3 + d + 1).padStart(2, '0');
+  /** Columnas de la matriz = niveles digitales vigentes. */
+  const digCols = () => (DIG && DIG.length ? DIG.length : 3);
+  const code = (r, d) => 'P' + String(r * digCols() + d + 1).padStart(2, '0');
   const parseCode = (p) => {
     const s = p != null ? String(p) : '';
     if (!/^P\d+$/i.test(s)) return { r: -1, d: -1 };
     const n = parseInt(s.slice(1), 10) - 1;
     if (!Number.isFinite(n) || n < 0) return { r: -1, d: -1 };
-    return { r: Math.floor(n / 3), d: n % 3 };
+    const cols = digCols();
+    return { r: Math.floor(n / cols), d: n % cols };
   };
 
+  // Cuestionario de ánimo / salud (personas mayores). 4 opciones · pts 0–3.
   const PHQ = [
-    'Poco interés o placer en hacer las cosas',
-    'Se ha sentido decaído/a, deprimido/a o sin esperanza',
-    'Dificultad para dormir o dormir demasiado',
-    'Se ha sentido cansado/a o con poca energía',
-    'Poco apetito o come en exceso',
-    'Se ha sentido mal consigo mismo/a, o una carga para su familia',
-    'Dificultad para concentrarse',
-    'Se mueve o habla muy lento, o está muy inquieto/a',
-    'Pensamientos de que estaría mejor muerto/a o de hacerse daño'
+    'En las últimas dos semanas, ¿ha tenido poco interés o ganas de hacer las cosas de siempre?',
+    '¿Se ha sentido triste, decaído/a o sin esperanza?',
+    '¿Ha dormido mal o demasiado?',
+    '¿Se ha sentido sin energía o muy cansado/a para su día a día?',
+    '¿Ha comido mucho menos o mucho más de lo normal (apetito)?',
+    '¿Se ha sentido una carga para su familia o mal consigo mismo/a?',
+    '¿Le ha costado concentrarse (conversar, ver TV, seguir una receta)?',
+    '¿Ha notado problemas para moverse, levantarse o caminar con normalidad?',
+    '¿Ha pensado que estaría mejor muerto/a o en hacerse daño?',
   ];
   const PHQ_OPTS = ['Nunca', 'Varios días', 'Más de la mitad de los días', 'Casi todos los días'];
   const Q9_EXACT = 'En las últimas dos semanas, ¿con qué frecuencia ha pensado que estaría mejor muerto o muerta, o en hacerse daño de alguna forma?';
+  // Capacidad digital y acceso a cuidado · mayores. Siempre 4 opciones · 0–3 pts.
   const DIGQ = [
-    { q: 'Teléfono', o: ['Ninguno', 'Compartido', 'Smartphone propio'] },
-    { q: 'Conexión en casa', o: ['Sin señal', 'Datos limitados', 'Estable'] },
-    { q: 'Uso diario', o: ['Solo llamadas', 'WhatsApp y audios', 'Apps y videollamadas'] },
-    { q: 'Lectura y escritura', o: ['Prefiere voz', 'Básica', 'Cómoda'] },
-    { q: '¿Hablaría con una app?', o: ['No', 'Tal vez', 'Sí'] },
-    { q: 'Alguien en casa le ayuda con el celular', o: ['No', 'Sí'] }
+    { q: '¿Tiene teléfono propio para hablar o pedir ayuda si se siente mal?', o: PHQ_OPTS.slice() },
+    { q: '¿Puede usar WhatsApp o mensajes con alguien de confianza?', o: PHQ_OPTS.slice() },
+    { q: '¿Tiene internet o datos suficientes en casa?', o: PHQ_OPTS.slice() },
+    { q: '¿Se siente capaz de hablar por videollamada con un profesional de salud?', o: PHQ_OPTS.slice() },
+    { q: '¿Alguien en casa le ayuda con el celular cuando lo necesita?', o: PHQ_OPTS.slice() },
+    { q: '¿Le gustaría usar la app de Parienta para cuidar su ánimo y su salud?', o: PHQ_OPTS.slice() },
   ];
+  // Contexto de vida · soledad, apoyo y duelo (opcional en la ruta). 4 opciones · 0–3.
   const CTX = [
-    { q: 'Daño en la vivienda', o: ['Ninguno', 'Parcial', 'Total'] },
-    { q: 'Perdió a un familiar o allegado', o: ['No', 'Sí'] }
+    { q: '¿Con qué frecuencia se siente solo/a en su casa?', o: PHQ_OPTS.slice() },
+    { q: '¿Cuenta con alguien cercano si necesita ayuda con su salud o ánimo?', o: PHQ_OPTS.slice() },
+    { q: '¿Ha vivido un duelo o pérdida importante en el último año?', o: PHQ_OPTS.slice() },
   ];
+
+  /** Forma editable en reglas: pregunta + opciones con puntos. */
+  function qFromLabels(q, labels) {
+    return { q, o: labels.map((o, i) => ({ o, p: i })) };
+  }
+  function defaultPhqRules() {
+    // Pregunta 9 (índice 8): crisis si puntaje > 0, encendida por defecto (se puede apagar en admin).
+    return {
+      q: PHQ.map((t, i) => {
+        const row = qFromLabels(t, PHQ_OPTS.slice());
+        if (i === 8) row.crisis = true;
+        return row;
+      }),
+    };
+  }
+  /** Territorio cuyas reglas están aplicadas en RISK/PHQ/DIG (entrevista / admin). */
+  let _activeRulesTerr = null;
+  /** ¿La pregunta 9 del PHQ tiene crisis activa en reglas vigentes? */
+  function phqQ9CrisisOn(s, terr) {
+    const src = s || cache;
+    const t = terr || _activeRulesTerr;
+    const pack = (t && getTerrRules(src, t)) || (src && src.rules);
+    const q9 = pack && pack.phq && pack.phq.q && pack.phq.q[8];
+    if (!q9) return true;
+    return q9.crisis !== false;
+  }
+  function defaultDigRules() {
+    return {
+      q: DIGQ.map((x) => qFromLabels(x.q, x.o.slice())),
+      cuts: DIG.map((d) => ({ k: d.k, min: d.min, max: d.max })),
+    };
+  }
+  function defaultCtxRules() {
+    return { q: CTX.map((x) => qFromLabels(x.q, x.o.slice())) };
+  }
+  function replaceArr(target, next) {
+    target.length = 0;
+    (next || []).forEach((x) => target.push(x));
+  }
+  /** Puntos de una opción según reglas vigentes del territorio activo (si no hay, el índice). */
+  function optionPoints(sec, qi, vi) {
+    if (vi == null || vi === '' || Number.isNaN(+vi)) return 0;
+    const pack =
+      (_activeRulesTerr && cache && getTerrRules(cache, _activeRulesTerr)) ||
+      (cache && cache.rules);
+    const block =
+      sec === 'phq' ? pack && pack.phq && pack.phq.q
+        : sec === 'dig' ? pack && pack.dig && pack.dig.q
+          : sec === 'ctx' ? pack && pack.ctx && pack.ctx.q
+            : null;
+    const p = block && block[qi] && block[qi].o && block[qi].o[vi] && block[qi].o[vi].p;
+    if (p != null && p !== '' && !Number.isNaN(+p)) return +p;
+    return +vi;
+  }
 
   // Solo estos 6 servicios en el editor de rutas / perfiles (matriz v2 proyectada).
   // Nombres / notas / freqs: editar por archivo en src/lib/nara-services/<id>.js
@@ -73,11 +135,12 @@ const KEY = 'nara-memory-v1';
     note: sv.note || '',
   }));
   const SERVICE_IDS = new Set(SERVICES.map((x) => x.id));
-  const PATH_LOCKED_IDS = ['tech', 'revisit', 'cursos'];
+  /** Ids retirados del producto; se limpian de rutas antiguas. */
+  const PATH_RETIRADO_IDS = ['tech', 'revisit', 'cursos'];
   const prunePathS = (s) => {
     const out = {};
     Object.keys(s || {}).forEach((k) => {
-      if (SERVICE_IDS.has(k)) out[k] = s[k];
+      if (SERVICE_IDS.has(k) && !PATH_RETIRADO_IDS.includes(k)) out[k] = s[k];
     });
     return out;
   };
@@ -91,22 +154,19 @@ const KEY = 'nara-memory-v1';
       const v = s && s[sv.id];
       out[sv.id] = v != null && String(v).trim() ? String(v).trim() : '';
     });
-    PATH_LOCKED_IDS.forEach((k) => {
-      if (SERVICE_IDS.has(k)) out[k] = '';
-    });
     return out;
   }
   const CLIN_CH = ['En persona', 'Por teléfono', 'Videollamada o teléfono'];
 
   // ---------- v7 · Recursos de tratamiento: cuentos, videos, técnicas y cursos ----------
-  const cursosFreq = (r) => (r <= 1 ? 'Curso guiado por TEO' : r === 2 ? 'Curso con el experto' : 'Asignado por la psicóloga');
+  const cursosFreq = (r) => (r <= 1 ? 'Curso guiado por Aurelia' : r === 2 ? 'Curso con el experto' : 'Asignado por la psicóloga');
   // v2: con capacidad Baja, Mínimo a Moderado llevan el curso con el experto.
   const cursosMod = (r, d) => (r >= 3 ? 'Asignado por la psicóloga' : d === 0 ? 'Curso con el experto' : cursosFreq(r));
   const REC = (() => {
     const C = (slug, title, temas, para, pag, lect, audio, uso, extra) => Object.assign({ slug, title, temas, para, pag, lect, audio, uso, nivel: 'TEO o experto', restr: null, estado: 'Aprobado', version: 1, aprobado: '14 sep', pages: 0, preguntas: [] }, extra || {});
     const CUENTOS = [
       C('el-pais-de-los-suenos', 'El país de los sueños', 'Sueño, hábitos, pesadillas', 'Todos', 6, 4, 5, 'Ambos', { preguntas: ['¿Qué hace usted antes de dormir?', '¿Qué le gustaría soñar esta noche?'] }),
-      C('el-ladron-de-suenos', 'El ladrón de sueños', 'Sueño, miedo, ansiedad, esperanza', 'Adultos', 10, 8, 10, 'Ambos', { pages: 10, preguntas: ['¿Qué le quita el sueño desde el sismo?', '¿Qué le ayuda a calmarse cuando se despierta de noche?', '¿Qué sueño tiene para su familia este año?'] }),
+      C('el-ladron-de-suenos', 'El ladrón de sueños', 'Sueño, miedo, ansiedad, esperanza', 'Adultos', 10, 8, 10, 'Ambos', { pages: 10, preguntas: ['¿Qué le quita el sueño últimamente?', '¿Qué le ayuda a calmarse cuando se despierta de noche?', '¿Qué sueño tiene para su familia este año?'] }),
       C('la-bruja-estresona', 'La bruja Estresona', 'Estrés, orden, lealtad', 'Todos', 7, 4, 5, 'Ambos', { pages: 7, preguntas: ['¿Qué siente en el cuerpo cuando hay una réplica?', '¿Qué hace usted para ordenar sus pensamientos?', '¿A quién le puede pedir ayuda cuando se siente tenso?'] }),
       C('el-robot-autocontrol', 'El robot Autocontrol', 'Autocontrol, autocuidado, compañía', 'Todos', 7, 4, 5, 'Ambos'),
       C('el-vaso-medio-lleno', 'El vaso medio lleno o medio vacío', 'Mirada positiva, adversidad', 'Todos', 5, 3, 3, 'Ambos'),
@@ -115,7 +175,7 @@ const KEY = 'nara-memory-v1';
       C('salud-nieves-y-los-7-daninos', 'Salud Nieves y los 7 dañinos', 'Angustia, ansiedad, tristeza y otros malestares', 'Adultos', 10, 8, 10, 'Ambos'),
       C('el-inventario-de-las-cosas-perdidas', 'El inventario de las cosas perdidas', 'Pérdidas, lo que aún podemos hacer', 'Adultos y 60+', 5, 3, 3, 'Ambos'),
       C('la-perdida-del-sol', 'La pérdida del sol', 'Duelo, soledad, recuerdos, esperanza', 'Adultos', 7, 6, 8, 'Ambos'),
-      C('la-carta-del-abuelo', 'La carta del abuelo', 'Duelo, resiliencia, familia, mayores', 'Familias y 60+', 7, 5, 6, 'Ambos', { pages: 7, preguntas: ['Si alguien que ya no está le escribiera una carta, ¿qué le gustaría leer?', '¿Qué objeto de su casa le trae un buen recuerdo?', '¿Quién lo ha acompañado desde el sismo?'] }),
+      C('la-carta-del-abuelo', 'La carta del abuelo', 'Duelo, resiliencia, familia, mayores', 'Familias y 60+', 7, 5, 6, 'Ambos', { pages: 7, preguntas: ['Si alguien que ya no está le escribiera una carta, ¿qué le gustaría leer?', '¿Qué objeto de su casa le trae un buen recuerdo?', '¿Quién lo acompaña en el día a día?'] }),
       C('la-carrera-del-riesgo', 'La carrera del riesgo', 'Resiliencia familiar, unión', 'Familias', 6, 4, 5, 'Grupo'),
       C('el-espejo-de-la-mente', 'El espejo de la mente', 'Envejecer, sentirse útil, amistad', '60+', 6, 4, 5, 'Ambos'),
       C('las-huellas-en-supermente', 'Las huellas en Supermente', 'Hábitos saludables, mente y cuerpo', 'Todos', 7, 4, 5, 'Ambos'),
@@ -137,8 +197,8 @@ const KEY = 'nara-memory-v1';
     const TECNICAS = [T('resp-46', 'Respiración 4-6', 2, 'Respiración'), T('resp-dormir', 'Respiración para dormir', 6, 'Sueño'), T('musculos', 'Relajación de los músculos', 10, 'Estrés'), T('54321', '5-4-3-2-1 cuando hay una réplica', 3, 'Miedo, réplicas'), T('lugar-seguro', 'Mi lugar seguro', 7, 'Calma'), T('escaneo', 'Escaneo del cuerpo', 8, 'Calma'), T('caminar', 'Caminar con atención', 5, 'Ánimo'), T('rutina-noche', 'Rutina de la noche', 4, 'Sueño'), T('soltar', 'Soltar la preocupación', 5, 'Preocupación'), T('manos', 'Las manos tibias', 3, 'Calma'), T('bueno-dia', 'Contar lo bueno del día', 3, 'Ánimo'), T('dia-sentido', 'Planear un día con sentido', 6, 'Ánimo')];
     const M = (cuento, tecnica, video, pregunta) => ({ cuento, tecnica, video, pregunta });
     const CURSOS = [
-      { id: 'dormir', title: 'Dormir mejor después del sismo', weeks: 4, para: 'Sueño (el más asignado)', mods: [M('el-pais-de-los-suenos', 'rutina-noche', 'no-duermo', '¿Qué cambió en sus noches desde el sismo?'), M('el-ladron-de-suenos', 'resp-dormir', 'miedo-sismo', '¿Qué le ayuda a volver a dormir cuando se despierta?'), M('la-bruja-estresona', 'musculos', 'cuerpo-estres', '¿En qué parte del cuerpo siente la tensión?'), M('las-huellas-en-supermente', 'bueno-dia', 'rutina', '¿Qué hábito quiere mantener?')] },
-      { id: 'calma', title: 'Calma cuando tiembla', weeks: 4, para: 'Miedo y estrés', mods: [M('la-bruja-estresona', '54321', 'miedo-sismo', '¿Qué hace su cuerpo cuando tiembla?'), M('el-robot-autocontrol', 'resp-46', 'cuerpo-estres', '¿Qué le ayuda a recuperar la calma?'), M('el-vaso-medio-lleno', 'lugar-seguro', 'pedir-ayuda', '¿A quién le puede pedir ayuda?'), M('un-pais-llamado-mente', 'soltar', 'rutina', '¿Qué preocupación quiere soltar esta semana?')] },
+      { id: 'dormir', title: 'Dormir mejor en esta etapa', weeks: 4, para: 'Sueño (el más asignado)', mods: [M('el-pais-de-los-suenos', 'rutina-noche', 'no-duermo', '¿Qué cambió en sus noches últimamente?'), M('el-ladron-de-suenos', 'resp-dormir', 'miedo-sismo', '¿Qué le ayuda a volver a dormir cuando se despierta?'), M('la-bruja-estresona', 'musculos', 'cuerpo-estres', '¿En qué parte del cuerpo siente la tensión?'), M('las-huellas-en-supermente', 'bueno-dia', 'rutina', '¿Qué hábito quiere mantener?')] },
+      { id: 'calma', title: 'Calma en el día a día', weeks: 4, para: 'Inquietud y estrés', mods: [M('la-bruja-estresona', '54321', 'miedo-sismo', '¿Qué hace su cuerpo cuando se pone nervioso/a?'), M('el-robot-autocontrol', 'resp-46', 'cuerpo-estres', '¿Qué le ayuda a recuperar la calma?'), M('el-vaso-medio-lleno', 'lugar-seguro', 'pedir-ayuda', '¿A quién le puede pedir ayuda?'), M('un-pais-llamado-mente', 'soltar', 'rutina', '¿Qué preocupación quiere soltar esta semana?')] },
       { id: 'perdimos', title: 'Lo que perdimos', weeks: 4, para: 'Duelo y pérdidas', mods: [M('el-inventario-de-las-cosas-perdidas', 'escaneo', 'perder-casa', '¿Qué conserva todavía?'), M('la-perdida-del-sol', 'lugar-seguro', 'duelo-camino', '¿Qué recuerdo le acompaña?'), M('la-carta-del-abuelo', 'soltar', 'pedir-ayuda', '¿Qué le diría a quien ya no está?'), M('salud-y-bienestar', 'bueno-dia', 'rutina', '¿Qué le da fuerza hoy?')] },
       { id: 'animo', title: 'Ánimo, paso a paso', weeks: 4, para: 'Ánimo bajo', mods: [M('los-tres-cerditos', 'dia-sentido', 'rutina', '¿Qué pequeña cosa quiere hacer mañana?'), M('la-lunatica', 'caminar', 'pedir-ayuda', '¿Con quién le gustaría hablar esta semana?'), M('salud-nieves-y-los-7-daninos', 'escaneo', 'cuerpo-estres', '¿Qué malestar quiere conocer mejor?'), M('el-vaso-medio-lleno', 'bueno-dia', 'rutina', '¿Qué salió bien hoy?')] },
       { id: 'familia', title: 'En familia', weeks: 4, para: 'Familias, grupos de apoyo', mods: [M('la-carrera-del-riesgo', 'resp-46', 'ninos-sismo', '¿Cómo se apoyan en su familia?'), M('el-congreso-de-las-emociones', '54321', 'cuerpo-estres', '¿Qué emoción se nota más en su casa?'), M('la-carta-del-abuelo', 'bueno-dia', 'duelo-camino', '¿Qué historia de familia quiere contar?'), M('la-esmeralda-encantada', 'dia-sentido', 'rutina', '¿Qué plan quieren hacer juntos?')] },
@@ -148,25 +208,25 @@ const KEY = 'nara-memory-v1';
     const video = id => VIDEOS.find(v => v.id === id);
     const tecnica = id => TECNICAS.find(t => t.id === id);
     const curso = id => CURSOS.find(c => c.id === id);
-    const cover = slug => '/nara/recursos/cuentos/portadas/' + slug + '.jpg';
-    const page = (slug, n) => '/nara/recursos/cuentos/paginas/' + slug + '/' + String(n).padStart(2, '0') + '.jpg';
+    const cover = slug => '/parienta/recursos/cuentos/portadas/' + slug + '.jpg';
+    const page = (slug, n) => '/parienta/recursos/cuentos/paginas/' + slug + '/' + String(n).padStart(2, '0') + '.jpg';
     const openLib = c => !c.restr || c.restr === 'pandemia';
     const teoOk = c => !c.restr;
     const channel = d => d === 2 ? 'App · leer y escuchar' : d === 1 ? 'WhatsApp · portada, audio y pregunta' : 'Cuadernillo impreso · audio en la visita';
     function courseFor(x) {
       const phq = x.phq || [], age = x.age || 0, ctx = x.ctx || {};
-      if ((phq[2] || 0) >= 2) return { id: 'dormir', motivo: 'porque duerme mal desde el sismo' };
-      if (ctx.perdida > 0) return { id: 'perdimos', motivo: 'porque perdió a un familiar en el sismo' };
+      if ((phq[2] || 0) >= 2) return { id: 'dormir', motivo: 'porque duerme mal' };
+      if (ctx.perdida > 0) return { id: 'perdimos', motivo: 'porque tiene un duelo o pérdida reciente' };
       if ((phq[0] || 0) >= 2 && (phq[1] || 0) >= 2) return { id: 'animo', motivo: 'porque tiene el ánimo bajo' };
       if (age >= 60) return { id: 'mayores', motivo: 'porque tiene 60 años o más' };
-      return { id: 'calma', motivo: 'para manejar el miedo y el estrés' };
+      return { id: 'calma', motivo: 'para manejar la inquietud y el estrés del día a día' };
     }
     const RULES = [
-      ['Mínimo', 'Biblioteca abierta + 1 curso a elección, guiado por TEO; con capacidad digital baja, con el experto'],
-      ['Leve', '1 curso recomendado según el motivo principal, guiado por TEO; con capacidad digital baja, con el experto'],
-      ['Moderado', '1 curso con el experto (dentro del grupo de apoyo)'],
-      ['Moderado-severo', 'Solo cuentos y cursos que asigne la psicóloga, como apoyo a la terapia'],
-      ['Severo', 'Igual que moderado-severo; nunca recomendaciones automáticas'],
+      ['Mínimo', 'Ánimo, acompañante con IA y psicólogo según capacidad digital'],
+      ['Leve', 'Ruta con psicólogo y acompañante según capacidad digital'],
+      ['Moderado', 'Psicólogo mensual y acompañante entre sesiones'],
+      ['Moderado-severo', 'Psicólogo quincenal; acompañante solo si la clínica lo indica'],
+      ['Severo', 'Psicólogo semanal; sin recomendaciones automáticas'],
     ];
     const STATS = { courses: { dormir: [412, 46], calma: [236, 41], perdimos: [158, 52], animo: [121, 38], familia: [64, 57], mayores: [97, 61] }, groupStories: [['la-bruja-estresona', 38], ['el-ladron-de-suenos', 31], ['la-carta-del-abuelo', 24], ['el-congreso-de-las-emociones', 19], ['la-carrera-del-riesgo', 15], ['el-arbol-que-no-queria-crecer', 11]], phq: { done: [486, -5.8], notDone: [602, -3.1] }, topStories: [['el-pais-de-los-suenos', 512], ['el-ladron-de-suenos', 447], ['la-bruja-estresona', 390], ['el-inventario-de-las-cosas-perdidas', 211], ['la-carta-del-abuelo', 198]] };
     return { TEMAS, temaMatch, STATS, CUENTOS, VIDEOS, TECNICAS, CURSOS, TAG, RULES, cuento, video, tecnica, curso, cover, page, openLib, teoOk, channel, courseFor, item: id => cuento(id) || video(id) || tecnica(id) };
@@ -185,8 +245,7 @@ const KEY = 'nara-memory-v1';
   function basePath(r, d) {
     const s = {};
     const on = (id, freq) => { s[id] = freq; };
-    // Matriz v2 (2026-10-08) limitada a los 3 servicios que funcionan hoy (decisión de Dani, 2026-10-09):
-    // estado de ánimo, psicólogo clínico y TEO. Técnicas, revisita y cursos quedan apagados.
+    // Matriz: ánimo, psicólogo clínico, acompañante con IA y juegos.
     // · Ánimo en la app solo con capacidad Alta.
     if (d === 2) on('mood', 'Diario');
     // · Psicólogo desde Moderado (Mensual, Quincenal, Semanal). P01 y P04 (riesgo bajo y capacidad Baja)
@@ -195,12 +254,14 @@ const KEY = 'nara-memory-v1';
     else if (d === 0) on('clin', 'Mensual');
     // · TEO con capacidad Media o Alta, nunca en Severo.
     if (d >= 1 && r <= 3) on('ia', r <= 1 ? 'Acceso libre' : 'Entre sesiones');
+    // · Juegos (Sudoku) en app con capacidad Media o Alta.
+    if (d >= 1) on('juegos', '2h');
     // inactiveMinutes: umbral del perfil para estado Inactivo (default: 1 día).
     if (r <= 1) return { s, months: 3, inactiveMinutes: 1440 };
     if (r === 2) return { s, months: 6, inactiveMinutes: 1440 };
     return { s, months: 12, inactiveMinutes: 1440 };
   }
-  // ctx: { dano: 0 ninguno · 1 parcial · 2 total, perdida: 0/1 }
+  // ctx: { dano: 0 apoyo sólido · 1 irregular · 2 solo/casi sin apoyo, perdida: 0/1 duelo reciente }
   const needsSocial = ctx => !!ctx && ((ctx.dano || 0) > 0 || (ctx.perdida || 0) > 0);
   function asPathDraft(x) {
     // s:{} vacío cuenta como override explícito (ruta sin módulos).
@@ -208,28 +269,46 @@ const KEY = 'nara-memory-v1';
     if (!Object.prototype.hasOwnProperty.call(x, 's') || typeof x.s !== 'object' || !x.s) return null;
     return x;
   }
-  function pathList(r, d, override, ctx) {
-    if (r < 0 || d < 0 || r > 4 || d > 2) return [];
-    const storeOv = cache && cache.pathOverrides && cache.pathOverrides[code(r, d)];
+  /**
+   * Mapa completo de servicios para un perfil ('' = apagado).
+   * Misma fusión que usa la app del paciente y el clínico.
+   * · override/pending explícito gana.
+   * · '' = apagado (no se rellena desde default).
+   * · clave nunca guardada → hereda defaultPath (servicio nuevo del catálogo).
+   */
+  function pathServicesMap(r, d, override, ctx) {
+    const empty = {
+      s: normalizePathS({}),
+      months: 3,
+      inactiveMinutes: 1440,
+    };
+    if (r < 0 || d < 0 || r >= RISK.length || d >= DIG.length) return empty;
+    const terr = ctx && ctx.terr;
+    const storeOv = resolvePathOverride(cache, code(r, d), terr);
     const explicit = asPathDraft(override) || asPathDraft(storeOv);
     const full = defaultPath(r, d);
-    // Con override aprobado/enviado: fuente de verdad completa.
-    // Clave ausente o '' = apagado (NO se rellena desde defaultPath).
-    // Sin override: los 6 del perfil por defecto.
-    let merged;
+    let active = {};
     if (explicit && explicit.s && typeof explicit.s === 'object') {
-      const norm = normalizePathS(explicit.s);
-      merged = {};
+      const raw = explicit.s;
+      const norm = normalizePathS(raw);
       Object.keys(norm).forEach((k) => {
-        if (norm[k]) merged[k] = norm[k];
+        if (!Object.prototype.hasOwnProperty.call(raw, k)) {
+          if (full.s && full.s[k]) active[k] = full.s[k];
+          return;
+        }
+        if (norm[k]) active[k] = norm[k];
       });
     } else {
-      merged = { ...(full.s || {}) };
+      active = { ...(full.s || {}) };
     }
-    // tech / revisit / cursos: aún no se ofrecen en la app del paciente.
-    PATH_LOCKED_IDS.forEach((k) => { delete merged[k]; });
-    const p = {
-      s: prunePathS(merged),
+    PATH_RETIRADO_IDS.forEach((k) => { delete active[k]; });
+    // Editor / toggles: catálogo completo con '' donde no está activo.
+    const s = normalizePathS({});
+    Object.keys(active).forEach((k) => {
+      if (active[k]) s[k] = String(active[k]);
+    });
+    return {
+      s: prunePathS(s),
       months:
         explicit && explicit.months != null
           ? explicit.months
@@ -243,16 +322,18 @@ const KEY = 'nara-memory-v1';
             ? full.inactiveMinutes
             : 1440,
     };
-
+  }
+  function pathList(r, d, override, ctx) {
+    if (r < 0 || d < 0 || r >= RISK.length || d >= DIG.length) return [];
+    const p = pathServicesMap(r, d, override, ctx);
     return SERVICES.filter(x => p.s[x.id]).map(x => ({
       id: x.id, name: x.name, freq: p.s[x.id],
       channel:
         x.id === 'mood' ? 'App · check-in de ánimo' :
         x.id === 'clin' ? CLIN_CH[d] :
         x.id === 'ia' ? 'App' :
-        x.id === 'revisit' ? 'Visita en casa' :
-        x.id === 'cursos' ? REC.channel(d) :
-        x.id === 'tech' ? 'App o impreso' : '',
+        x.id === 'juegos' ? 'App · sudoku' :
+        '',
       main: x.id === 'clin' && r >= 2,
     }));
   }
@@ -329,7 +410,9 @@ const KEY = 'nara-memory-v1';
       },
       rules: {
         risk: RISK.map(r => ({ k: r.k, min: r.min, max: r.max, c: r.c })),
-        dig: { q: DIGQ.map(x => ({ q: x.q, o: x.o.map((o, i) => ({ o, p: i })) })), cuts: DIG.map(d => ({ k: d.k, min: d.min, max: d.max })) },
+        phq: defaultPhqRules(),
+        dig: defaultDigRules(),
+        ctx: defaultCtxRules(),
         auto: { expert: 'vereda', clin: 'carga', review: 'Cada 4 semanas' },
         goals: { daily: 9, weekly: 45 },
         pending: null,
@@ -396,13 +479,104 @@ const KEY = 'nara-memory-v1';
         changed = true;
       }
       if (!Array.isArray(s.rules.dig.q) || !s.rules.dig.q.length) {
-        s.rules.dig.q = DIGQ.map(x => ({ q: x.q, o: x.o.map((o, i) => ({ o, p: i })) }));
+        s.rules.dig.q = defaultDigRules().q;
         changed = true;
       }
       if (!Array.isArray(s.rules.dig.cuts) || !s.rules.dig.cuts.length) {
-        s.rules.dig.cuts = DIG.map(d => ({ k: d.k, min: d.min, max: d.max }));
+        s.rules.dig.cuts = defaultDigRules().cuts;
         changed = true;
       }
+      if (!s.rules.phq || typeof s.rules.phq !== 'object') {
+        s.rules.phq = defaultPhqRules();
+        changed = true;
+      } else if (!Array.isArray(s.rules.phq.q) || !s.rules.phq.q.length) {
+        s.rules.phq.q = defaultPhqRules().q;
+        changed = true;
+      } else if (s.rules.phq.q[8] && s.rules.phq.q[8].crisis === undefined) {
+        s.rules.phq.q[8].crisis = true;
+        changed = true;
+      }
+      if (!s.rules.ctx || typeof s.rules.ctx !== 'object') {
+        s.rules.ctx = defaultCtxRules();
+        changed = true;
+      } else if (!Array.isArray(s.rules.ctx.q) || !s.rules.ctx.q.length) {
+        s.rules.ctx.q = defaultCtxRules().q;
+        changed = true;
+      }
+      // Migra preguntas a 4 opciones Likert (pts 0–3) y alinea cortes al máximo real.
+      const likertFix = (q) => {
+        if (!q || typeof q !== 'object') return false;
+        const prev = Array.isArray(q.o) ? q.o : [];
+        const need =
+          prev.length !== 4 ||
+          prev.some((o, i) => !o || Number(o.p) !== i || !String(o.o || '').trim());
+        if (!need) return false;
+        q.o = [0, 1, 2, 3].map((i) => ({
+          o: String((prev[i] && prev[i].o) || PHQ_OPTS[i] || ('Opción ' + (i + 1))),
+          p: i,
+        }));
+        return true;
+      };
+      const qMaxPts = (qs) =>
+        (qs || []).reduce(
+          (a, q) => a + Math.max(0, ...((q.o || []).map((o) => Number(o.p) || 0))),
+          0,
+        );
+      const fitLast = (bands, maxPts) => {
+        if (!Array.isArray(bands) || !bands.length) return false;
+        bands[0].min = 0;
+        const last = bands[bands.length - 1];
+        if (Number(last.max) === maxPts) return false;
+        if (maxPts >= Number(last.min)) {
+          last.max = maxPts;
+          return true;
+        }
+        const n = bands.length;
+        let prev = -1;
+        for (let i = 0; i < n; i++) {
+          const lo = prev + 1;
+          const hi = i === n - 1 ? maxPts : Math.floor(((i + 1) * maxPts) / n);
+          bands[i].min = lo;
+          bands[i].max = Math.max(lo, hi);
+          prev = bands[i].max;
+        }
+        bands[0].min = 0;
+        bands[n - 1].max = maxPts;
+        return true;
+      };
+      [['phq', s.rules.phq], ['dig', s.rules.dig], ['ctx', s.rules.ctx]].forEach(([, block]) => {
+        if (block && Array.isArray(block.q)) {
+          block.q.forEach((q) => {
+            if (likertFix(q)) changed = true;
+          });
+        }
+      });
+      if (fitLast(s.rules.risk, qMaxPts(s.rules.phq && s.rules.phq.q))) changed = true;
+      if (fitLast(s.rules.dig && s.rules.dig.cuts, qMaxPts(s.rules.dig && s.rules.dig.q))) changed = true;
+      // Rutas por territorio: seed byTerr desde reglas globales / defaults.
+      if (!s.rules.byTerr || typeof s.rules.byTerr !== 'object') {
+        s.rules.byTerr = {};
+        changed = true;
+      }
+      (s.territories || []).forEach((t) => {
+        const name = t && t.name;
+        if (!name) return;
+        if (!s.rules.byTerr[name]) {
+          ensureTerrRules(s, name);
+          changed = true;
+        } else {
+          const pack = s.rules.byTerr[name];
+          [['phq', pack.phq], ['dig', pack.dig], ['ctx', pack.ctx]].forEach(([, block]) => {
+            if (block && Array.isArray(block.q)) {
+              block.q.forEach((q) => {
+                if (likertFix(q)) changed = true;
+              });
+            }
+          });
+          if (fitLast(pack.risk, qMaxPts(pack.phq && pack.phq.q))) changed = true;
+          if (fitLast(pack.dig && pack.dig.cuts, qMaxPts(pack.dig && pack.dig.q))) changed = true;
+        }
+      });
       if (!s.rules.auto) {
         s.rules.auto = { expert: 'vereda', clin: 'carga', review: 'Cada 4 semanas' };
         changed = true;
@@ -438,11 +612,110 @@ const KEY = 'nara-memory-v1';
     }
     return changed;
   }
-  function applyRules(s) {
-    if (!s.rules) return;
+  /** Pack de reglas de clasificación para un territorio. */
+  function emptyTerrRulesPack() {
+    return {
+      risk: RISK.map((r) => ({ k: r.k, min: r.min, max: r.max, c: r.c })),
+      phq: defaultPhqRules(),
+      dig: defaultDigRules(),
+      ctx: defaultCtxRules(),
+      custom: [],
+      pending: null,
+      versions: [],
+      pendingClearedAt: 0,
+    };
+  }
+  function cloneTerrRulesPack(src) {
+    const base = src && typeof src === 'object' ? src : {};
+    return {
+      risk: JSON.parse(JSON.stringify(base.risk || emptyTerrRulesPack().risk)),
+      phq: JSON.parse(JSON.stringify(base.phq || defaultPhqRules())),
+      dig: JSON.parse(JSON.stringify(base.dig || defaultDigRules())),
+      ctx: JSON.parse(JSON.stringify(base.ctx || defaultCtxRules())),
+      custom: Array.isArray(base.custom) ? JSON.parse(JSON.stringify(base.custom)) : [],
+      pending: base.pending ? JSON.parse(JSON.stringify(base.pending)) : null,
+      versions: Array.isArray(base.versions) ? JSON.parse(JSON.stringify(base.versions)) : [],
+      pendingClearedAt: base.pendingClearedAt || 0,
+    };
+  }
+  /** Crea/obtiene el pack de reglas del territorio (mutación; usar dentro de set/ensure). */
+  function ensureTerrRules(s, terr) {
+    if (!s || !terr) return null;
+    s.rules = s.rules || {};
+    if (!s.rules.byTerr || typeof s.rules.byTerr !== 'object') s.rules.byTerr = {};
+    if (!s.rules.byTerr[terr]) {
+      if (s.rules.phq || s.rules.risk || s.rules.dig) {
+        s.rules.byTerr[terr] = cloneTerrRulesPack(s.rules);
+      } else {
+        s.rules.byTerr[terr] = emptyTerrRulesPack();
+      }
+    }
+    return s.rules.byTerr[terr];
+  }
+  function getTerrRules(s, terr) {
+    if (!s || !s.rules) return null;
+    if (terr && s.rules.byTerr && s.rules.byTerr[terr]) return s.rules.byTerr[terr];
+    return null;
+  }
+  /** Clave de override de servicios: P01 o P01@Salento. */
+  function pathOverrideKey(code, scope) {
+    if (!scope || scope === 'all') return String(code || '');
+    return String(code || '') + '@' + String(scope);
+  }
+  function resolvePathOverride(s, code, terr) {
+    const ov = (s && s.pathOverrides) || {};
+    if (terr && ov[pathOverrideKey(code, terr)]) return ov[pathOverrideKey(code, terr)];
+    if (ov[code]) return ov[code];
+    return null;
+  }
+  function applyRulesPack(pack) {
+    if (!pack) return;
+    const riskSrc = pack.risk;
+    if (Array.isArray(riskSrc) && riskSrc.length) {
+      replaceArr(RISK, riskSrc.map((r, i) => ({
+        k: r.k || ('Nivel ' + (i + 1)),
+        c: r.c || '#4E9A6B',
+        bg: r.bg || '#DCEDE2',
+        min: +r.min,
+        max: +r.max,
+      })));
+    }
+    const digCuts = pack.dig && pack.dig.cuts;
+    if (Array.isArray(digCuts) && digCuts.length) {
+      replaceArr(DIG, digCuts.map((c, i) => ({
+        k: c.k || ['Baja', 'Media', 'Alta'][i] || ('Nivel ' + (i + 1)),
+        c: c.c || '#8C857C',
+        bg: c.bg || '#C0DFC8',
+        min: +c.min,
+        max: +c.max,
+      })));
+    }
+    if (pack.dig && Array.isArray(pack.dig.q) && pack.dig.q.length) {
+      replaceArr(DIGQ, pack.dig.q.map((q) => ({
+        q: q.q,
+        o: (q.o || []).slice(0, 4).map((x) => x.o),
+      })));
+    }
+    if (pack.phq && Array.isArray(pack.phq.q) && pack.phq.q.length) {
+      replaceArr(PHQ, pack.phq.q.map((q) => q.q));
+      const opts0 = pack.phq.q[0] && pack.phq.q[0].o;
+      if (opts0 && opts0.length) replaceArr(PHQ_OPTS, opts0.slice(0, 4).map((x) => x.o));
+    }
+    if (pack.ctx && Array.isArray(pack.ctx.q) && pack.ctx.q.length) {
+      replaceArr(CTX, pack.ctx.q.map((q) => ({
+        q: q.q,
+        o: (q.o || []).slice(0, 4).map((x) => x.o),
+      })));
+    }
+  }
+  /** Aplica reglas del territorio (o las globales legacy si no hay pack). */
+  function applyRules(s, terr) {
+    if (!s || !s.rules) return;
     ensure(s);
-    (s.rules.risk || []).forEach((r, i) => { if (RISK[i]) Object.assign(RISK[i], { k: r.k, min: r.min, max: r.max, c: r.c }); });
-    ((s.rules.dig && s.rules.dig.cuts) || []).forEach((c, i) => { if (DIG[i]) Object.assign(DIG[i], { min: c.min, max: c.max }); });
+    _activeRulesTerr = terr || null;
+    const pack = (terr && getTerrRules(s, terr)) || null;
+    if (pack) applyRulesPack(pack);
+    else applyRulesPack(s.rules);
   }
   function syncPatients(s) {
     Object.keys(PATIENTS).forEach(k => { if (!(s.patients && s.patients[k])) delete PATIENTS[k]; });
@@ -876,13 +1149,16 @@ const KEY = 'nara-memory-v1';
   let devFlag = false;
   const ROLE_HREF = {
     Administrador: '/inicio', Administradora: '/inicio',
+    'Gestor de campo': '/experto',
     'Experto de campo': '/experto', 'Experta de campo': '/experto',
     Clínico: '/clinico', Clínica: '/clinico',
-    Paciente: '/paciente', Observador: '/observador',
+    'Persona acompañada': '/paciente', Paciente: '/paciente',
+    Observador: '/observador',
+    'Cuidadora / familiar': '/cuidador', Cuidadora: '/cuidador', Cuidador: '/cuidador',
   };
   const ROLE_ID_HREF = {
-    admin: '/inicio', experto: '/experto', clinico: '/clinico',
-    paciente: '/paciente', observador: '/observador',
+    admin: '/inicio', experto: '/experto', gestor: '/experto', clinico: '/clinico',
+    paciente: '/paciente', persona: '/paciente', observador: '/observador', cuidador: '/cuidador',
   };
   const ROLE_NK = {
     Administrador: 'admin', Administradora: 'admin',
@@ -891,9 +1167,12 @@ const KEY = 'nara-memory-v1';
   const ROLE_ID_NK = { admin: 'admin', clinico: 'clin' };
   const ROLE_LABEL_TO_ID = {
     Administrador: 'admin', Administradora: 'admin',
+    'Gestor de campo': 'experto', Gestor: 'experto',
     'Experto de campo': 'experto', 'Experta de campo': 'experto',
     Clínico: 'clinico', Clínica: 'clinico',
-    Paciente: 'paciente', Observador: 'observador',
+    'Persona acompañada': 'paciente', Persona: 'paciente', Paciente: 'paciente',
+    Observador: 'observador',
+    'Cuidadora / familiar': 'cuidador', Cuidadora: 'cuidador', Cuidador: 'cuidador',
   };
   const OBS_MODULES = [
     { id: 'avance', name: 'Avance', desc: 'Captación, cuotas y ritmo (agregado)' },
@@ -912,7 +1191,7 @@ const KEY = 'nara-memory-v1';
   };
   function isAdminRole(role) { return !!role && /Admin/i.test(role); }
   function accountAsUser(a) {
-    if (!a || a.status !== 'Activo') return null;
+    if (!a || !/^activo$/i.test(String(a.status || ''))) return null;
     const role = a.role || '';
     const roleId = a.roleId || ROLE_LABEL_TO_ID[role] || null;
     const href = ROLE_ID_HREF[roleId] || ROLE_HREF[role] || '/ingreso';
@@ -930,7 +1209,11 @@ const KEY = 'nara-memory-v1';
   function session() {
     if (typeof window === 'undefined' || !sessionId) return null;
     const a = (get().accounts || []).find(x => x.id === sessionId);
-    if (a) return accountAsUser(a);
+    // Si la fila de accounts no sirve (status, etc.), caer a la cuenta de sesión.
+    if (a) {
+      const fromList = accountAsUser(a);
+      if (fromList) return fromList;
+    }
     return sessionAccount && sessionAccount.id === sessionId ? accountAsUser(sessionAccount) : null;
   }
   function login(id, account) {
@@ -1196,7 +1479,9 @@ const KEY = 'nara-memory-v1';
   const AlientoStore = {
     OFFSET, shiftText, fmtDay, today0, needsSocial, crisisLines, ctxFor, teamPerf, OBS_MODULES, OBS_DEFAULT_MODULES, OBS_TEMPLATES, ensure, TERRS, EXPERT_LIST, CLINICIANS, ROSTER, TCODE, person, people, terrInfo, experts, assetList, logActivity, logAccess,
     KEY, C, RISK, DIG, PHQ, PHQ_OPTS, Q9_EXACT, DIGQ, CTX, SERVICES, CLIN_CH, HEAT, PATIENTS, emptyPatient,
-    riskIdx, digIdx, code, parseCode, defaultPath, normalizePathS, pathList, appModuleIdsFromPath, cursosFreq, cursosMod,
+    optionPoints, defaultPhqRules, defaultDigRules, defaultCtxRules, phqQ9CrisisOn,
+    riskIdx, digIdx, code, parseCode, defaultPath, normalizePathS, pathServicesMap, pathList, appModuleIdsFromPath, cursosFreq, cursosMod,
+    applyRules, ensureTerrRules, getTerrRules, pathOverrideKey, resolvePathOverride, emptyTerrRulesPack, cloneTerrRulesPack,
     get, set, reset, subscribe, ensureExpertBuckets, teamGoals, quotas, openFlags, expertAlertCount, expertTeamStatus, minsAgo, agoText, countdown, addAlert, pushCrisisLog,
     CRISIS_TERMS, crisisCheck, logAgent, logAi, SAMPLE,
     USERS, session, login, logout, requireSession, devMode, setDevMode, param, notify, pushNotif, PEOPLE, CASE_IDS, territoryDist, placeMap, small, REC, recPerson, courseProgress

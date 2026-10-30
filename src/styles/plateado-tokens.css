@@ -1,0 +1,105 @@
+/* Parienta · sistema de marca (presentación p.15).
+ * Paleta oficial del campo y de la casa — hex exactos:
+ *   Verde raíz #27683A · Verde vivo #359A54 · Menta #C0DFC8
+ *   Naranja abrazo #F26B3A · Lima #E0DB55 · Crema sol #FDF2B3 · Hueso #FBFAF3
+ * Remapea también --nara-* para pantallas heredadas.
+ */
+:root {
+  /* Paleta oficial */
+  --pl-verde-raiz: #27683a;
+  --pl-verde-vivo: #359a54;
+  --pl-menta: #c0dfc8;
+  --pl-naranja: #f26b3a;
+  --pl-lima: #e0db55;
+  --pl-crema-sol: #fdf2b3;
+  --pl-hueso: #fbfaf3;
+  --pl-tinta: #222220;
+  --pl-linea: #e3dfcf;
+  --pl-texto2: #5a5a52;
+  --pl-blanco: #ffffff;
+  --pl-rojo: #b42318;
+
+  /* Alias legacy plateado → Parienta */
+  --pl-noche: var(--pl-verde-raiz);
+  --pl-niebla: var(--pl-hueso);
+  --pl-plata: #8a9a8c;
+  --pl-plata-oscura: #5c6b5e;
+  --pl-azul: var(--pl-verde-raiz);
+  --pl-azul-claro: var(--pl-verde-vivo);
+  --pl-teal: var(--pl-verde-vivo);
+  --pl-ambar: var(--pl-naranja);
+
+  /* Alias semánticos NARA → Parienta (toda la app autenticada) */
+  --nara-amarillo: var(--pl-naranja);
+  --nara-rosa: var(--pl-verde-vivo);
+  --nara-crema: var(--pl-hueso);
+  --nara-tinta: var(--pl-tinta);
+  --nara-blanco: var(--pl-hueso);
+
+  /* Aurelia · estados */
+  --nara-calma: var(--pl-menta);
+  --nara-curiosidad: #d4ead9;
+  --nara-duda: var(--pl-crema-sol);
+  --nara-energia: #f8c9b4;
+
+  --personaje-nara-calma: var(--pl-verde-vivo);
+  --personaje-nara-curiosidad: var(--pl-naranja);
+  --personaje-nara-duda: var(--pl-lima);
+  --personaje-nara-energia: var(--pl-verde-raiz);
+
+  --teo-calma: var(--pl-verde-vivo);
+  --teo-curiosidad: var(--pl-naranja);
+  --teo-duda: #c4a010;
+  --teo-energia: var(--pl-verde-raiz);
+
+  --texto-secundario: var(--pl-texto2);
+  --linea: var(--pl-linea);
+  /* Neutro (no menta): cabeceras/tablas y superficies secundarias */
+  --superficie-2: #f3f0e8;
+
+  --crisis: var(--pl-rojo);
+  --crisis-suave: #fde7e4;
+  --crisis-texto: #8a1c14;
+  --ia-borrador: var(--pl-menta);
+  --riesgo-minimo: var(--pl-verde-vivo);
+  --riesgo-leve: var(--pl-verde-raiz);
+  --riesgo-moderado: var(--pl-naranja);
+  --riesgo-moderado-severo: #c4471a;
+  --riesgo-severo: var(--pl-rojo);
+  --digital-baja: var(--pl-plata);
+  --digital-media: var(--pl-plata-oscura);
+  --digital-alta: var(--pl-tinta);
+  --estado-al-dia: var(--pl-verde-vivo);
+  --exito-suave: var(--pl-menta);
+  --estado-bajo-meta: var(--pl-naranja);
+  --estado-revisar: #c4471a;
+
+  /* Fuentes oficiales · Branding/fuentes (next/font inyecta --font-bricolage / --font-dm-mono) */
+  --fuente-titulos: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --fuente-texto: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --fuente-mono: var(--font-dm-mono), "DM Mono", ui-monospace, monospace;
+}
+
+@theme inline {
+  --color-pl-verde-raiz: var(--pl-verde-raiz);
+  --color-pl-verde-vivo: var(--pl-verde-vivo);
+  --color-pl-menta: var(--pl-menta);
+  --color-pl-naranja: var(--pl-naranja);
+  --color-pl-lima: var(--pl-lima);
+  --color-pl-crema-sol: var(--pl-crema-sol);
+  --color-pl-hueso: var(--pl-hueso);
+  --color-pl-noche: var(--pl-noche);
+  --color-pl-tinta: var(--pl-tinta);
+  --color-pl-niebla: var(--pl-niebla);
+  --color-pl-blanco: var(--pl-blanco);
+  --color-pl-plata: var(--pl-plata);
+  --color-pl-plata-oscura: var(--pl-plata-oscura);
+  --color-pl-azul: var(--pl-azul);
+  --color-pl-azul-claro: var(--pl-azul-claro);
+  --color-pl-teal: var(--pl-teal);
+  --color-pl-ambar: var(--pl-ambar);
+  --color-pl-rojo: var(--pl-rojo);
+  --color-pl-linea: var(--pl-linea);
+  --color-pl-texto2: var(--pl-texto2);
+  --font-mono: var(--fuente-mono);
+}

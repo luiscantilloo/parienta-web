@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { LandingFooter, LandingHeader } from "./LandingChrome";
-import { landingAssets } from "./assets";
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
@@ -59,7 +58,7 @@ const TOC = [
   { href: "#5-principios", label: "5. Principios" },
   { href: "#6-autorizacion", label: "6. Autorización" },
   { href: "#7-finalidades-del-tratamiento", label: "7. Finalidades del tratamiento" },
-  { href: "#8-uso-de-inteligencia-artificial-teo", label: "8. Uso de inteligencia artificial (TEO)" },
+  { href: "#8-uso-de-inteligencia-artificial-teo", label: "8. Uso de inteligencia artificial (Aurelia)" },
   {
     href: "#9-quien-accede-a-los-datos-transmision-y-transferencia",
     label: "9. Quién accede a los datos, transmisión y transferencia",
@@ -78,8 +77,8 @@ const TOC = [
 
 export function TratamientoDatosScreen() {
   return (
-    <div className="min-h-svh overflow-x-clip bg-nara-crema text-nara-tinta">
-      <LandingHeader logoSrc={landingAssets.logoPrivacidad} sticky />
+    <div className="min-h-svh overflow-x-clip bg-pl-niebla text-pl-tinta">
+      <LandingHeader sticky />
       <main className="flex justify-center px-4 pb-[72px] pt-10">
         <article className="flex w-full max-w-[70ch] flex-col gap-[18px]">
           <Link
@@ -108,7 +107,7 @@ export function TratamientoDatosScreen() {
 
           <P muted>
             <strong className="font-bold text-nara-tinta">
-              NARA · Programa de acompañamiento post-sismo del Eje Cafetero
+              Parienta · Programa de acompañamiento para personas mayores
             </strong>
             <br />
             Versión 1
@@ -116,7 +115,7 @@ export function TratamientoDatosScreen() {
 
           <P muted>
             Esta política explica cómo recolectamos, usamos, guardamos, compartimos y protegemos los datos personales
-            de quienes participan en el programa y de quienes usan la plataforma NARA. Se expide en cumplimiento de la{" "}
+            de quienes participan en el programa y de quienes usan la plataforma Parienta. Se expide en cumplimiento de la{" "}
             <strong className="font-bold text-nara-tinta">Ley 1581 de 2012</strong>, el{" "}
             <strong className="font-bold text-nara-tinta">Decreto 1377 de 2013</strong> (compilado en el{" "}
             <strong className="font-bold text-nara-tinta">Decreto 1074 de 2015</strong>) y las demás normas que los
@@ -155,13 +154,13 @@ export function TratamientoDatosScreen() {
           <H2 id="1-responsable-del-tratamiento">1. Responsable del tratamiento</H2>
           <P>
             El responsable del tratamiento es{" "}
-            <strong className="font-bold">la entidad que ejecuta el programa NARA</strong>. Su razón social, NIT y
+            <strong className="font-bold">la entidad que ejecuta el programa Parienta</strong>. Su razón social, NIT y
             domicilio constan en el documento de autorización que cada persona recibe y firma en la visita, y se
             informan a quien los solicite por los canales de la sección 12.
           </P>
           <P>Las consultas y reclamos las atiende el área responsable de protección de datos del programa.</P>
           <P>
-            En esta política, «NARA», «nosotros» y «el programa» se refieren a esa entidad.
+            En esta política, «Parienta», «nosotros» y «el programa» se refieren a esa entidad.
           </P>
 
           <H2 id="2-definiciones">2. Definiciones</H2>
@@ -224,7 +223,7 @@ export function TratamientoDatosScreen() {
             items={[
               "Respuestas a cuestionarios sobre el estado de ánimo y la salud mental.",
               "Resultados y clasificaciones derivadas de esas respuestas.",
-              "Lo que la persona comunica a TEO, a su psicóloga o a su experto de campo, en texto o en audio.",
+              "Lo que la persona comunica a Aurelia, a su psicóloga o a su experto de campo, en texto o en audio.",
               "Seguimiento clínico, alertas, notas, remisiones y respuestas de las instituciones de salud.",
               "Datos de sueño, si la persona recibe una manilla.",
             ]}
@@ -358,15 +357,15 @@ export function TratamientoDatosScreen() {
             <strong className="font-bold">No vendemos datos personales ni los usamos para publicidad.</strong>
           </P>
 
-          <H2 id="8-uso-de-inteligencia-artificial-teo">8. Uso de inteligencia artificial (TEO)</H2>
+          <H2 id="8-uso-de-inteligencia-artificial-teo">8. Uso de inteligencia artificial (Aurelia)</H2>
           <Ul
             items={[
               <>
-                <strong className="font-bold">TEO es un acompañante con inteligencia artificial.</strong> No diagnostica,
+                <strong className="font-bold">Aurelia es un acompañante con inteligencia artificial.</strong> No diagnostica,
                 no receta, no toma decisiones clínicas y no reemplaza a un profesional.
               </>,
               <>
-                Lo que TEO sugiere <strong className="font-bold">no se vuelve un dato clínico</strong> hasta que una
+                Lo que Aurelia sugiere <strong className="font-bold">no se vuelve un dato clínico</strong> hasta que una
                 persona del equipo lo revisa y lo confirma.
               </>,
               <>
@@ -374,9 +373,9 @@ export function TratamientoDatosScreen() {
                 respuesta de la IA, y una persona del equipo se comunica con la persona. El tiempo de respuesta es una
                 meta del programa y no una garantía.
               </>,
-              "Las conversaciones con TEO son datos sensibles y reciben la protección de esta política.",
+              "Las conversaciones con Aurelia son datos sensibles y reciben la protección de esta política.",
               "Registramos el uso de la inteligencia artificial para poder auditarlo.",
-              "Los proveedores tecnológicos que apoyan a TEO tratan los datos solo para prestar su servicio y bajo las condiciones de la sección 9.",
+              "Los proveedores tecnológicos que apoyan a Aurelia tratan los datos solo para prestar su servicio y bajo las condiciones de la sección 9.",
             ]}
           />
 

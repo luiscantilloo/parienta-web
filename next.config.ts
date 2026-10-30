@@ -1,15 +1,19 @@
 import type { NextConfig } from "next";
 
 /**
- * Gateway Nest (nara-api). Obligatorio en runtime: sin esto `/api/*` no tiene backend
- * (las route handlers locales se eliminaron).
- * Dev: http://127.0.0.1:4000
+ * Gateway del núcleo (nucleo-api · PROGRAM_ID=parienta).
+ * Preferir NUCLEO_API_URL. NARA_API_URL solo por compatibilidad de env legado.
+ * Dev Parienta (PROGRAM_ID=parienta): http://127.0.0.1:4000 (NARA usa :4100; no mezclar).
  */
-const NARA_API_URL = (process.env.NARA_API_URL || "").replace(/\/$/, "");
+const NUCLEO_API_URL = (
+  process.env.NUCLEO_API_URL ||
+  process.env.NARA_API_URL ||
+  ""
+).replace(/\/$/, "");
 
-if (!NARA_API_URL && process.env.NODE_ENV !== "test") {
+if (!NUCLEO_API_URL && process.env.NODE_ENV !== "test") {
   console.warn(
-    "[nara-web] Falta NARA_API_URL — defínalo en .env.local (ej. http://127.0.0.1:4000).",
+    "[parienta-web] Falta NUCLEO_API_URL — defínalo en .env.local (ej. http://127.0.0.1:4000 → nucleo-api / parienta).",
   );
 }
 
@@ -21,10 +25,10 @@ if (!NARA_API_URL && process.env.NODE_ENV !== "test") {
 const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
-  "font-src 'self' data:",
-  "connect-src 'self' https://polariatech.app.n8n.cloud",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "connect-src 'self' https://polariatech.app.n8n.cloud https://fonts.googleapis.com https://fonts.gstatic.com",
   "media-src 'self' blob:",
   "frame-ancestors 'self'",
   "base-uri 'self'",
@@ -33,10 +37,13 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  experimental: {
+    agentUpgrade: "security",
+  },
   // H-008: sin la cabecera X-Powered-By: Next.js
   poweredByHeader: false,
-  // Acceso HMR desde la red local (p. ej. celular/otro PC en la LAN)
-  allowedDevOrigins: ["192.168.80.12"],
+  // Acceso HMR desde la red local (p. ej. celular/otro PC en la LAN) y loopback
+  allowedDevOrigins: ["127.0.0.1", "localhost", "192.168.80.12"],
   // El código portado del prototipo aún tiene deuda de tipos; no bloquear el deploy.
   typescript: {
     ignoreBuildErrors: true,
@@ -66,11 +73,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    if (!NARA_API_URL) return [];
+    if (!NUCLEO_API_URL) return [];
     return [
       {
         source: "/api/:path*",
-        destination: `${NARA_API_URL}/api/:path*`,
+        destination: `${NUCLEO_API_URL}/api/:path*`,
       },
     ];
   },

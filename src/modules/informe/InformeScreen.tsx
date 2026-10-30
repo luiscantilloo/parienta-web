@@ -67,7 +67,7 @@ export function InformeScreen() {
   return (
     <div
       data-screen-label="Informe"
-      className="nara-scroll flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto overscroll-contain bg-[#E6E1D9] px-3 py-4 font-texto text-nara-tinta sm:gap-4 sm:px-4 sm:pb-10"
+      className="nara-scroll flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto overscroll-contain bg-[#C0DFC8] px-3 py-4 font-texto text-nara-tinta sm:gap-4 sm:px-4 sm:pb-10"
     >
       <style>{`
         @page { size: letter; margin: 9mm; }
@@ -155,10 +155,10 @@ export function InformeScreen() {
         data-informe-doc="1"
         className="box-border flex w-full max-w-[816px] flex-col gap-4 bg-nara-blanco px-5 py-6 shadow-[0_8px_30px_rgba(22,20,19,.12)] sm:px-8 sm:py-7"
       >
-        <header className="flex flex-col gap-2 border-b border-[#E6E1D9] pb-3">
+        <header className="flex flex-col gap-2 border-b border-[#C0DFC8] pb-3">
           <img
-            src="/nara/marca/logo/monocromatico/nara-logo-mono-positivo.svg"
-            alt="NARA"
+            src="/parienta/logo/parienta-horizontal-principal.svg"
+            alt="Parienta"
             className="block h-8 w-auto"
           />
           <div className="flex flex-col gap-0.5">
@@ -265,7 +265,7 @@ export function InformeScreen() {
                       {sec.rows.map((r, i) => (
                         <tr
                           key={i}
-                          className={`border-b border-[#E6E1D9] last:border-b-0 ${rowTone(r.tone)}`}
+                          className={`border-b border-[#C0DFC8] last:border-b-0 ${rowTone(r.tone)}`}
                         >
                           {r.cells.map((cell, j) => (
                             <td
@@ -295,8 +295,8 @@ export function InformeScreen() {
           </p>
         ) : null}
 
-        <footer className="border-t border-[#E6E1D9] pt-2 text-[10px] leading-snug text-texto-secundario">
-          One-pager NARA · período indicado. Servicios comunitarios: agregado de
+        <footer className="border-t border-[#C0DFC8] pt-2 text-[10px] leading-snug text-texto-secundario">
+          One-pager Parienta · período indicado. Servicios comunitarios: agregado de
           referencia del programa.
         </footer>
       </article>

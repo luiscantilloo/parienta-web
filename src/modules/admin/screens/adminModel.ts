@@ -9,6 +9,7 @@ import { CHECKS, type AdminUiState } from "./adminConstants";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { resolvePlaceLatLng, terrCenter } from "@/lib/geo/quindioPlaces";
 import { buildPathServiceRows } from "@/modules/admin/rutas/servicios";
+import { generateParientaEmail } from "@/lib/auth/generateCredentials";
 
 export type AdminModelApi = {
   setState: (patch: Partial<AdminUiState> | ((s: AdminUiState) => AdminUiState)) => void;
@@ -28,17 +29,17 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
     const mapT = terr || 'Salento', T = A.terrInfo(S, mapT) || { places: [] };
     const places = T.places.slice(0, 10), n = places.length;
     const exps = A.experts(S).filter(e => e.terr === mapT && e.active !== false && !e.isNew);
-    const PAL = ['#161413', '#3D6B9A', '#A3B13C', '#C45C26'];
+    const PAL = ['#27683A', '#3D6B9A', '#A3B13C', '#C45C26'];
     const h = (str: string) => { let x = 3; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) >>> 0; return x; };
     const mapMarkers: { lat: number; lng: number; color: string; tip: string; alert?: boolean; kind: 'place' | 'visit' }[] = [];
     if (!places.length) {
       const [lat, lng] = terrCenter(mapT);
-      mapMarkers.push({ lat, lng, color: '#FDCD22', kind: 'place', tip: mapT + ' · centro del municipio' });
+      mapMarkers.push({ lat, lng, color: '#F26B3A', kind: 'place', tip: mapT + ' · centro del municipio' });
     }
     places.forEach(([name, rural]: [string, boolean]) => {
       const [lat, lng] = resolvePlaceLatLng(name, mapT);
       mapMarkers.push({
-        lat, lng, color: rural ? '#FDCD22' : '#C4BDB3', kind: 'place',
+        lat, lng, color: rural ? '#F26B3A' : '#C4BDB3', kind: 'place',
         tip: name + (rural ? ' · Vereda rural' : ' · Barrio urbano'),
       });
     });
@@ -80,14 +81,41 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
   }
   function rulesVals(A, S, C, st) {
     A.ensure(S);
-    const base = S.rules.pending ? S.rules.pending.draft : { risk: S.rules.risk, dig: S.rules.dig };
-    const rd = st.rd || JSON.parse(JSON.stringify(base));
+    const terrNames: string[] = (S.territories || []).map((t: { name?: string }) => t.name).filter(Boolean);
+    const pathTerr =
+      (st.pathTerr && terrNames.includes(st.pathTerr) ? st.pathTerr : null) ||
+      terrNames[0] ||
+      '';
+    if (pathTerr && typeof A.applyRules === 'function') {
+      A.applyRules(S, pathTerr);
+    }
+    const pack =
+      (pathTerr && A.getTerrRules && A.getTerrRules(S, pathTerr)) ||
+      null;
+    const live = pack
+      ? {
+          risk: pack.risk,
+          phq: pack.phq || (A.defaultPhqRules && A.defaultPhqRules()),
+          dig: pack.dig,
+          ctx: pack.ctx || (A.defaultCtxRules && A.defaultCtxRules()),
+          custom: Array.isArray(pack.custom) ? pack.custom : [],
+        }
+      : {
+          risk: S.rules.risk,
+          phq: S.rules.phq || (A.defaultPhqRules && A.defaultPhqRules()),
+          dig: S.rules.dig,
+          ctx: S.rules.ctx || (A.defaultCtxRules && A.defaultCtxRules()),
+          custom: Array.isArray(S.rules.custom) ? S.rules.custom : [],
+        };
+    const base = pack && pack.pending ? pack.pending.draft : (S.rules.pending && !pack ? S.rules.pending.draft : live);
+    // Siempre clonar: al sincronizar cortes/riesgo no mutamos st.rd en el render.
+    const rd = JSON.parse(JSON.stringify(st.rd || base));
     if (!rd.dig) rd.dig = {};
     if (!Array.isArray(rd.dig.q) || !rd.dig.q.length) {
-      rd.dig.q = A.DIGQ.map((x: { q: string; o: string[] }) => ({
+      rd.dig.q = (A.defaultDigRules ? A.defaultDigRules().q : A.DIGQ.map((x: { q: string; o: string[] }) => ({
         q: x.q,
         o: x.o.map((o: string, i: number) => ({ o, p: i })),
-      }));
+      })));
     }
     if (!Array.isArray(rd.dig.cuts) || !rd.dig.cuts.length) {
       rd.dig.cuts = A.DIG.map((d: { k: string; min: number; max: number }) => ({
@@ -96,25 +124,142 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
         max: d.max,
       }));
     }
-    const upd = fn => { const d = JSON.parse(JSON.stringify(rd)); fn(d); api.setState({ rd: d, rulesMsg: '' }); };
-    const num = v => v === '' || isNaN(+v) ? NaN : +v;
+    if (!rd.phq || !Array.isArray(rd.phq.q) || !rd.phq.q.length) {
+      rd.phq = A.defaultPhqRules ? A.defaultPhqRules() : { q: A.PHQ.map((t: string) => ({ q: t, o: A.PHQ_OPTS.map((o: string, i: number) => ({ o, p: i })) })) };
+    }
+    if (!rd.ctx || !Array.isArray(rd.ctx.q) || !rd.ctx.q.length) {
+      rd.ctx = A.defaultCtxRules ? A.defaultCtxRules() : { q: A.CTX.map((x: { q: string; o: string[] }) => ({ q: x.q, o: x.o.map((o: string, i: number) => ({ o, p: i })) })) };
+    }
+    if (!Array.isArray(rd.custom)) rd.custom = [];
+    const num = (v) => (v === '' || isNaN(+v) ? NaN : +v);
+    const LIKERT: string[] = A.PHQ_OPTS || ['Nunca', 'Varios días', 'Más de la mitad de los días', 'Casi todos los días'];
+    const likertOpts = () => LIKERT.slice(0, 4).map((o, i) => ({ o, p: i }));
+    /** Toda pregunta: exactamente 4 opciones, puntos fijos 0–3. */
+    const ensureLikert4 = (q: { o?: { o?: string; p?: number | string }[] }) => {
+      const prev = Array.isArray(q.o) ? q.o : [];
+      q.o = [0, 1, 2, 3].map((i) => ({
+        o: String((prev[i] && prev[i].o) || LIKERT[i] || ('Opción ' + (i + 1))),
+        p: i,
+      }));
+    };
+    const qMax = (qs) => (qs || []).reduce((a, q) => a + Math.max(0, ...((q.o || []).map((o) => num(o.p) || 0))), 0);
+    const redistributeBands = (bands, maxPts) => {
+      if (!Array.isArray(bands) || !bands.length) return;
+      const n = bands.length;
+      let prev = -1;
+      for (let i = 0; i < n; i++) {
+        const lo = prev + 1;
+        const hi = i === n - 1 ? maxPts : Math.floor(((i + 1) * maxPts) / n);
+        bands[i].min = lo;
+        bands[i].max = Math.max(lo, hi);
+        prev = bands[i].max;
+      }
+      bands[0].min = 0;
+      bands[n - 1].max = maxPts;
+    };
+    /** Si el máximo de puntos ya no calza con el último corte/rango, lo extiende (o redistribuye si hace falta). */
+    const fitBandsToMax = (bands, maxPts) => {
+      if (!Array.isArray(bands) || !bands.length) return;
+      bands[0].min = 0;
+      const last = bands[bands.length - 1];
+      if (num(last.max) === maxPts) return;
+      if (maxPts >= num(last.min)) {
+        last.max = maxPts;
+        return;
+      }
+      redistributeBands(bands, maxPts);
+    };
+    const syncScoreBands = (d) => {
+      (d.phq?.q || []).forEach(ensureLikert4);
+      (d.dig?.q || []).forEach(ensureLikert4);
+      (d.ctx?.q || []).forEach(ensureLikert4);
+      (d.custom || []).forEach((c: { q?: unknown[] }) => (c.q || []).forEach(ensureLikert4));
+      fitBandsToMax(d.dig?.cuts, qMax(d.dig?.q || []));
+      fitBandsToMax(d.risk, qMax(d.phq?.q || []));
+    };
+    syncScoreBands(rd);
+    const upd = (fn) => {
+      const d = JSON.parse(JSON.stringify(rd));
+      fn(d);
+      syncScoreBands(d);
+      api.setState({ rd: d, rulesMsg: '' });
+    };
+    const mapQBlock = (sec: 'phq' | 'dig' | 'ctx') =>
+      (rd[sec].q || []).map((q, qi) => ({
+        n: qi + 1,
+        q: q.q,
+        showCrisisToggle: sec === 'phq' && qi === 8,
+        crisisOn: sec === 'phq' && qi === 8 ? q.crisis !== false : false,
+        toggleCrisis: sec === 'phq' && qi === 8
+          ? () => upd((d) => {
+              const row = d.phq.q[8];
+              if (!row) return;
+              row.crisis = row.crisis === false;
+            })
+          : undefined,
+        setQ: (e) => upd((d) => { d[sec].q[qi].q = e.target.value; }),
+        remove: () => upd((d) => { d[sec].q.splice(qi, 1); }),
+        opts: (q.o || []).slice(0, 4).map((o, oi) => ({
+          o: o.o,
+          p: String(oi),
+          setO: (e) => upd((d) => {
+            ensureLikert4(d[sec].q[qi]);
+            d[sec].q[qi].o[oi].o = e.target.value;
+          }),
+        })),
+      }));
     let err = '';
-    const rs = rd.risk; if (num(rs[0].min) !== 0 || num(rs[rs.length - 1].max) !== 27) err = 'Los niveles deben cubrir de 0 a 27.';
-    rs.forEach((r, i) => { if (!(num(r.min) <= num(r.max))) err = 'Revise el rango de ' + (r.k || 'un nivel') + '.'; if (i && num(r.min) !== num(rs[i - 1].max) + 1) err = 'Los rangos deben ser seguidos, sin huecos ni cruces (' + rs[i - 1].k + ' → ' + r.k + ').'; if (!String(r.k).trim()) err = 'Cada nivel necesita un nombre.'; });
-    const digMax = rd.dig.q.reduce((a, q) => a + Math.max.apply(null, q.o.map(o => num(o.p) || 0)), 0);
-    const cuts = rd.dig.cuts; if (num(cuts[0].min) !== 0 || num(cuts[cuts.length - 1].max) !== digMax) err = err || 'Los cortes digitales deben cubrir de 0 a ' + digMax + '.';
-    cuts.forEach((c, i) => { if (!(num(c.min) <= num(c.max)) || (i && num(c.min) !== num(cuts[i - 1].max) + 1)) err = err || 'Revise los cortes de capacidad digital.'; });
-    rd.dig.q.forEach(q => q.o.forEach(o => { if (isNaN(num(o.p)) || num(o.p) < 0) err = err || 'Los puntos deben ser números de 0 en adelante.'; }));
-    const changed = JSON.stringify(rd) !== JSON.stringify({ risk: S.rules.risk, dig: S.rules.dig });
+    const rs = rd.risk;
+    const phqMax = qMax(rd.phq.q);
+    if (!rd.phq.q.length) err = 'El cuestionario de ánimo debe tener al menos una pregunta.';
+    if (!rs || !rs.length) err = err || 'Defina al menos un nivel de riesgo.';
+    else {
+      if (num(rs[0].min) !== 0 || num(rs[rs.length - 1].max) !== phqMax) err = err || 'Los niveles de riesgo deben cubrir de 0 a ' + phqMax + '.';
+      rs.forEach((r, i) => { if (!(num(r.min) <= num(r.max))) err = 'Revise el rango de ' + (r.k || 'un nivel') + '.'; if (i && num(r.min) !== num(rs[i - 1].max) + 1) err = 'Los rangos deben ser seguidos, sin huecos ni cruces (' + rs[i - 1].k + ' → ' + r.k + ').'; if (!String(r.k).trim()) err = 'Cada nivel necesita un nombre.'; });
+    }
+    const digMax = qMax(rd.dig.q);
+    if (!rd.dig.q.length) err = err || 'Capacidad digital debe tener al menos una pregunta.';
+    const cuts = rd.dig.cuts;
+    if (!cuts || !cuts.length) err = err || 'Defina al menos un corte digital.';
+    else {
+      if (num(cuts[0].min) !== 0 || num(cuts[cuts.length - 1].max) !== digMax) err = err || 'Los cortes digitales deben cubrir de 0 a ' + digMax + '.';
+      cuts.forEach((c, i) => { if (!(num(c.min) <= num(c.max)) || (i && num(c.min) !== num(cuts[i - 1].max) + 1)) err = err || 'Revise los cortes de capacidad digital.'; });
+    }
+    if (!rd.ctx.q.length) err = err || 'Contexto de vida debe tener al menos una pregunta.';
+    const allQs = [
+      ...rd.phq.q,
+      ...rd.dig.q,
+      ...rd.ctx.q,
+      ...(rd.custom || []).flatMap((c: { q?: unknown[] }) => c.q || []),
+    ];
+    allQs.forEach((q) => {
+      if (!String(q.q || '').trim()) err = err || 'Toda pregunta necesita un enunciado.';
+      if (!q.o || q.o.length !== 4) err = err || 'Cada pregunta debe tener exactamente 4 opciones (0 a 3 pts).';
+      (q.o || []).forEach((o, oi) => {
+        if (num(o.p) !== oi) err = err || 'Los puntos de cada pregunta deben ser 0, 1, 2 y 3.';
+        if (!String(o.o || '').trim()) err = err || 'Toda opción necesita un texto.';
+      });
+    });
+    (rd.custom || []).forEach((c: { title?: string }) => {
+      if (!String(c.title || '').trim()) err = err || 'Cada cuestionario extra necesita un nombre.';
+    });
+    const liveSnap = {
+      risk: live.risk,
+      phq: live.phq,
+      dig: live.dig,
+      ctx: live.ctx,
+      custom: live.custom || [],
+    };
+    const changed = JSON.stringify(rd) !== JSON.stringify(liveSnap);
     const au = st.au || S.rules.auto, auChanged = JSON.stringify(au) !== JSON.stringify(S.rules.auto);
     const sp = num(st.simPhq ?? '17'), sd = num(st.simDig ?? '6');
     const ri = rs.findIndex(r => sp >= num(r.min) && sp <= num(r.max)), di = cuts.findIndex(c => sd >= num(c.min) && sd <= num(c.max));
-    // v2: casilla «Sin teléfono» fuerza capacidad Baja aunque el puntaje digital sea alto.
     const diForced = st.simNoPhone ? 0 : di;
     const simOk = ri > -1 && (st.simNoPhone || di > -1);
     let sim = { services: [] };
     if (simOk) {
-      const ri2 = Math.min(4, ri), di2 = Math.min(2, st.simNoPhone ? 0 : diForced);
+      const ri2 = Math.min(rs.length - 1, ri);
+      const di2 = Math.min(cuts.length - 1, st.simNoPhone ? 0 : diForced);
       const digLabel = st.simNoPhone ? 'baja' : String(cuts[di].k).toLowerCase();
       const code = A.code(ri2, di2);
       const dr = (st.drafts || {})[code];
@@ -124,23 +269,344 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
         bg: rs[ri].c + '33',
         crisis: false,
         months: A.defaultPath(ri2, di2).months,
-        services: A.pathList(ri2, di2, dr, { dano: +(st.simDano || 0), perdida: st.simLoss ? 1 : 0 }).map(s => ({ name: s.name, freq: s.freq + (s.channel ? ' · ' + s.channel : '') })),
+        services: A.pathList(ri2, di2, dr, { dano: +(st.simDano || 0), perdida: st.simLoss ? 1 : 0, terr: pathTerr }).map(s => ({ name: s.name, freq: s.freq + (s.channel ? ' · ' + s.channel : '') })),
       };
     }
-    const pend = S.rules.pending;
+    const pend = (pack && pack.pending) || (!pack ? S.rules.pending : null);
+    const pathStep = st.pathTab || '1';
+    const versionsSrc = (pack && pack.versions) || S.rules.versions || [];
+    // Perfiles de matriz distintos al vigente (misma fusión pathServicesMap).
+    const matrixDirtyCodes: string[] = (() => {
+      const drafts = st.drafts || {};
+      const dirtyFlags = st.pathDraftDirty || {};
+      const codes = new Set<string>();
+      const considerKey = (key: string) => {
+        let code = "";
+        if (pathTerr && key.startsWith(pathTerr + "|")) code = key.slice(pathTerr.length + 1);
+        else if (!key.includes("|")) code = key;
+        if (code) codes.add(code);
+      };
+      Object.keys(drafts).forEach(considerKey);
+      Object.keys(dirtyFlags).forEach((key) => {
+        if (dirtyFlags[key]) considerKey(key);
+      });
+      const ctx = { terr: pathTerr || undefined };
+      return Array.from(codes).filter((code) => {
+        const local =
+          drafts[pathTerr ? pathTerr + "|" + code : code] || drafts[code];
+        if (!local || !local.s) return false;
+        const { r, d } = A.parseCode(code);
+        if (r < 0 || d < 0) return false;
+        const next =
+          typeof A.pathServicesMap === "function"
+            ? A.pathServicesMap(r, d, local, ctx)
+            : local;
+        const cur =
+          typeof A.pathServicesMap === "function"
+            ? A.pathServicesMap(r, d, null, ctx)
+            : A.defaultPath(r, d);
+        return (
+          JSON.stringify(next.s || {}) !== JSON.stringify(cur.s || {}) ||
+          Number(next.months) !== Number(cur.months) ||
+          Number(next.inactiveMinutes ?? DEFAULT_INACTIVE_MINUTES) !==
+            Number(cur.inactiveMinutes ?? DEFAULT_INACTIVE_MINUTES)
+        );
+      });
+    })();
+    const btnGhost = { fontFamily: 'Bricolage Grotesque, system-ui, sans-serif', fontSize: '13px', height: '34px', padding: '0 10px', borderRadius: '8px', border: '1.5px solid #C0DFC8', background: '#fff', color: '#27683A', cursor: 'pointer' };
+    const riskColors = ['#4E9A6B', '#A3B13C', '#E0A526', '#D9692B', '#9C2F25', '#27683A'];
     return {
-      pathTabs: [['1', 'Servicios por perfil'], ['2', 'Reglas de clasificación']].map(([k, label]) => ({ label, bd: (st.pathTab || '1') === k ? C.amarillo : 'transparent', fg: (st.pathTab || '1') === k ? C.verde : C.tinta, go: () => api.setState({ pathTab: k }) })),
-      pathTab1: (st.pathTab || '1') === '1', pathTab2: st.pathTab === '2', pathTab3: st.pathTab === '3',
-      closeLib: () => api.setState({ pathTab: '1' }),
+      pathTerr,
+      pathTerrOpts: terrNames,
+      setPathTerr: (e: { target: { value: string } } | string) => {
+        const next = typeof e === 'string' ? e : e.target.value;
+        api.setState({ pathTerr: next, rd: null, rulesMsg: '', drafts: {}, pathDraftDirty: {}, sel: 'P01', scope: next || 'all' });
+      },
+      pathTabs: [
+        ['1', '1 · Cuestionarios'],
+        ['2', '2 · Niveles'],
+        ['3', '3 · Matriz'],
+        ['4', '4 · Envío'],
+      ].map(([k, label]) => ({
+        label,
+        bd: pathStep === k ? C.amarillo : 'transparent',
+        fg: pathStep === k ? C.verde : C.tinta,
+        go: () => api.setState({ pathTab: k }),
+      })),
+      pathTab1: pathStep === '1',
+      pathTab2: pathStep === '2',
+      pathTab3: pathStep === '3',
+      pathTab4: pathStep === '4',
+      pathTabLib: pathStep === 'lib',
+      closeLib: () => api.setState({ pathTab: '3' }),
+      pathStepNext: () => {
+        const order = ['1', '2', '3', '4'];
+        const i = order.indexOf(pathStep);
+        if (i >= 0 && i < order.length - 1) api.setState({ pathTab: order[i + 1] });
+      },
+      pathStepPrev: () => {
+        const order = ['1', '2', '3', '4'];
+        const i = order.indexOf(pathStep);
+        if (i > 0) api.setState({ pathTab: order[i - 1] });
+      },
+      matrixSizeLabel: (rs.length || 0) + ' × ' + (cuts.length || 0) + ' = ' + ((rs.length || 0) * (cuts.length || 0)) + ' perfiles',
       ...libVals(A, S, st),
-      rRisk: rs.map((r, i) => ({ k: r.k, c: r.c, min: String(r.min), max: String(r.max), bd: num(r.min) <= num(r.max) ? C.lineas : C.revisar, setK: e => upd(d => { d.risk[i].k = e.target.value; }), setC: e => upd(d => { d.risk[i].c = e.target.value; }), setMin: e => upd(d => { d.risk[i].min = e.target.value.replace(/\D/g, ''); }), setMax: e => upd(d => { d.risk[i].max = e.target.value.replace(/\D/g, ''); }) })),
-      rDigQ: rd.dig.q.map((q, qi) => ({ n: qi + 1, q: q.q, opts: q.o.map((o, oi) => ({ o: o.o, p: String(o.p), setO: e => upd(d => { d.dig.q[qi].o[oi].o = e.target.value; }), setP: e => upd(d => { d.dig.q[qi].o[oi].p = e.target.value.replace(/\D/g, ''); }) })) })),
-      rCuts: cuts.map((c, i) => ({ k: c.k, min: String(c.min), max: String(c.max), bd: C.lineas, setMin: e => upd(d => { d.dig.cuts[i].min = e.target.value.replace(/\D/g, ''); }), setMax: e => upd(d => { d.dig.cuts[i].max = e.target.value.replace(/\D/g, ''); }) })),
-      digMax, rulesErr: !!err && changed, rulesErrText: err, sendRulesBg: err || !changed ? '#8C857C' : C.verde,
+      rRisk: rs.map((r, i) => ({
+        k: r.k, c: r.c, min: String(r.min), max: String(r.max),
+        bd: num(r.min) <= num(r.max) ? C.lineas : C.revisar,
+        setK: e => upd(d => { d.risk[i].k = e.target.value; }),
+        setC: e => upd(d => { d.risk[i].c = e.target.value; }),
+        setMin: e => upd(d => { d.risk[i].min = e.target.value.replace(/\D/g, ''); }),
+        setMax: e => upd(d => { d.risk[i].max = e.target.value.replace(/\D/g, ''); }),
+        remove: rs.length > 2
+          ? () => upd((d) => {
+              d.risk.splice(i, 1);
+              redistributeBands(d.risk, qMax(d.phq.q));
+            })
+          : undefined,
+      })),
+      addRiskLevel: () => upd((d) => {
+        d.risk.push({ k: 'Nuevo nivel', c: riskColors[d.risk.length % riskColors.length], min: 0, max: 0 });
+        redistributeBands(d.risk, qMax(d.phq.q));
+      }),
+      phqMax,
+      rPhqQ: mapQBlock('phq'),
+      addPhqQ: () => upd((d) => {
+        d.phq.q.push({ q: 'Nueva pregunta', o: likertOpts() });
+      }),
+      rDigQ: mapQBlock('dig'),
+      addDigQ: () => upd((d) => { d.dig.q.push({ q: 'Nueva pregunta', o: likertOpts() }); }),
+      rCtxQ: mapQBlock('ctx'),
+      addCtxQ: () => upd((d) => { d.ctx.q.push({ q: 'Nueva pregunta', o: likertOpts() }); }),
+      rCustom: (rd.custom || []).map((c: { id?: string; title?: string; subtitle?: string; q?: unknown[] }, ci: number) => {
+        const qs = Array.isArray(c.q) ? c.q : [];
+        const maxPts = qMax(qs);
+        return {
+          id: c.id || ('c' + ci),
+          title: c.title || 'Cuestionario',
+          subtitle: c.subtitle || 'Cuestionario adicional de este territorio',
+          maxLabel: 'Máx. ' + maxPts + ' pts',
+          setTitle: (e: { target: { value: string } }) =>
+            upd((d) => {
+              if (!d.custom[ci]) return;
+              d.custom[ci].title = e.target.value;
+            }),
+          remove: () =>
+            upd((d) => {
+              d.custom.splice(ci, 1);
+            }),
+          addQuestion: () =>
+            upd((d) => {
+              if (!d.custom[ci]) return;
+              d.custom[ci].q = d.custom[ci].q || [];
+              d.custom[ci].q.push({ q: 'Nueva pregunta', o: likertOpts() });
+            }),
+          questions: qs.map((q: any, qi: number) => ({
+            n: qi + 1,
+            q: q.q,
+            setQ: (e: { target: { value: string } }) =>
+              upd((d) => {
+                d.custom[ci].q[qi].q = e.target.value;
+              }),
+            remove: () =>
+              upd((d) => {
+                d.custom[ci].q.splice(qi, 1);
+              }),
+            opts: (q.o || []).slice(0, 4).map((o: { o: string }, oi: number) => ({
+              o: o.o,
+              p: String(oi),
+              setO: (e: { target: { value: string } }) =>
+                upd((d) => {
+                  ensureLikert4(d.custom[ci].q[qi]);
+                  d.custom[ci].q[qi].o[oi].o = e.target.value;
+                }),
+            })),
+          })),
+        };
+      }),
+      addCustomQuestionnaire: () =>
+        upd((d) => {
+          d.custom = d.custom || [];
+          d.custom.push({
+            id: 'c' + Date.now().toString(36),
+            title: 'Nuevo cuestionario',
+            subtitle: 'Preguntas adicionales para este territorio',
+            q: [{ q: 'Nueva pregunta', o: likertOpts() }],
+          });
+        }),
+      rCuts: cuts.map((c, i) => ({
+        k: c.k, min: String(c.min), max: String(c.max), bd: C.lineas,
+        setK: e => upd(d => { d.dig.cuts[i].k = e.target.value; }),
+        setMin: e => upd(d => { d.dig.cuts[i].min = e.target.value.replace(/\D/g, ''); }),
+        setMax: e => upd(d => { d.dig.cuts[i].max = e.target.value.replace(/\D/g, ''); }),
+        remove: cuts.length > 2
+          ? () => upd((d) => {
+              d.dig.cuts.splice(i, 1);
+              redistributeBands(d.dig.cuts, qMax(d.dig.q));
+            })
+          : undefined,
+      })),
+      addDigCut: () => upd((d) => {
+        const names = ['Baja', 'Media', 'Alta', 'Muy alta'];
+        d.dig.cuts.push({ k: names[d.dig.cuts.length] || ('Nivel ' + (d.dig.cuts.length + 1)), min: 0, max: 0 });
+        redistributeBands(d.dig.cuts, qMax(d.dig.q));
+      }),
+      digMax, ctxMax: qMax(rd.ctx.q), rulesErr: !!err && changed, rulesErrText: err,
       rulesFlash: st.rulesMsg || '', clearRulesFlash: () => api.setState({ rulesMsg: '' }),
-      rulesStatus: pend ? 'Hay un cambio esperando aprobación de la Dra. Lucía Marín (líder clínica), enviado ' + A.agoText(pend.at) + '. Mientras tanto siguen las reglas vigentes.' : changed ? 'Tiene cambios sin enviar.' : 'Reglas vigentes · versión ' + ((S.rules.versions && S.rules.versions[0] && S.rules.versions[0].v) || 1) + '.',
-      sendRules: () => { if (err) return api.setState({ rulesMsg: err }); if (!changed) return; const clean = JSON.parse(JSON.stringify(rd)); clean.risk.forEach(r => { r.min = +r.min; r.max = +r.max; }); clean.dig.cuts.forEach(c => { c.min = +c.min; c.max = +c.max; }); clean.dig.q.forEach(q => q.o.forEach(o => { o.p = +o.p; })); A.set(s => { const who = (A.session() && A.session().name) || 'Administrador'; s.rules = s.rules || {}; s.rules.pending = { draft: clean, at: Date.now(), by: who }; s.rules.pendingClearedAt = 0; A.pushNotif(s, 'clin', 'Cambio en las reglas de clasificación esperando su aprobación', '/clinico/aprobaciones'); A.pushNotif(s, 'clinico', 'Cambio en las reglas de clasificación esperando su aprobación', '/clinico/aprobaciones'); A.logActivity(s, (A.session()?.id || "admin"), 'Envió a aprobación un cambio en las reglas de clasificación'); }); void import('@/lib/store/persist').then(m => m.flushPersistWhenReady(A)); api.setState({ rd: null, rulesMsg: 'Enviado a la líder clínica. Se aplicará cuando lo apruebe.' }); },
-      resetRules: () => api.setState({ rd: null, rulesMsg: '' }),
+      pathDirtyCodes: matrixDirtyCodes,
+      rulesStatus: (() => {
+        if (!pathTerr) return "Seleccione un territorio para configurar su ruta.";
+        if (pend) {
+          return (
+            "Hay un cambio de " +
+            pathTerr +
+            " esperando aprobación clínica, enviado " +
+            A.agoText(pend.at) +
+            ". Mientras tanto siguen las reglas vigentes de este territorio."
+          );
+        }
+        if (err && changed) return err;
+        const bits = [];
+        if (changed) bits.push("cuestionarios/niveles");
+        if (matrixDirtyCodes.length) {
+          bits.push(
+            "matriz (" +
+              matrixDirtyCodes.length +
+              ": " +
+              matrixDirtyCodes.slice(0, 4).join(", ") +
+              (matrixDirtyCodes.length > 4 ? "…" : "") +
+              ")",
+          );
+        }
+        if (bits.length) {
+          return "Cambios sin enviar · " + bits.join(" + ") + " · " + pathTerr + ".";
+        }
+        return (
+          "Vigente en " +
+          pathTerr +
+          " · versión " +
+          ((versionsSrc[0] && versionsSrc[0].v) || 1) +
+          ". Envíe desde aquí cuestionarios y matriz."
+        );
+      })(),
+      rulesCanSend: !!pathTerr && !err && (changed || matrixDirtyCodes.length > 0),
+      sendRulesBg:
+        !!pathTerr && !err && (changed || matrixDirtyCodes.length > 0)
+          ? C.verde
+          : "#8C857C",
+      sendRules: () => {
+        if (!pathTerr) return api.setState({ rulesMsg: 'Seleccione un territorio.' });
+        if (err) return api.setState({ rulesMsg: err });
+
+        const dirtyCodes = matrixDirtyCodes.slice();
+
+        if (!changed && !dirtyCodes.length) return;
+
+        const who = (A.session() && A.session().name) || 'Administrador';
+        A.set((s) => {
+          if (changed) {
+            const clean = JSON.parse(JSON.stringify(rd));
+            clean.risk.forEach((r) => { r.min = +r.min; r.max = +r.max; });
+            clean.dig.cuts.forEach((c) => { c.min = +c.min; c.max = +c.max; });
+            clean.dig.q.forEach((q) => q.o.forEach((o) => { o.p = +o.p; }));
+            clean.phq.q.forEach((q) => q.o.forEach((o) => { o.p = +o.p; }));
+            clean.ctx.q.forEach((q) => q.o.forEach((o) => { o.p = +o.p; }));
+            (clean.custom || []).forEach((c) => {
+              (c.q || []).forEach((q) => q.o.forEach((o) => { o.p = +o.p; }));
+            });
+            const terrPack = A.ensureTerrRules(s, pathTerr);
+            terrPack.pending = { draft: clean, at: Date.now(), by: who, terr: pathTerr };
+            terrPack.pendingClearedAt = 0;
+            A.logActivity(s, (A.session()?.id || 'admin'), 'Envió a aprobación reglas de ' + pathTerr);
+          }
+
+          // Servicios / frecuencias de la matriz (uno por perfil).
+          s.pathRequests = s.pathRequests || [];
+          const now = Date.now();
+          dirtyCodes.forEach((code) => {
+            const live = api.draft(code);
+            const draft = JSON.parse(JSON.stringify(live));
+            if (!draft.s || typeof draft.s !== "object") draft.s = {};
+            draft.s =
+              typeof A.normalizePathS === "function"
+                ? A.normalizePathS(draft.s)
+                : draft.s;
+            s.pathRequests = s.pathRequests.map((x) => {
+              const same =
+                x.code === code && String(x.scope || "all") === String(pathTerr);
+              const stRq = String(x.status || "pending").toLowerCase();
+              if (same && stRq === "pending") {
+                return { ...x, status: "superseded", resolvedAt: now };
+              }
+              return x;
+            });
+            s.pathRequests.push({
+              id: code + "-" + pathTerr + "-" + now + "-" + Math.random().toString(36).slice(2, 7),
+              code,
+              scope: pathTerr,
+              draft,
+              at: now,
+              status: "pending",
+            });
+          });
+
+          if (changed || dirtyCodes.length) {
+            const bits = [];
+            if (changed) bits.push("reglas");
+            if (dirtyCodes.length) bits.push("matriz (" + dirtyCodes.join(", ") + ")");
+            const msg =
+              "Cambio de ruta en " + pathTerr + " (" + bits.join(" + ") + ") esperando aprobación clínica";
+            A.pushNotif(s, "clin", msg, "/clinico/aprobaciones");
+            A.pushNotif(s, "clinico", msg, "/clinico/aprobaciones");
+          }
+        });
+        void import('@/lib/store/persist').then((m) => m.flushPersistWhenReady(A));
+        const parts = [];
+        if (changed) parts.push("cuestionarios/niveles");
+        if (dirtyCodes.length) {
+          parts.push(
+            dirtyCodes.length === 1
+              ? "perfil " + dirtyCodes[0]
+              : dirtyCodes.length + " perfiles de la matriz",
+          );
+        }
+        const nextDrafts = { ...(st.drafts || {}) };
+        const nextDirty = { ...(st.pathDraftDirty || {}) };
+        dirtyCodes.forEach((code) => {
+          const terrKey = pathTerr ? pathTerr + "|" + code : code;
+          delete nextDrafts[terrKey];
+          delete nextDrafts[code];
+          delete nextDirty[terrKey];
+          delete nextDirty[code];
+        });
+        api.setState({
+          rd: null,
+          drafts: nextDrafts,
+          pathDraftDirty: nextDirty,
+          rulesMsg:
+            "Enviado a la líder clínica (" +
+            pathTerr +
+            "): " +
+            parts.join(" y ") +
+            ". Se aplica al aprobar (incluye frecuencias).",
+        });
+      },
+      resetRules: () => {
+        // Descartar borrador de reglas y de matriz del territorio.
+        const nextDrafts = { ...(st.drafts || {}) };
+        const nextDirty = { ...(st.pathDraftDirty || {}) };
+        Object.keys(nextDrafts).forEach((key) => {
+          if (pathTerr && key.startsWith(pathTerr + "|")) {
+            delete nextDrafts[key];
+            delete nextDirty[key];
+          } else if (!key.includes("|")) {
+            delete nextDrafts[key];
+            delete nextDirty[key];
+          }
+        });
+        api.setState({ rd: null, rulesMsg: '', drafts: nextDrafts, pathDraftDirty: nextDirty });
+      },
+      btnGhost,
       autoV: au, autoSet: { expert: e => api.setState({ au: Object.assign({}, au, { expert: e.target.value }), autoMsg: '' }), clin: e => api.setState({ au: Object.assign({}, au, { clin: e.target.value }), autoMsg: '' }), review: e => api.setState({ au: Object.assign({}, au, { review: e.target.value }), autoMsg: '' }) },
       autoBg: auChanged ? C.verde : '#8C857C', autoMsg: st.autoMsg || '', clearAutoMsg: () => api.setState({ autoMsg: '' }),
       saveAuto: () => { if (!auChanged) return; const L = { territorio: 'por territorio', vereda: 'por vereda o barrio', carga: 'por carga' }; A.set(s => { s.rules.auto = au; s.rules.versions = s.rules.versions || []; const prev = (s.rules.versions[0] && s.rules.versions[0].v) || 1; s.rules.versions.unshift({ v: prev + 1, by: (A.session() && A.session().name) || 'Administrador', at: Date.now(), what: 'Asignación automática: experto ' + L[au.expert] + ', clínico ' + L[au.clin] + ', revisión de ruta ' + au.review.toLowerCase() + '.' }); A.logActivity(s, (A.session()?.id || "admin"), 'Cambió la asignación automática'); }); api.setState({ au: null, autoMsg: 'Guardado. Aplica a las personas nuevas desde hoy.' }); },
@@ -149,7 +615,7 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
       toggleSimNoPhone: () => api.setState({ simNoPhone: !st.simNoPhone }), simNoPhoneBd: st.simNoPhone ? C.verde : C.texto2, simNoPhoneBg: st.simNoPhone ? C.verde : '#fff', simNoPhoneMark: st.simNoPhone ? '✓' : '',
       toggleSimQ9: () => api.setState({ simQ9: !st.simQ9 }), simQ9Bd: st.simQ9 ? C.rojo : C.texto2, simQ9Bg: st.simQ9 ? C.rojo : '#fff', simQ9Mark: st.simQ9 ? '✓' : '',
       simOk, simBad: !simOk, sim,
-      versions: S.rules.versions.map(v => ({ v: v.v, by: v.by, what: v.what, when: A.fmtDay(v.at, { year: true }) }))
+      versions: versionsSrc.map(v => ({ v: v.v, by: v.by, what: v.what, when: A.fmtDay(v.at, { year: true }) }))
     };
   }
   function moreVals(A, S, C, st) {
@@ -533,23 +999,22 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
     };
   }
   function libVals(A, S, st) {
-    const R = A.REC, RC = S.recursos || {}, ST = RC.status || {}, kind = st.libKind || 'cuentos', ED = RC.courseEdits || {};
-    const SB = { 'Aprobado': '#E3F1E8', 'En revisión clínica': '#F9EBC8', 'Borrador': '#F0ECE6', 'Retirado': '#E6E1D9' };
-    const items = kind === 'cuentos' ? R.CUENTOS.map(c => ({ id: c.slug, title: c.title, meta: c.temas + ' · ' + c.para + ' · ' + c.pag + ' pág.' + (c.restr ? ' · ' + R.TAG[c.restr] : ''), o: c, cover: R.cover(c.slug) })) : kind === 'videos' ? R.VIDEOS.map(v => ({ id: v.id, title: v.title, meta: 'Video · ' + v.min + ' min · ' + v.tema, o: v })) : kind === 'tecnicas' ? R.TECNICAS.map(v => ({ id: v.id, title: v.title, meta: 'Técnica · ' + v.min + ' min · audio y hoja impresa', o: v })) : R.CURSOS.map(c => ({ id: c.id, title: c.title, meta: 'Curso · ' + c.weeks + ' semanas · ' + c.para, o: { estado: 'Aprobado', version: 2 } }));
+    const R = A.REC, RC = S.recursos || {}, ST = RC.status || {};
+    const kind = st.libKind === 'tecnicas' ? 'tecnicas' : 'videos';
+    const SB = { 'Aprobado': '#C0DFC8', 'En revisión clínica': '#F9EBC8', 'Borrador': '#FBFAF3', 'Retirado': '#C0DFC8' };
+    const items = kind === 'videos'
+      ? R.VIDEOS.map(v => ({ id: v.id, title: v.title, meta: 'Video · ' + v.min + ' min · ' + v.tema, o: v }))
+      : R.TECNICAS.map(v => ({ id: v.id, title: v.title, meta: 'Técnica · ' + v.min + ' min · audio y hoja impresa', o: v }));
     const ov = id => ST[id] || {}, est = it => ov(it.id).estado || it.o.estado || 'Aprobado';
     const setSt = (id, k, v) => A.set(s => { const x = (s.recursos.status[id] = s.recursos.status[id] || {}); x[k] = v; if (k === 'estado') { x.version = (x.version || 1) + 1; A.logActivity(s, (A.session()?.id || "admin"), 'Cambió el estado de un recurso a ' + v); } });
     const sel = items.find(x => x.id === st.libSel);
-    const FIELDS = kind === 'cuentos' ? [['title', 'Título'], ['temas', 'Temas'], ['para', 'Para quién'], ['pag', 'Páginas'], ['lect', 'Lectura (min)'], ['audio', 'Audio narrado (min)'], ['uso', 'Uso'], ['nivel', 'Nivel mínimo']] : [['title', 'Título'], ['min', 'Duración (min)'], ['tema', 'Tema']];
-    const cId = st.libCourse || 'dormir', C0 = R.curso(cId), mods = C0.mods.map((m, i) => Object.assign({}, m, (ED[cId] || {})[i] || {}));
-    const setMod = (i, k) => e => A.set(s => { const E = (s.recursos.courseEdits[cId] = s.recursos.courseEdits[cId] || {}); E[i] = Object.assign({}, E[i], { [k]: e.target.value }); });
+    const FIELDS = [['title', 'Título'], ['min', 'Duración (min)'], ['tema', 'Tema']];
     const rules = (RC.rules || R.RULES);
     return { lib: {
-      kinds: [['cuentos', 'Cuentos'], ['videos', 'Videos'], ['tecnicas', 'Técnicas'], ['cursos', 'Cursos']].map(([k, label]) => ({ label, bg: kind === k ? '#FDCD22' : '#fff', go: () => api.setState({ libKind: k, libSel: null }) })),
-      rows: items.map(it => { const e = est(it); return { hasCover: !!it.cover, cover: it.cover || '', title: it.title, meta: it.meta, estado: e, sBg: SB[e], version: ov(it.id).version || it.o.version || 1, fecha: e === 'Aprobado' ? (it.o.aprobado || '14 sep') : '—', bg: st.libSel === it.id ? '#FFF4CC' : '#fff', pick: () => kind === 'cursos' ? api.setState({ libCourse: it.id, libSel: null }) : api.setState({ libSel: it.id }) }; }),
-      hasSel: !!sel, sel: sel ? { title: (ov(sel.id).title) || sel.title, hasCover: !!sel.cover, cover: sel.cover || '', hasTag: !!sel.o.restr, tag: sel.o.restr ? R.TAG[sel.o.restr] : '', estado: est(sel), setEstado: e => setSt(sel.id, 'estado', e.target.value), fields: FIELDS.map(([k, label]) => ({ k: label, v: String(ov(sel.id)[k] != null ? ov(sel.id)[k] : sel.o[k]), set: e => setSt(sel.id, k, e.target.value) })) } : { fields: [] },
-      course: cId, setCourse: e => api.setState({ libCourse: e.target.value }), courseOpts: R.CURSOS.map(c => ({ v: c.id, l: c.title, s: c.id === cId })),
-      cuentoOpts: R.CUENTOS.filter(c => !c.restr).map(c => ({ v: c.slug, l: c.title })), techOpts: R.TECNICAS.map(t => ({ v: t.id, l: t.title })), videoOpts: R.VIDEOS.map(v => ({ v: v.id, l: v.title })),
-      mods: mods.map((m, i) => ({ cOpts: R.CUENTOS.filter(c => !c.restr).map(c => ({ v: c.slug, l: c.title, s: c.slug === m.cuento })), tOpts: R.TECNICAS.map(t => ({ v: t.id, l: t.title, s: t.id === m.tecnica })), vOpts: R.VIDEOS.map(v => ({ v: v.id, l: v.title, s: v.id === m.video })), n: i + 1, cuento: m.cuento, tecnica: m.tecnica, video: m.video, pregunta: m.pregunta, setCuento: setMod(i, 'cuento'), setTecnica: setMod(i, 'tecnica'), setVideo: setMod(i, 'video'), setPregunta: setMod(i, 'pregunta') })),
+      kinds: [['videos', 'Videos'], ['tecnicas', 'Técnicas']].map(([k, label]) => ({ label, bg: kind === k ? '#F26B3A' : '#fff', go: () => api.setState({ libKind: k, libSel: null }) })),
+      rows: items.map(it => { const e = est(it); return { hasCover: false, cover: '', title: it.title, meta: it.meta, estado: e, sBg: SB[e], version: ov(it.id).version || it.o.version || 1, fecha: e === 'Aprobado' ? (it.o.aprobado || '14 sep') : '—', bg: st.libSel === it.id ? '#FDF2B3' : '#fff', pick: () => api.setState({ libSel: it.id }) }; }),
+      hasSel: !!sel, sel: sel ? { title: (ov(sel.id).title) || sel.title, hasCover: false, cover: '', hasTag: false, tag: '', estado: est(sel), setEstado: e => setSt(sel.id, 'estado', e.target.value), fields: FIELDS.map(([k, label]) => ({ k: label, v: String(ov(sel.id)[k] != null ? ov(sel.id)[k] : sel.o[k]), set: e => setSt(sel.id, k, e.target.value) })) } : { fields: [] },
+      mods: [],
       rules: rules.map((r, i) => ({ k: r[0], c: (A.RISK[i] || {}).c, v: r[1], set: e => A.set(s => { s.recursos.rules[i][1] = e.target.value; }) }))
     } };
   }
@@ -679,27 +1144,90 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
         api.setState({ msg: f.fromVisit ? 'Visita rechazada. No cuenta para la cuota de ' + f.expertName + ' y se le avisó.' : 'Visita rechazada. Se restó de la cuota de ' + f.expertName + ' y se le avisó.', msgActions: [] });
       } }));
 
+    const pathTerrNow =
+      (st.pathTerr && (S.territories || []).some((t: { name?: string }) => t.name === st.pathTerr)
+        ? st.pathTerr
+        : null) ||
+      ((S.territories || [])[0] && (S.territories || [])[0].name) ||
+      '';
+    if (pathTerrNow && typeof A.applyRules === 'function') A.applyRules(S, pathTerrNow);
+    const terrPackNow =
+      (pathTerrNow && A.getTerrRules && A.getTerrRules(S, pathTerrNow)) || null;
+    const draftRules = (st.rd as { risk?: typeof A.RISK; dig?: { cuts?: typeof A.DIG } } | null | undefined) || null;
+    const pendingDraft = (terrPackNow && terrPackNow.pending && terrPackNow.pending.draft) || null;
+    const riskBands = (draftRules && Array.isArray(draftRules.risk) && draftRules.risk.length)
+      ? draftRules.risk
+      : (pendingDraft && pendingDraft.risk) || A.RISK;
+    const digBands = (draftRules && draftRules.dig && Array.isArray(draftRules.dig.cuts) && draftRules.dig.cuts.length)
+      ? draftRules.dig.cuts
+      : (pendingDraft && pendingDraft.dig && pendingDraft.dig.cuts) || A.DIG;
+    const digN = digBands.length || 3;
+    const profileCode = (ri: number, di: number) =>
+      'P' + String(ri * digN + di + 1).padStart(2, '0');
     const cellFor = (ri, di) => {
-      const code = A.code(ri, di);
+      const code = profileCode(ri, di);
       const dr = api.draft(code);
       const n = Object.keys(dr.s || {}).filter(
         (k) => dr.s[k] && String(dr.s[k]).trim(),
       ).length;
       return { code, n };
     };
-    const pm = A.RISK.map((r, ri) => ({ k: r.k, c: r.c, cells: [0, 1, 2].map(di => { const x = cellFor(ri, di); const on = st.sel === x.code; return Object.assign(x, { bg: on ? C.verde : r.bg, fg: on ? '#fff' : C.tinta, bd: on ? C.amarillo : 'transparent', pick: () => api.setState({ sel: x.code }) }); }) }));
-    const { r: sr, d: sd } = A.parseCode(st.sel); const dr = api.draft(st.sel);
+    const pm = riskBands.map((r, ri) => ({
+      k: r.k,
+      c: r.c,
+      cells: digBands.map((_dg, di) => {
+        const x = cellFor(ri, di);
+        const on = st.sel === x.code;
+        return Object.assign(x, {
+          bg: on ? C.verde : (r.bg || '#FBFAF3'),
+          fg: on ? '#fff' : C.tinta,
+          bd: on ? C.amarillo : 'transparent',
+          pick: () => api.setState({ sel: x.code }),
+        });
+      }),
+    }));
+    const digHeaders = digBands.map((d) => d.k || 'Digital');
+    const selNum = parseInt(String(st.sel || 'P01').replace(/\D/g, ''), 10) - 1;
+    let sr = Number.isFinite(selNum) && selNum >= 0 ? Math.floor(selNum / digN) : 0;
+    let sd = Number.isFinite(selNum) && selNum >= 0 ? selNum % digN : 0;
+    if (sr < 0 || sd < 0 || sr >= riskBands.length || sd >= digN) {
+      sr = 0;
+      sd = 0;
+    }
+    const selCode = profileCode(sr, sd);
+    const dr = api.draft(st.sel || selCode);
     const req = (S.pathRequests || []).find(
       (x) =>
         x.code === st.sel &&
-        String(x.scope || 'all') === String(st.scope || 'all') &&
+        String(x.scope || 'all') === String(pathTerrNow || st.scope || 'all') &&
         String(x.status || 'pending').toLowerCase() === 'pending',
     );
+    const peRows = buildPathServiceRows(dr, C, api, st.sel);
     const pe = {
-      title: st.sel + ' · ' + A.RISK[sr].k + ' × digital ' + A.DIG[sd].k.toLowerCase(), people: A.people(S).filter(p => p.profile === st.sel).length,
-      rows: buildPathServiceRows(dr, C, api, st.sel),
+      title: (st.sel || selCode) + ' · ' + (riskBands[sr]?.k || '') + ' × digital ' + String(digBands[sd]?.k || '').toLowerCase(),
+      people: A.people(S).filter(p => p.profile === st.sel).length,
+      // Con pending: solo lectura de lo vigente (no editar el envío en curso).
+      rows: req
+        ? peRows.map((row) => ({
+            ...row,
+            locked: true,
+            lockHint: "Hay un cambio pendiente de aprobación clínica",
+            cur: "not-allowed",
+            toggle: () => {},
+            freqs: (row.freqs || []).map((f) => ({ ...f, pick: () => {} })),
+          }))
+        : peRows,
       warn: false,
-      durs: [3, 6, 12].map(m => ({ label: m + ' meses', bd: dr.months === m ? C.verde : C.lineas, bg: dr.months === m ? '#FFF4CC' : '#fff', fg: C.tinta, pick: () => api.setDraft(st.sel, d => { d.months = m; }) })),
+      durs: [3, 6, 12].map(m => ({
+        label: m + ' meses',
+        bd: dr.months === m ? C.verde : C.lineas,
+        bg: dr.months === m ? '#FDF2B3' : '#fff',
+        fg: C.tinta,
+        pick: () => {
+          if (req) return;
+          api.setDraft(st.sel, (d) => { d.months = m; });
+        },
+      })),
       inactiveMins: [
         { label: '5 minutos', minutes: 5 },
         { label: '1 día', minutes: 1440 },
@@ -711,13 +1239,29 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
         return {
           label: opt.label,
           bd: sel ? C.verde : C.lineas,
-          bg: sel ? '#FFF4CC' : '#fff',
+          bg: sel ? '#FDF2B3' : '#fff',
           fg: C.tinta,
-          pick: () => api.setDraft(st.sel, (d) => { d.inactiveMinutes = opt.minutes; }),
+          pick: () => {
+            if (req) return;
+            api.setDraft(st.sel, (d) => { d.inactiveMinutes = opt.minutes; });
+          },
         };
       }),
       sendBg: C.verde,
-      status: req ? 'Enviado a aprobación clínica · pendiente de la líder clínica. Al aprobarse, aplica a personas nuevas y a las actuales en su próxima revisión de ruta.' : 'Los cambios no se aplican de inmediato: la líder clínica debe aprobarlos.'
+      status: (() => {
+        if (req) {
+          return "Hay un cambio pendiente de aprobación clínica. Aquí se ve lo vigente (aún no aplicado). Cuando la líder apruebe, se actualiza esta matriz y la app del paciente.";
+        }
+        const sel = String(st.sel || selCode);
+        const dKey = pathTerrNow ? pathTerrNow + "|" + sel : sel;
+        const hasLocal =
+          !!(st.pathDraftDirty && (st.pathDraftDirty[dKey] || st.pathDraftDirty[sel])) &&
+          !!(st.drafts && (st.drafts[dKey] || st.drafts[sel]));
+        if (hasLocal) {
+          return "Hay cambios en este perfil sin enviar · vaya a la etapa 4 · Envío para mandarlos a aprobación clínica.";
+        }
+        return "Edite aquí y envíe desde la etapa 4 · Envío (servicios y periodicidad).";
+      })(),
     };
     const extra = moreVals(A, S, C, st);
     Object.assign(extra, rulesVals(A, S, C, st), perfVals(A, S, C, st));
@@ -730,8 +1274,12 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
         if (action === 'report') api.router.push('/informe?id=' + p + '&back=/inicio');
       },
       hasFilter: st.view === 'terr' && !!st.terrFilter, terrFilter: st.terrFilter, clearFilter: () => api.setState({ terrFilter: '' }),
-      homeLinks: [['terr', 'Territorios', 'Captación, cuotas y estado'], ['team', 'Equipos de campo', S.flags.filter(f => f.status === 'pending').length + ' visitas por revisar'], ['paths', 'Rutas', '15 perfiles'], ['assets', 'Activos', 'Manillas y tablets'], ['users', 'Usuarios y permisos', S.accounts.length + ' cuentas'], ['reports', 'Informes', 'Biblioteca y programados']].map(([k, label, sub]) => ({ id: k, label, sub, go: () => api.go(k, { msg: '', terrFilter: '' }) })),
-      dev: A.devMode(), zoom: st.zoom || 1, screenCode: { home: 'AdminHome', terr: 'AdminTerritories', team: 'AdminFieldTeams', paths: st.pathTab === '2' ? 'ClassificationRules' : 'PathEditor', people: 'AdminPeople', assets: 'AdminAssets' }[st.view],
+      homeLinks: [['terr', 'Territorios', 'Captación, cuotas y estado'], ['team', 'Equipos de campo', S.flags.filter(f => f.status === 'pending').length + ' visitas por revisar'], ['paths', 'Rutas', (riskBands.length * digN) + ' perfiles'], ['assets', 'Activos', 'Manillas y tablets'], ['users', 'Usuarios y permisos', S.accounts.length + ' cuentas'], ['reports', 'Informes', 'Biblioteca y programados']].map(([k, label, sub]) => ({ id: k, label, sub, go: () => api.go(k, { msg: '', terrFilter: '' }) })),
+      digHeaders,
+      matrixCols: digN,
+      matrixRowsN: riskBands.length,
+      matrixProfiles: riskBands.length * digN,
+      dev: A.devMode(), zoom: st.zoom || 1, screenCode: { home: 'AdminHome', terr: 'AdminTerritories', team: 'AdminFieldTeams', paths: st.pathTab === '1' ? 'PathQuestionnaires' : st.pathTab === '2' ? 'PathLevels' : st.pathTab === '4' ? 'PathSubmit' : 'PathEditor', people: 'AdminPeople', assets: 'AdminAssets' }[st.view],
       navActive: st.view, navGo: k => api.go(k, { msg: '' }),
       nav: [['home', 'Inicio'], ['terr', 'Territorios'], ['team', 'Equipos de campo'], ['paths', 'Rutas'], ['people', 'Personas'], ['assets', 'Activos'], ['users', 'Usuarios y permisos'], ['reports', 'Informes']].map(([k, label]) => ({ label, bd: st.view === k ? C.amarillo : 'transparent', fg: st.view === k ? C.verde : C.tinta, go: () => api.go(k, { msg: '' }) })),
       hasMsg: !!st.msg, msg: st.msg, msgActions: st.msgActions,
@@ -751,13 +1299,13 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
       terrForm: st.terrForm, terrFormBtn: '+ Crear territorio', toggleTerrForm: () => api.setState({ terrForm: true }), closeTerrForm: () => api.setState({ terrForm: false }),
       tf, tfSet: { dep: setTf('dep'), mun: setTf('mun'), goal: setTf('goal'), rural: setTf('rural'), sixty: setTf('sixty') }, tfErr: st.tfErr, clearTfErr: () => api.setState({ tfErr: '' }),
       levels: ['Municipio completo', 'Veredas seleccionadas', 'Barrios seleccionados'].map(label => ({ label, bd: tf.level === label ? C.verde : C.texto2, dot: tf.level === label ? C.verde : '#fff', pick: () => api.setState({ tf: Object.assign({}, tf, { level: label }) }) })),
-      modules: [chk('mods', 'base', 'PHQ-9 + capacidad digital (base)'), chk('mods', 'ctx', 'Contexto del sismo'), chk('mods', 'videos', 'Videos adaptados a la región')],
+      modules: [chk('mods', 'base', 'PHQ-9 + capacidad digital (base)'), chk('mods', 'ctx', 'Contexto de vida'), chk('mods', 'videos', 'Videos adaptados a la región')],
       tinsts: [chk('insts', 'hl', 'Hospital público local'), chk('insts', 'cu', 'Clínica universitaria · teleconsulta'), chk('insts', 'cf', 'Comisaría de familia')],
       saveTerr: async () => {
         if (!tf.mun.trim() || !(parseInt(tf.goal, 10) > 0)) return api.setState({ tfErr: 'Escriba el municipio y una meta de captación mayor que cero.' });
         if (allTerr.find(t => t.name === tf.mun.trim())) return api.setState({ tfErr: 'Ese territorio ya existe.' });
         const name = tf.mun.trim();
-        const content = ['PHQ-9 + capacidad digital (base)'].concat(tf.mods.ctx ? ['Contexto del sismo'] : [], tf.mods.videos ? ['Videos adaptados a la región'] : []);
+        const content = ['PHQ-9 + capacidad digital (base)'].concat(tf.mods.ctx ? ['Contexto de vida'] : [], tf.mods.videos ? ['Videos adaptados a la región'] : []);
         const payload = {
           name, dep: tf.dep, level: tf.level, goal: parseInt(tf.goal, 10),
           ruralG: parseInt(tf.rural, 10) || 0, sixtyG: parseInt(tf.sixty, 10) || 0,
@@ -772,14 +1320,33 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
             s.territories = (s.territories || []).filter(x => x.name !== t.name).concat([t]);
             s.terrOv = s.terrOv || {};
             s.terrOv[t.name] = Object.assign({}, s.terrOv[t.name], { content: t.content || content });
+            if (typeof A.ensureTerrRules === 'function') A.ensureTerrRules(s, t.name);
           });
-          api.setState({ terrForm: false, ef: Object.assign({}, st.ef, { terr: name }), msg: 'Territorio ' + name + ' creado y guardado en MongoDB. Siguientes pasos:', msgActions: [{ label: 'Asignar expertos', go: () => api.go('team', { expForm: true, msg: '' }) }, { label: 'Asignar manillas', go: () => api.go('assets', { msg: '' }) }] });
+          api.setState({
+            terrForm: false,
+            ef: Object.assign({}, st.ef, { terr: name }),
+            pathTerr: name,
+            msg: 'Territorio ' + name + ' creado. Configure su ruta en Rutas.',
+            msgActions: [
+              { label: 'Configurar ruta', go: () => api.go('paths', { pathTerr: name, pathTab: '1', msg: '' }) },
+              { label: 'Asignar expertos', go: () => api.go('team', { expForm: true, msg: '' }) },
+              { label: 'Asignar manillas', go: () => api.go('assets', { msg: '' }) },
+            ],
+          });
         } catch (e) {
           api.setState({ tfErr: 'No se pudo conectar con la base de datos.' });
         }
       },
       expForm: st.expForm, expFormBtn: '+ Crear experto', toggleExpForm: () => api.setState({ expForm: true }), closeExpForm: () => api.setState({ expForm: false }),
-      ef, efSet: { name: setEf('name'), phone: setEf('phone'), terr: setEf('terr'), target: setEf('target') }, terrNames: allTerr.map(t => t.name),
+      ef, efSet: { name: setEf('name'), phone: setEf('phone'), email: setEf('email'), terr: setEf('terr'), target: setEf('target') },
+      genExpEmail: () => {
+        const email = generateParientaEmail(String(ef.name || ''));
+        if (!email) {
+          return api.setState({ msg: 'Escriba el nombre del experto para generar el correo.', msgActions: [] });
+        }
+        api.setState({ ef: Object.assign({}, ef, { email }), msg: '' });
+      },
+      terrNames: allTerr.map(t => t.name),
       goalsForm: st.goalsForm,
       openGoalsForm: () => api.setState({ goalsForm: true, gf: { daily: String(goals.daily), weekly: String(goals.weekly) }, gfErr: '' }),
       closeGoalsForm: () => api.setState({ goalsForm: false, gfErr: '' }),
@@ -831,13 +1398,20 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
           api.setState({ gfErr: 'No se pudo conectar con la base de datos.' });
         }
       },
-      terrChips: allTerr.map(t => ({ n: t.name, bd: ef.terr === t.name ? C.verde : C.lineas, bg: ef.terr === t.name ? '#FFF4CC' : '#fff', fw: ef.terr === t.name ? 500 : 400, pick: () => api.setState({ ef: Object.assign({}, ef, { terr: t.name }) }) })),
+      terrChips: allTerr.map(t => ({ n: t.name, bd: ef.terr === t.name ? C.verde : C.lineas, bg: ef.terr === t.name ? '#FDF2B3' : '#fff', fw: ef.terr === t.name ? 500 : 400, pick: () => api.setState({ ef: Object.assign({}, ef, { terr: t.name }) }) })),
       saveExp: async () => {
-        if (!ef.name.trim() || ef.phone.replace(/\D/g, '').length < 10) return api.setState({ msg: 'Faltan datos: escriba el nombre y un celular de 10 dígitos.', msgActions: [] });
+        const email = String(ef.email || '').trim().toLowerCase();
+        if (!ef.name.trim() || ef.phone.replace(/\D/g, '').length < 10) {
+          return api.setState({ msg: 'Faltan datos: escriba el nombre y un celular de 10 dígitos.', msgActions: [] });
+        }
+        if (!email || !/@/.test(email)) {
+          return api.setState({ msg: 'Escriba un correo válido para el acceso del experto (ej. nombre@parienta.co).', msgActions: [] });
+        }
         if (!ef.terr) return api.setState({ msg: 'Seleccione un territorio para el experto.', msgActions: [] });
         const payload = {
           name: ef.name.trim(),
           phone: ef.phone,
+          email,
           terr: ef.terr,
           target: parseInt(ef.target, 10) || goals.daily,
         };
@@ -848,15 +1422,36 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
           const e = data.expert;
           A.set(s => {
             s.experts = (s.experts || []).filter(x => x.id !== e.id).concat([e]);
+            if (e.accountId || data.tempPassword) {
+              const accId = e.accountId;
+              const existingAcc = (s.accounts || []).find((a: { id?: string }) => a.id === accId);
+              if (!existingAcc && accId) {
+                s.accounts = (s.accounts || []).concat([{
+                  id: accId,
+                  name: e.name,
+                  email: e.email || email,
+                  contact: e.email || email,
+                  phone: e.phone,
+                  role: 'Gestor de campo',
+                  roleId: 'gestor',
+                  terr: e.terr,
+                  org: 'Parienta',
+                  status: 'Activo',
+                }]);
+              }
+            }
             const t = (s.territories || []).find(x => x.name === e.terr);
             if (t) t.experts = (t.experts || 0) + 1;
           });
+          const passHint = data.tempPassword
+            ? ' Clave temporal: ' + data.tempPassword + ' (debe cambiarla al entrar).'
+            : '';
           api.setState({
             expForm: false,
-            msg: 'Experto ' + e.name + ' guardado en MongoDB (territorio ' + e.terr + '). Acceso SMS simulado a ' + e.phone + '. Siguiente: asignar tablet y capacitar antes de la primera visita.',
+            msg: 'Experto ' + e.name + ' creado en ' + e.terr + ' con correo ' + (e.email || email) + '.' + passHint + ' Siguiente: asignar tablet y capacitar.',
             msgActions: [
               { label: 'Asignar tablet', go: () => api.go('assets', { msg: '' }) },
-              { label: 'Revisar la ruta P08', go: () => api.go('paths', { sel: 'P08', msg: '' }) },
+              { label: 'Ver en Usuarios', go: () => api.go('users', { msg: '' }) },
             ],
           });
         } catch (err) {
@@ -864,71 +1459,16 @@ export function buildAdminModel(A: any, st: AdminUiState, api: AdminModelApi) {
         }
       },
       experts, flags, flagCount: flags.filter(f => f.pending).length + ' por revisar', checks: CHECKS.map(([k, v]) => ({ k, v })),
-      pm, pe, scope: st.scope, setScope: e => api.setState({ scope: e.target.value }),
+      pm, pe, scope: pathTerrNow || st.scope || "all",
+      setScope: (e) => api.setState({ scope: e.target.value }),
+      /** @deprecated El envío de matriz va solo por etapa 4 · Envío (`sendRules`). */
       sendPath: () => {
-        // Copia profunda + catálogo completo ('' = apagado; no se rellena al aprobar).
-        const live = api.draft(st.sel);
-        const draft = JSON.parse(JSON.stringify(live));
-        if (!draft.s || typeof draft.s !== "object") draft.s = {};
-        draft.s =
-          typeof A.normalizePathS === "function"
-            ? A.normalizePathS(draft.s)
-            : draft.s;
-        const scope = st.scope || "all";
-        // Id único: si reutilizamos el mismo id que un approved viejo, el merge
-        // en Mongo descarta el pending nuevo y el clínico nunca lo ve.
-        const id = st.sel + "-" + scope + "-" + Date.now();
-        A.set((s) => {
-          const now = Date.now();
-          s.pathRequests = (s.pathRequests || []).map((x) => {
-            const same =
-              x.code === st.sel && String(x.scope || "all") === scope;
-            const stRq = String(x.status || "pending").toLowerCase();
-            if (same && stRq === "pending") {
-              return { ...x, status: "superseded", resolvedAt: now };
-            }
-            return x;
-          });
-          s.pathRequests.push({
-            id,
-            code: st.sel,
-            scope,
-            draft,
-            at: now,
-            status: "pending",
-          });
-          A.pushNotif(
-            s,
-            "clin",
-            "Cambio de ruta " + st.sel + " esperando aprobación clínica",
-            "/clinico/aprobaciones",
-          );
-          A.pushNotif(
-            s,
-            "clinico",
-            "Cambio de ruta " + st.sel + " esperando aprobación clínica",
-            "/clinico/aprobaciones",
-          );
-        });
-        void import("@/lib/store/persist").then((m) => {
-          void m.flushPersistWhenReady(A);
-        });
-        const n = Object.keys(draft.s).filter(
-          (k) => draft.s[k] && String(draft.s[k]).trim(),
-        ).length;
         api.setState({
-          msg: n
-            ? "Ruta " +
-              st.sel +
-              " enviada a aprobación clínica (" +
-              n +
-              " servicios)."
-            : "Ruta " +
-              st.sel +
-              " enviada a aprobación clínica (sin módulos en la app).",
+          pathTab: "4",
+          msg: "Los cambios de la matriz se envían desde la etapa 4 · Envío.",
           msgActions: [],
         });
-      }
+      },
     }, extra);
   }
   return renderVals();

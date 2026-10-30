@@ -60,7 +60,7 @@ export function MoodPanel({ patientId }: { patientId: string }) {
                 style={{
                   borderColor: tint.bd,
                   background: tint.bg,
-                  color: "#161413",
+                  color: "#27683A",
                 }}
               >
                 <span className="text-xl font-semibold leading-none">{i + 1}</span>

@@ -1,0 +1,46 @@
+/* Parienta · tokens (alias plateado legacy). */
+:root {
+  --pl-verde-raiz: #27683a;
+  --pl-verde-vivo: #359a54;
+  --pl-menta: #c0dfc8;
+  --pl-naranja: #f26b3a;
+  --pl-lima: #e0db55;
+  --pl-crema-sol: #fdf2b3;
+  --pl-hueso: #fbfaf3;
+  --pl-tinta: #222220;
+  --pl-texto2: #5a5a52;
+  --pl-lineas: #c0dfc8;
+  --pl-fuente: "Bricolage Grotesque", system-ui, sans-serif;
+  --pl-fuente-mono: "DM Mono", ui-monospace, monospace;
+
+  /* Alias legacy */
+  --pl-crema: var(--pl-hueso);
+  --pl-blanco: #ffffff;
+  --pl-azul: var(--pl-verde-raiz);
+  --pl-plata: #8a9a8c;
+  --pl-plata-bg: var(--pl-menta);
+  --pl-ambar: var(--pl-naranja);
+  --pl-rojo: #b42318;
+}
+body {
+  margin: 0;
+  background: #fbfaf3;
+  color: #27683a;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+}
+a {
+  color: #27683a;
+}
+a:hover {
+  color: #359a54;
+}
+:focus-visible {
+  outline: 3px solid #f26b3a;
+  outline-offset: 2px;
+}
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}

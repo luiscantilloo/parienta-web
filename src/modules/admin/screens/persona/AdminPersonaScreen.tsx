@@ -148,7 +148,7 @@ function AdminPersonaInner() {
                     .map((row) => {
                       const [dt, dd] = row as [string, string];
                       return (
-                        <div key={dt} className="grid grid-cols-[120px_minmax(0,1fr)] gap-2 border-t border-[#F0ECE6] pt-2 first:border-0 first:pt-0">
+                        <div key={dt} className="grid grid-cols-[120px_minmax(0,1fr)] gap-2 border-t border-[#C0DFC8] pt-2 first:border-0 first:pt-0">
                           <dt className="text-texto-secundario">{dt}</dt>
                           <dd className="min-w-0 break-words font-medium">{dd || "—"}</dd>
                         </div>
@@ -156,7 +156,7 @@ function AdminPersonaInner() {
                     })}
                 </dl>
                 <div className="mt-1 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6E1D9]">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#C0DFC8]">
                     <div
                       className="h-full rounded-full bg-nara-tinta"
                       style={{ width: v.pct }}
@@ -177,12 +177,12 @@ function AdminPersonaInner() {
                   </p>
                 </div>
                 {!v.hasProfile ? (
-                  <p className="border-t border-[#F0ECE6] pt-3 text-sm text-texto-secundario">
+                  <p className="border-t border-[#C0DFC8] pt-3 text-sm text-texto-secundario">
                     Sin perfil de ruta aún. Cuando el experto complete el cuestionario y quede
                     clasificada, aquí aparecerán los servicios activos de ese perfil.
                   </p>
                 ) : !v.modules?.length ? (
-                  <p className="border-t border-[#F0ECE6] pt-3 text-sm text-texto-secundario">
+                  <p className="border-t border-[#C0DFC8] pt-3 text-sm text-texto-secundario">
                     Este perfil no tiene servicios activos en la ruta actual.
                   </p>
                 ) : (
@@ -195,7 +195,7 @@ function AdminPersonaInner() {
                   }) => (
                     <div
                       key={m.key}
-                      className="grid grid-cols-[52px_minmax(0,1fr)] items-center gap-2.5 border-t border-[#F0ECE6] py-2"
+                      className="grid grid-cols-[52px_minmax(0,1fr)] items-center gap-2.5 border-t border-[#C0DFC8] py-2"
                     >
                       <span
                         className="relative h-[26px] w-11 rounded-full"

@@ -15,15 +15,15 @@ import { logoForHerramienta } from "../../toolLogos";
 import type { HerramientaCardProps } from "../../types";
 
 function moodFace(value: number | null) {
-  if (value == null) return "/nara/marca/personajes/teo-curiosidad.svg";
-  if (value <= 2) return "/nara/marca/personajes/teo-duda.svg";
-  if (value === 3) return "/nara/marca/personajes/teo-calma.svg";
-  return "/nara/marca/personajes/teo-energia.svg";
+  if (value == null) return "/parienta/aurelia/aurelia-escucha.svg";
+  if (value <= 2) return "/parienta/aurelia/aurelia-piensa.svg";
+  if (value === 3) return "/parienta/aurelia/aurelia-base.svg";
+  return "/parienta/aurelia/aurelia-celebra.svg";
 }
 
 function moodChip(value: number) {
   if (value <= 2) return "bg-[#FDE7E4] text-[#8A1C14] border-[#E8B4B4]";
-  if (value === 3) return "bg-[#FFF4CC] text-[#5E5750] border-[#E0D4A8]";
+  if (value === 3) return "bg-[#FDF2B3] text-[#5A5A52] border-[#E0D4A8]";
   return "bg-[#E8F0E4] text-[#2F6F4E] border-[#C5D4A8]";
 }
 
@@ -153,7 +153,7 @@ export function MoodToolCard({ item, patientId }: HerramientaCardProps) {
               ) : (
                 <div className="rounded-[22px] border border-dashed border-linea bg-nara-blanco px-5 py-10 text-center">
                   <img
-                    src="/nara/marca/personajes/teo-calma.svg"
+                    src="/parienta/aurelia/aurelia-base.svg"
                     alt=""
                     className="mx-auto mb-3 h-16 w-16 object-contain"
                   />

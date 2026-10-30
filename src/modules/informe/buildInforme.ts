@@ -356,7 +356,7 @@ export function buildInforme(
     const rows: [string, string][] = [
       ["Personas registradas", people.length.toLocaleString("es-CO")],
       ["Personas activas", activas.toLocaleString("es-CO")],
-      ["Con perfil asignado (psicólogo clínico, TEO y estado de ánimo)", conPerfil.toLocaleString("es-CO")],
+      ["Con perfil asignado (psicólogo clínico, Aurelia y estado de ánimo)", conPerfil.toLocaleString("es-CO")],
       ["Sesiones PM+", SIN_REGISTRO],
       ["Grupos de apoyo", SIN_REGISTRO],
       ["Vinculaciones a ayudas sociales", SIN_REGISTRO],

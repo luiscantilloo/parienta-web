@@ -10,13 +10,20 @@ import React, {
 } from "react";
 import { IoClose } from "react-icons/io5";
 import { useNaraStore } from "@/providers/nara-provider";
+import {
+  AURELIA_DISCLOSURE_ES,
+  AURELIA_HANDOFF_LABEL,
+  AURELIA_HANDOFF_REPLY_ES,
+  BRAND,
+  aureliaAsset,
+} from "@/lib/brand";
 import { TeoRichText } from "./TeoRichText";
 import { pickTeoSuggestions } from "./teoSuggestions";
 
 type Props = {
   role?: string;
   mode?: "home" | "drawer";
-  /** true cuando el drawer de TEO está abierto — rota sugerencias al abrir */
+  /** true cuando el drawer de Aurelia está abierto — rota sugerencias al abrir */
   open?: boolean;
   /** @deprecated Las sugerencias ya no dependen del contexto de pantalla */
   context?: string;
@@ -36,6 +43,7 @@ export function AgentPanel({
   open = true,
   contextLabel = "",
   initialAsk = "",
+  onAction,
   onOpenDrawer,
   onClose,
   style,
@@ -133,8 +141,8 @@ export function AgentPanel({
           id,
           q: text,
           text: data.text,
-          basis: "Según los datos actuales del programa NARA",
-          method: "TEO resume e interpreta lo registrado en el programa, en lenguaje claro.",
+          basis: "Según los datos actuales del programa Parienta",
+          method: "Aurelia resume e interpreta lo registrado en el programa, en lenguaje claro.",
           none: false,
         };
       } else {
@@ -146,7 +154,7 @@ export function AgentPanel({
             data.text ||
             data.error ||
             data.message ||
-            "TEO no respondió. Compruebe que nara-api (gateway :4000 y ai :4004) esté en marcha.",
+            "Aurelia no respondió. Compruebe que nara-api (gateway :4000 y ai :4004) esté en marcha.",
         };
       }
     } catch {
@@ -154,7 +162,7 @@ export function AgentPanel({
         id,
         q: text,
         err: true,
-        text: "No pude contactar a TEO. Revise la conexión con nara-api e intente de nuevo.",
+        text: "No pude contactar a Aurelia. Revise la conexión con nara-api e intente de nuevo.",
       };
     }
     setConv((s) => s.map((x) => (x.id === id ? a : x)));
@@ -181,7 +189,7 @@ export function AgentPanel({
       (G.ROLE[(roleAlias[roleKey] || roleKey) as keyof typeof G.ROLE] ||
         G.ROLE.admin)) ||
     {
-      name: "TEO · Asistente de datos",
+      name: "Aurelia · Asistente de datos",
       greet: "",
       sub: "Pregunte sobre lo que ve en pantalla.",
     };
@@ -225,7 +233,7 @@ export function AgentPanel({
     const ok = b.dots.filter((d: { ok: boolean }) => d.ok).length;
     brief = {
       text: b.text,
-      dots: b.dots.map((d: { ok: boolean }) => ({ bg: d.ok ? "#161413" : "#fff" })),
+      dots: b.dots.map((d: { ok: boolean }) => ({ bg: d.ok ? "#27683A" : "#fff" })),
       dotsLabel: ok + " de " + b.dots.length + " hechas",
       revisits: b.revisits,
       crisis: b.crisis,
@@ -247,14 +255,13 @@ export function AgentPanel({
     return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
   })();
   const greetLine = greetName ? `${greetHour}, ${greetName}.` : `${greetHour}.`;
-  const bg = mode === "drawer" ? "#F0ECE6" : "transparent";
+  const bg = mode === "drawer" ? "#C0DFC8" : "transparent";
   const pad = mode === "drawer" ? "16px 18px" : "0";
 
   return (
     <div
+      className="font-texto text-pl-verde-raiz"
       style={{
-        fontFamily: "Figtree, system-ui, sans-serif",
-        color: "#161413",
         fontSize: 15,
         display: "flex",
         flexDirection: "column",
@@ -269,11 +276,11 @@ export function AgentPanel({
           className="box-border flex h-16 shrink-0 items-center justify-between border-b border-linea bg-nara-blanco px-5"
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <img src="/nara/marca/logo/teo-isotipo.svg" alt="" style={{ width: 34, height: 34, display: "block", flex: "none" }} />
+            <img src={aureliaAsset("escucha")} alt="" style={{ width: 34, height: 34, display: "block", flex: "none" }} />
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-              <span style={{ fontWeight: 500, fontSize: 16, lineHeight: 1.2 }}>{R.name}</span>
-              <span style={{ fontSize: 13, color: "#5E5750", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {contextLabel || "Pregunte sobre lo que ve en pantalla"}
+              <span className="font-titulos text-base font-extrabold leading-tight">{R.name || BRAND.agentName}</span>
+              <span className="font-mono text-[12px] leading-tight text-[#5A5A52]">
+                {contextLabel || BRAND.agentRole}
               </span>
             </div>
           </div>
@@ -301,32 +308,31 @@ export function AgentPanel({
         }}
       >
         {mode === "home" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img src="/nara/marca/logo/teo-isotipo.svg" alt="" style={{ width: 40, height: 40, display: "block" }} />
-              <span style={{ fontSize: 14, color: "#5E5750", fontWeight: 500 }}>{R.name}</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-12 place-items-center rounded-2xl bg-pl-menta">
+                <img src={aureliaAsset("base")} alt="" className="block h-9 w-9" />
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono text-sm font-medium uppercase tracking-[0.12em] text-pl-naranja">
+                  {R.name || BRAND.agentName}
+                </span>
+                <span className="font-mono text-[11px] text-pl-texto2">{BRAND.agentRole}</span>
+              </div>
             </div>
-            <span
-              style={{
-                fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
-                fontWeight: 600,
-                fontSize: "clamp(22px, 4vw, 30px)",
-                lineHeight: 1.2,
-              }}
-            >
+            <h1 className="font-titulos text-[clamp(22px,4vw,30px)] font-extrabold leading-[1.2] text-pl-verde-raiz">
               {greetLine}
-            </span>
-            <span
-              style={{
-                fontSize: 16,
-                color: "#5E5750",
-                maxWidth: 760,
-                textWrap: "pretty" as const,
-                overflowWrap: "anywhere",
-              }}
-            >
-              {R.sub}
-            </span>
+            </h1>
+            <p className="max-w-[760px] text-pretty text-base text-pl-texto2">{R.sub}</p>
+            <p className="max-w-[760px] text-pretty font-mono text-[13px] leading-snug text-pl-texto2">
+              {AURELIA_DISCLOSURE_ES}
+            </p>
+          </div>
+        ) : null}
+
+        {mode === "drawer" && conv.length === 0 && !loading ? (
+          <div className="rounded-2xl border border-linea bg-nara-blanco px-4 py-3">
+            <p className="m-0 font-mono text-[13px] leading-snug text-pl-texto2">{AURELIA_DISCLOSURE_ES}</p>
           </div>
         ) : null}
 
@@ -334,7 +340,7 @@ export function AgentPanel({
           <div
             style={{
               background: "#fff",
-              border: "1px solid #DCD6CD",
+              border: "1px solid #E3DFCF",
               borderRadius: 20,
               padding: "16px 18px",
               display: "flex",
@@ -352,21 +358,21 @@ export function AgentPanel({
                     height: 18,
                     borderRadius: "50%",
                     background: d.bg,
-                    border: "2px solid #161413",
+                    border: "2px solid #27683A",
                     boxSizing: "border-box",
                   }}
                 />
               ))}
-              <span style={{ fontSize: 14, color: "#5E5750", marginLeft: 6 }}>{brief.dotsLabel}</span>
+              <span style={{ fontSize: 14, color: "#5A5A52", marginLeft: 6 }}>{brief.dotsLabel}</span>
             </div>
-            <span style={{ fontSize: 13, color: "#5E5750" }}>{brief.basis}</span>
+            <span style={{ fontSize: 13, color: "#5A5A52" }}>{brief.basis}</span>
           </div>
         ) : null}
 
         {mode === "home" || mode === "drawer" ? (
           <div className="flex w-full min-w-0 flex-col gap-2">
             {mode === "drawer" && contextLabel ? (
-              <span className="text-[13px] font-medium text-[#5E5750]">{contextLabel}</span>
+              <span className="text-[13px] font-medium text-[#5A5A52]">{contextLabel}</span>
             ) : null}
             <div className="flex w-full min-w-0 flex-wrap gap-2">
               {chips.map((c, i) => (
@@ -374,7 +380,11 @@ export function AgentPanel({
                   key={`${c.q}-${i}`}
                   type="button"
                   onClick={c.go}
-                  style={{ ...chipStyle, background: mode === "home" ? "#FFF4CC" : "#fff" }}
+                  className={
+                    mode === "home"
+                      ? "max-w-full cursor-pointer rounded-md border-[1.5px] border-[#27683A] bg-[#FDF2B3] px-3.5 py-2.5 text-left font-mono text-[13px] font-medium leading-snug !text-[#27683A] transition hover:bg-[#E0DB55]/70"
+                      : "max-w-full cursor-pointer rounded-md border-[1.5px] border-[#C0DFC8] bg-white px-3.5 py-2.5 text-left font-mono text-[13px] font-medium leading-snug !text-[#27683A] transition hover:bg-[#C0DFC8]/50"
+                  }
                 >
                   {c.q}
                 </button>
@@ -385,19 +395,19 @@ export function AgentPanel({
 
         {convUi.map(({ a, id }) => (
           <div key={id} className="flex flex-col gap-2.5">
-            <div className="max-w-[80%] self-end rounded-[14px_4px_14px_14px] bg-[#FFF4CC] px-3.5 py-2.5 text-[15px]">
+            <div className="max-w-[80%] self-end rounded-[14px_4px_14px_14px] bg-[#FDF2B3] px-3.5 py-2.5 text-[15px]">
               {a.q as string}
             </div>
             {a.text || a.err || a.lines || a.aiNote || a.understood ? (
               <div className="flex items-start gap-2.5">
                 <img
-                  src="/nara/marca/logo/teo-isotipo.svg"
-                  alt="TEO"
+                  src={aureliaAsset("responde")}
+                  alt="Aurelia"
                   className="mt-0.5 h-8 w-8 shrink-0"
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-[4px_20px_20px_20px] border border-linea bg-nara-blanco px-[18px] py-4">
                   {a.understood ? (
-                    <span className="text-[13px] text-[#5E5750]">{a.understood as string}</span>
+                    <span className="font-mono text-[12px] text-[#5A5A52]">{a.understood as string}</span>
                   ) : null}
                   {a.text ? <TeoRichText text={String(a.text)} /> : null}
                   {((a.lines as string[]) || []).map((l, i) => (
@@ -418,14 +428,14 @@ export function AgentPanel({
         ))}
 
         {loading ? (
-          <div className="flex items-start gap-2.5" aria-live="polite" aria-label="TEO está pensando">
+          <div className="flex items-start gap-2.5" aria-live="polite" aria-label="Aurelia está pensando">
             <img
-              src="/nara/marca/logo/teo-isotipo.svg"
+              src={aureliaAsset("piensa")}
               alt=""
               className="mt-0.5 h-8 w-8 shrink-0"
             />
             <div className="flex items-center gap-2.5 rounded-[4px_20px_20px_20px] border border-linea bg-nara-blanco px-4 py-3">
-              <span className="text-[15px] text-[#5E5750]">Pensando</span>
+              <span className="font-mono text-[13px] text-[#5A5A52]">Pensando</span>
               <span className="flex items-center gap-1" aria-hidden>
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-nara-tinta [animation-delay:0ms]" />
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-nara-tinta [animation-delay:150ms]" />
@@ -437,7 +447,7 @@ export function AgentPanel({
 
         {pinList.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <span style={{ fontFamily: "Fredoka, Figtree, system-ui, sans-serif", fontWeight: 600, fontSize: 20 }}>
+            <span style={{ fontFamily: "Bricolage Grotesque, system-ui, sans-serif", fontWeight: 800, fontSize: 20 }}>
               Respuestas fijadas
             </span>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 12 }}>
@@ -447,7 +457,7 @@ export function AgentPanel({
                     key={i}
                     style={{
                       background: "#fff",
-                      border: "1px solid #DCD6CD",
+                      border: "1px solid #E3DFCF",
                       borderRadius: 20,
                       padding: "14px 16px",
                       display: "flex",
@@ -463,7 +473,7 @@ export function AgentPanel({
                     </div>
                     <span style={{ fontSize: 14, lineHeight: 1.45 }}>{p.text}</span>
                     {p.chart}
-                    <span style={{ fontSize: 12, color: "#5E5750" }}>{p.basis} · se actualiza con los datos</span>
+                    <span style={{ fontSize: 12, color: "#5A5A52" }}>{p.basis} · se actualiza con los datos</span>
                   </div>
                 ) : null,
               )}
@@ -474,38 +484,46 @@ export function AgentPanel({
 
       {mode === "drawer" || mode === "home" ? (
         <div
-          className={`flex shrink-0 flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-2 sm:px-4 sm:py-3 ${
+          className={`flex shrink-0 flex-col gap-2 p-3 sm:px-4 sm:py-3 ${
             mode === "drawer" ? "border-t border-linea bg-nara-blanco" : "border-t border-linea/80 pt-4"
           }`}
         >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-              if (e.key === "Enter") void ask(input);
-            }}
-            placeholder={role === "inst" ? "Pregunte sobre sus casos remitidos" : "Escriba su pregunta"}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              width: "100%",
-              height: 46,
-              borderRadius: 10,
-              border: "1.5px solid #DCD6CD",
-              padding: "0 14px",
-              fontSize: 15,
-              fontFamily: "Figtree, system-ui, sans-serif",
-              color: "#161413",
-              background: "#fff",
-            }}
-          />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === "Enter") void ask(input);
+              }}
+              placeholder={role === "inst" ? "Pregunte sobre sus casos remitidos" : "Escriba su pregunta"}
+              className="h-[46px] w-full min-w-0 flex-1 rounded-[10px] border-[1.5px] border-[#C0DFC8] bg-white px-3.5 font-texto text-[15px] text-[#27683A]"
+            />
+            <button
+              type="button"
+              onClick={() => void ask(input)}
+              className="h-12 w-full shrink-0 cursor-pointer rounded-md border-0 bg-[#F26B3A] px-5 font-texto text-[15px] font-bold !text-[#FBFAF3] transition hover:bg-[#e05a2a] sm:w-auto"
+            >
+              Preguntar
+            </button>
+          </div>
           <button
             type="button"
-            onClick={() => void ask(input)}
-            className="w-full shrink-0 sm:w-auto"
-            style={sendBtnStyle}
+            onClick={() => {
+              const id = "handoff-" + Date.now();
+              setConv((s) => [
+                ...s,
+                {
+                  id,
+                  q: AURELIA_HANDOFF_LABEL,
+                  text: AURELIA_HANDOFF_REPLY_ES,
+                  lines: [AURELIA_HANDOFF_REPLY_ES],
+                } as ConvItem,
+              ]);
+              onAction?.("hablar-con-alguien", { role });
+            }}
+            className="self-start border-0 bg-transparent p-0 font-mono text-[13px] font-medium text-[#27683A] underline underline-offset-2"
           >
-            Preguntar
+            {AURELIA_HANDOFF_LABEL}
           </button>
         </div>
       ) : null}
@@ -513,43 +531,13 @@ export function AgentPanel({
   );
 }
 
-const chipStyle: CSSProperties = {
-  fontFamily: "Figtree, system-ui, sans-serif",
-  fontSize: 15,
-  padding: "9px 14px",
-  borderRadius: 999,
-  border: "1.5px solid #161413",
-  background: "#FFF4CC",
-  color: "#161413",
-  cursor: "pointer",
-  textAlign: "left",
-  whiteSpace: "normal",
-  lineHeight: 1.3,
-  maxWidth: "100%",
-  boxSizing: "border-box",
-  overflowWrap: "anywhere",
-};
-
 const moreBtnStyle: CSSProperties = {
-  fontFamily: "Figtree, system-ui, sans-serif",
+  fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
   fontSize: 14,
   padding: "9px 12px",
   border: "none",
   background: "none",
-  color: "#161413",
+  color: "#27683A",
   cursor: "pointer",
   textDecoration: "underline",
-};
-
-const sendBtnStyle: CSSProperties = {
-  fontFamily: "Figtree, system-ui, sans-serif",
-  fontSize: 15,
-  fontWeight: 500,
-  height: 46,
-  padding: "0 18px",
-  borderRadius: 14,
-  border: "none",
-  background: "#FDCD22",
-  color: "#161413",
-  cursor: "pointer",
 };

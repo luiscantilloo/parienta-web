@@ -16,21 +16,21 @@ export function PacienteHomeTools({ items }: { items: ToolItem[] }) {
 
   return (
     <section
-      className="rounded-[20px] border border-linea bg-nara-blanco px-4 py-4"
+      className="overflow-hidden rounded-2xl border border-[#C0DFC8] bg-white"
       aria-label="Herramientas"
     >
-      <p className="m-0 mb-3 font-texto text-[15px] font-medium text-nara-tinta">
+      <p className="m-0 border-b border-[#C0DFC8] bg-[#FBFAF3] px-4 py-3 font-mono text-sm font-medium uppercase tracking-[0.12em] text-[#F26B3A]">
         Herramientas
       </p>
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-2.5 p-4">
         {items.map((t) => {
           const src = logoForHerramienta(t.id as PacienteHerramientaId);
           const className = [
-            "flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-linea px-2 py-3 text-center font-texto",
+            "flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-[#C0DFC8] px-2 py-3 text-center font-texto",
             t.disabled
               ? "cursor-not-allowed opacity-45 grayscale"
-              : "cursor-pointer bg-nara-crema/40 active:scale-[0.98]",
-            t.on && !t.disabled ? "border-nara-tinta/35 bg-nara-crema" : "",
+              : "cursor-pointer bg-[#FBFAF3] transition hover:bg-[#C0DFC8]/40 active:scale-[0.98]",
+            t.on && !t.disabled ? "border-[#27683A] bg-[#FDF2B3]/60" : "",
           ]
             .filter(Boolean)
             .join(" ");
@@ -38,17 +38,19 @@ export function PacienteHomeTools({ items }: { items: ToolItem[] }) {
           const body = (
             <>
               {src ? (
-                <img
-                  src={src}
-                  alt=""
-                  className="h-12 w-12 object-contain sm:h-14 sm:w-14"
-                />
+                <span className="grid size-14 place-items-center rounded-2xl bg-[#C0DFC8]/70 sm:size-16">
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-10 w-10 object-contain sm:h-11 sm:w-11"
+                  />
+                </span>
               ) : null}
-              <span className="line-clamp-2 text-[12px] font-medium leading-tight text-nara-tinta">
+              <span className="line-clamp-2 font-mono text-[11px] font-medium leading-tight text-[#27683A] sm:text-[12px]">
                 {t.navLabel}
               </span>
               {t.disabled ? (
-                <span className="text-[10px] text-texto-secundario">
+                <span className="font-mono text-[10px] text-[#5A5A52]">
                   Próximamente
                 </span>
               ) : null}

@@ -172,7 +172,7 @@ function AdminTerritorioInner() {
           {v.experts.length ? (
             <div className="nara-scroll-x">
               <div className="min-w-[640px]">
-                <div className="grid grid-cols-[1.4fr_1fr_90px_90px_1.2fr] gap-3 bg-nara-crema px-5 py-3 text-sm font-medium text-texto-secundario">
+                <div className="grid grid-cols-[1.4fr_1fr_90px_90px_1.2fr] gap-3 border-b border-[#C0DFC8] bg-[#FBFAF3] px-5 py-3 text-sm font-medium text-[#5A5A52]">
                   <span>Nombre</span>
                   <span>Celular</span>
                   <span>Hoy</span>
@@ -184,7 +184,7 @@ function AdminTerritorioInner() {
                     key={e.name}
                     type="button"
                     onClick={() => e.open()}
-                    className="grid w-full cursor-pointer grid-cols-[1.4fr_1fr_90px_90px_1.2fr] gap-3 border-t border-[#E6E1D9] bg-nara-blanco px-5 py-3 text-left font-texto text-[15px] text-nara-tinta"
+                    className="grid w-full cursor-pointer grid-cols-[1.4fr_1fr_90px_90px_1.2fr] gap-3 border-t border-[#C0DFC8] bg-nara-blanco px-5 py-3 text-left font-texto text-[15px] text-nara-tinta"
                   >
                     <span className="font-medium">{e.name}</span>
                     <span>{e.phone}</span>
@@ -196,7 +196,7 @@ function AdminTerritorioInner() {
               </div>
             </div>
           ) : (
-            <p className="border-t border-[#E6E1D9] px-5 py-4 text-[15px] text-texto-secundario">
+            <p className="border-t border-[#C0DFC8] px-5 py-4 text-[15px] text-texto-secundario">
               Aún no hay experto asignado a este territorio.
             </p>
           )}
@@ -219,23 +219,23 @@ function AdminTerritorioInner() {
             </div>
           </div>
           {v.noPlaces ? (
-            <p className="border-t border-[#E6E1D9] px-5 py-4 text-[15px] text-texto-secundario">
+            <p className="border-t border-[#C0DFC8] px-5 py-4 text-[15px] text-texto-secundario">
               Sin veredas ni barrios distintos del territorio. La captación está en el resumen de arriba.
             </p>
           ) : (
             <div className="nara-scroll-x">
               <div className="min-w-[640px]">
-                <div className="grid grid-cols-[1.4fr_90px_1fr_80px_80px] gap-3 bg-nara-crema px-5 py-3 text-sm font-medium text-texto-secundario">
+                <div className="grid grid-cols-[1.4fr_90px_1fr_80px_80px] gap-3 border-b border-[#C0DFC8] bg-[#FBFAF3] px-5 py-3 text-sm font-medium text-[#5A5A52]">
                   <span>Lugar</span>
                   <span>Tipo</span>
                   <span>Captación</span>
                   <span>%</span>
                   <span>Alertas</span>
                 </div>
-                {placesRows.map((p) => (
+                {placesRows.map((p, i) => (
                   <div
-                    key={p.name}
-                    className="grid grid-cols-[1.4fr_90px_1fr_80px_80px] gap-3 border-t border-[#E6E1D9] px-5 py-3 text-[15px]"
+                    key={`${p.name}-${p.zone}-${i}`}
+                    className="grid grid-cols-[1.4fr_90px_1fr_80px_80px] gap-3 border-t border-[#C0DFC8] px-5 py-3 text-[15px]"
                   >
                     <span className="font-medium">{p.name}</span>
                     <span>{p.zone}</span>
@@ -247,7 +247,7 @@ function AdminTerritorioInner() {
                   </div>
                 ))}
                 {!placesRows.length ? (
-                  <p className="border-t border-[#E6E1D9] px-5 py-6 text-center text-[15px] text-texto-secundario">
+                  <p className="border-t border-[#C0DFC8] px-5 py-6 text-center text-[15px] text-texto-secundario">
                     Ningún lugar coincide con la búsqueda.
                   </p>
                 ) : null}

@@ -7,6 +7,7 @@ import { useRouteLoading } from "@/components/shared/nara-loading/RouteLoadingPr
 import { useRequireSession } from "@/hooks/useRequireSession";
 import { useNaraLive, useNaraStore } from "@/providers/nara-provider";
 import { pauseLiveHydrate } from "@/lib/store/hydrateProgram";
+import { LIVE_CLINICO, useLiveProgramSync } from "@/lib/store/liveSync";
 import { flushPersist } from "@/lib/store/persist";
 import {
   DEFAULT_INACTIVE_MINUTES,
@@ -36,6 +37,7 @@ const OUTCOMES = [
 export function useClinicoScreen() {
   const store = useNaraStore();
   const live = useNaraLive();
+  useLiveProgramSync({ parts: LIVE_CLINICO });
   const session = useRequireSession(["clinico"]);
   const router = useRouter();
   const pathname = usePathname();
@@ -154,64 +156,35 @@ export function useClinicoScreen() {
   function recFile(A, S, P) {
     const R = A.REC,
       pr = A.recPerson(S, P.id),
-      cp = A.courseProgress(S, P.id),
-      as = ((S.recursos || {}).assigned || []).filter((x) => x.pid === P.id);
+      as = ((S.recursos || {}).assigned || []).filter(
+        (x) =>
+          x.pid === P.id &&
+          x.kind !== "cuento" &&
+          x.kind !== "curso",
+      );
     const o = {
       assign: () =>
         setState({ asg: { pid: P.id, name: P.name, q: "", tipo: "", tema: "", para: "" } }),
-      has: !!cp,
-      none: !cp,
+      has: false,
+      none: true,
       mods: [],
-      read: "Ninguno todavía",
-      techs: [],
-      answers: [],
+      read: "N/A",
+      techs: [] as { n: string; v: string }[],
+      answers: [] as { h: string; a: string }[],
       noAns: true,
       assigned: as.map(
         (x) =>
           "Asignado por usted: «" +
-          (R.item(x.id) || R.curso(x.id) || {}).title +
+          (R.item(x.id) || {}).title +
           "»" +
           (x.session ? " · se trabajará en sesión" : ""),
       ),
     };
     if (!pr) return o;
-    if (cp)
-      Object.assign(o, {
-        title: cp.c.title,
-        meta:
-          "Semana " +
-          cp.week +
-          " de " +
-          cp.c.weeks +
-          " · " +
-          cp.done +
-          " semanas hechas · " +
-          pr.by,
-        mods: cp.c.mods.map((m, i) => {
-          const n = i + 1,
-            done = pr.doneMods.includes(n);
-          return {
-            c: done ? "#4E9A6B" : n === cp.week ? "#E0A526" : "#E6E1D9",
-            l:
-              "S" +
-              n +
-              " · " +
-              R.cuento(m.cuento).title +
-              " · " +
-              (done ? "hecha" : n === cp.week ? "esta semana" : "próxima"),
-          };
-        }),
-      });
-    const rd = Object.keys(pr.read || {}).map((s) => R.cuento(s).title);
-    if (rd.length) o.read = rd.join(" · ");
     o.techs = Object.keys(pr.tech4w || {}).map((k) => ({
       n: R.tecnica(k).title,
       v: pr.tech4w[k] + (pr.tech4w[k] === 1 ? " vez" : " veces"),
     }));
-    o.answers = (pr.answers || [])
-      .filter((a) => a.shared)
-      .map((a) => ({ h: "«" + R.cuento(a.slug).title + "» · " + a.q, a: a.a }));
-    o.noAns = !o.answers.length;
     return o;
   }
 
@@ -222,24 +195,6 @@ export function useClinicoScreen() {
       up = (v) => setState({ asg: Object.assign({}, g, v) });
     const all = []
       .concat(
-        R.CURSOS.map((c) => ({
-          kind: "curso",
-          id: c.id,
-          title: c.title,
-          temas: c.para,
-          para: c.id === "mayores" ? "60+" : c.id === "familia" ? "Familias" : "Todos",
-          meta: "Curso · " + c.weeks + " semanas · " + c.para,
-        })),
-        R.CUENTOS.map((c) => ({
-          kind: "cuento",
-          id: c.slug,
-          title: c.title,
-          temas: c.temas,
-          para: c.para,
-          restr: c.restr,
-          cover: R.cover(c.slug),
-          meta: "Cuento · " + c.temas + " · " + c.para + " · " + c.lect + " min",
-        })),
         R.VIDEOS.map((v) => ({
           kind: "video",
           id: v.id,
@@ -275,13 +230,6 @@ export function useClinicoScreen() {
           by: "Dra. Lucía Marín",
           at: Date.now(),
         });
-        const pr = s.recursos.people[g.pid];
-        if (x.kind === "curso" && pr) {
-          pr.course = x.id;
-          pr.week = 1;
-          pr.doneMods = [];
-          pr.by = "Asignado por la psicóloga";
-        }
       });
       up({
         confirm: null,
@@ -317,7 +265,7 @@ export function useClinicoScreen() {
         cTitle: cf ? cf.title : "",
         cWarn:
           cf && cf.restr === "restringido"
-            ? "habla de un intento de suicidio. Solo se asigna para leerlo en sesión, nunca por primera vez a solas. TEO no lo menciona."
+            ? "habla de un intento de suicidio. Solo se asigna para leerlo en sesión, nunca por primera vez a solas. Aurelia no lo menciona."
             : "tiene un personaje que dice «no quiero vivir». Se usa con el experto en grupo o PM+, o en sesión con usted.",
         confirm: () => cf && save(cf, true),
         cancel: () => up({ confirm: null }),
@@ -328,7 +276,7 @@ export function useClinicoScreen() {
           cover: x.cover || "",
           hasTag: !!x.restr,
           tag: x.restr ? R.TAG[x.restr] : "",
-          tagBg: x.restr === "pandemia" ? "#F0ECE6" : "#FDE7E4",
+          tagBg: x.restr === "pandemia" ? "#FBFAF3" : "#FDE7E4",
           pick: () =>
             x.restr === "restringido" || x.restr === "acompanamiento"
               ? up({ confirm: x.id, msg: "" })
@@ -345,7 +293,7 @@ export function useClinicoScreen() {
     const SEV = {
       crisis: ["Crisis", "#6B0000", "#fff"],
       revisar: ["Revisar", "#F7E2D2", "#7A3A10"],
-      info: ["Informativa", "#E6E1D9", C.azul],
+      info: ["Informativa", "#C0DFC8", C.azul],
     };
     const order = { crisis: 0, revisar: 1, info: 2 };
     const peopleLookup = {};
@@ -404,6 +352,21 @@ export function useClinicoScreen() {
     };
     // H-002 (SPEC-002 FR-005): la cola y el contador «en crisis» salen de la misma fuente. Una ficha en
     // Crisis sin alerta abierta (p. ej. la alerta se perdió) aparece en «Por tomar» para que alguien la tome.
+    // Si ya está en Cola abierta (esperando «estoy bien»), NO regenerar «Por tomar».
+    const pidsAwaitingWell = new Set(
+      (S.closedToday || [])
+        .filter(
+          (c) =>
+            c.sev === "crisis" &&
+            !c.patientConfirmedAt &&
+            (c.status === "awaiting_patient" ||
+              (!!c.outcome && c.outcome !== "Vista" && c.status !== "closed")),
+        )
+        .flatMap((c) => {
+          const f = resolveFicha(c.pid);
+          return [String(c.pid || ""), String(f.pid || "")].filter(Boolean);
+        }),
+    );
     const pidsConAlerta = new Set(
       S.alerts
         .filter((a) => a.sev === "crisis" && a.status !== "closed")
@@ -412,6 +375,7 @@ export function useClinicoScreen() {
     const sinAlerta = Object.values(patientsMap)
       .filter((P: any) => P?.id && !P.archived && (P.crisisLock === true || /crisis/i.test(String(P.status || P.signal || ""))))
       .filter((P: any) => !pidsConAlerta.has(String(P.id)))
+      .filter((P: any) => !pidsAwaitingWell.has(String(P.id)))
       .map((P: any) => ({
         id: "a-" + P.id,
         sev: "crisis",
@@ -424,8 +388,33 @@ export function useClinicoScreen() {
         source: "Ficha del paciente",
         sintetica: true,
       }));
-    const alertasCola = S.alerts.concat(sinAlerta);
-    const alerts = alertasCola
+    // Una fila por paciente en crisis (evitar duplicados de varios addAlert).
+    // Si el pid ya espera «estoy bien», no listar otra alerta abierta del mismo.
+    const crisisDeduped = (() => {
+      const byPid = new Map();
+      const rest = [];
+      for (const a of S.alerts.concat(sinAlerta)) {
+        if (a.sev !== "crisis") {
+          rest.push(a);
+          continue;
+        }
+        const st = String(a.status || "");
+        if (st === "closed" || st === "awaiting_patient") continue;
+        const key = String(a.pid || a.id || "");
+        if (!key) {
+          rest.push(a);
+          continue;
+        }
+        const fPid = String(resolveFicha(a.pid).pid || key);
+        if (pidsAwaitingWell.has(key) || pidsAwaitingWell.has(fPid)) continue;
+        const prev = byPid.get(key);
+        if (!prev || Number(a.at || 0) >= Number(prev.at || 0)) {
+          byPid.set(key, a);
+        }
+      }
+      return [...byPid.values(), ...rest];
+    })();
+    const alerts = crisisDeduped
       .slice()
       .sort((a, b) => order[a.sev] - order[b.sev] || b.at - a.at)
       .map((a) => {
@@ -513,6 +502,7 @@ export function useClinicoScreen() {
             a.status === "retry"
               ? "No contestó. La alerta sigue abierta · reintente a las " + a.retryAt
               : "",
+          loc: a.loc || null,
           outcomes: OUTCOMES.map((label, i) => ({
             label,
             selected: pick === i,
@@ -529,7 +519,19 @@ export function useClinicoScreen() {
             A.set((s) => {
               const x = s.alerts.find((y) => y.id === a.id);
               if (!x) return;
-              s.alerts = s.alerts.filter((y) => y.id !== a.id);
+              const samePid = String(x.pid || "");
+              // Quitar esta alerta y cualquier duplicado abierto del mismo paciente.
+              s.alerts = s.alerts.filter(
+                (y) =>
+                  y.id !== a.id &&
+                  !(
+                    y.sev === "crisis" &&
+                    samePid &&
+                    String(y.pid || "") === samePid &&
+                    y.status !== "closed" &&
+                    y.status !== "awaiting_patient"
+                  ),
+              );
               // Aún no está cerrada: falta «estoy bien» del paciente.
               x.status = "awaiting_patient";
               x.outcome = outcomeLabel;
@@ -538,6 +540,18 @@ export function useClinicoScreen() {
               x.closedBy = null;
               x.attendedBy = who;
               x.patientConfirmedAt = null;
+              // Solo quitar del mismo episodio en cola abierta (mismo id);
+              // no borrar otras crisis ya gestionadas del mismo paciente hoy.
+              s.closedToday = (s.closedToday || []).filter(
+                (c) =>
+                  !(
+                    c.sev === "crisis" &&
+                    String(c.id || "") === String(x.id || "") &&
+                    !c.patientConfirmedAt &&
+                    (c.status === "awaiting_patient" ||
+                      (!!c.outcome && c.outcome !== "Vista"))
+                  ),
+              );
               s.closedToday.unshift(x);
               if (A.pushCrisisLog)
                 A.pushCrisisLog(s, {
@@ -653,7 +667,8 @@ export function useClinicoScreen() {
                 }),
               }).catch(() => {});
             }
-            setState({ crisisTab: "done" });
+            // Tras gestionar → Cola abierta (esperan «estoy bien»), no Gestionadas.
+            setState({ crisisTab: "all" });
           },
           dismiss: () =>
             A.set((s) => {
@@ -696,9 +711,15 @@ export function useClinicoScreen() {
         stillInCrisis;
       const respondedAt = c.attendedAt || c.closedAt || c.takenAt || c.at;
       return {
+        id: c.id,
+        pid: c.pid || info.pid || null,
+        sev: c.sev,
+        status: c.status,
+        at: c.at,
         name: info.name,
         outcome: c.outcome,
         waiting,
+        patientConfirmedAt: c.patientConfirmedAt || null,
         statusLabel: waiting
           ? "Esperando al paciente"
           : c.sev === "crisis"
@@ -720,7 +741,7 @@ export function useClinicoScreen() {
               s.diana.crisis = false;
               s.dianaInbox.push({
                 id: "d" + Date.now(),
-                text: "Su psicóloga revisó su mensaje y reabrió su conversación con TEO.",
+                text: "Su psicóloga revisó su mensaje y reabrió su conversación con Aurelia.",
                 tab: "chat",
                 seen: false,
               });
@@ -729,7 +750,7 @@ export function useClinicoScreen() {
           }),
         reopenLabel:
           c.pid === "diana"
-            ? "Reabrir la conversación con TEO"
+            ? "Reabrir la conversación con Aurelia"
             : "Reabrir el acompañamiento por WhatsApp",
         meta:
           c.sev === "crisis"
@@ -739,6 +760,31 @@ export function useClinicoScreen() {
             : (SEV[c.sev] || SEV.info)[0],
       };
     });
+    // Cola abierta: una fila por paciente (episodio activo esperando «estoy bien»).
+    const awaitingPatient = (() => {
+      const byPid = new Map<string, (typeof closed)[0]>();
+      for (const c of closed.filter((x) => x.waiting)) {
+        const key = String(c.pid || c.id || "");
+        const prev = byPid.get(key);
+        if (!prev || Number(c.at || 0) >= Number(prev.at || 0)) byPid.set(key, c);
+      }
+      return Array.from(byPid.values());
+    })();
+    // Gestionadas hoy: TODAS las crisis cerradas del día (mismo paciente puede tener varias).
+    // Solo deduplicar por id de alerta, no por pid.
+    const closedDone = (() => {
+      const awaitIds = new Set(awaitingPatient.map((c) => String(c.id || "")));
+      const byId = new Map<string, (typeof closed)[0]>();
+      for (const c of closed.filter((x) => !x.waiting)) {
+        const id = String(c.id || "");
+        if (!id || awaitIds.has(id)) continue;
+        const prev = byId.get(id);
+        if (!prev || Number(c.at || 0) >= Number(prev.at || 0)) byId.set(id, c);
+      }
+      return Array.from(byId.values()).sort(
+        (a, b) => Number(b.at || 0) - Number(a.at || 0),
+      );
+    })();
 
     const ids: string[] = [];
     const seen = new Set<string>();
@@ -818,26 +864,34 @@ export function useClinicoScreen() {
       if (p?.id) peopleById[p.id] = p;
       if (p?.code) peopleById[p.code] = p;
     });
-    const crisisPids = new Set(
-      S.alerts
-        .filter((a) => a.sev === "crisis" && a.status !== "closed")
-        .flatMap((a) => {
-          const out: string[] = [];
-          if (a.pid) {
-            out.push(String(a.pid));
-            const resolved = resolveFicha(a.pid).pid;
-            if (resolved) out.push(resolved);
-          }
-          // id legado: a-{pid}-crisis-btn…
-          const m = String(a.id || "").match(/^a-(.+?)-crisis-btn/);
-          if (m?.[1]) {
-            out.push(m[1]);
-            const resolved = resolveFicha(m[1]).pid;
-            if (resolved) out.push(resolved);
-          }
-          return out;
-        }),
-    );
+    const pushCrisisPid = (set: Set<string>, raw: unknown) => {
+      const id = String(raw || "").trim();
+      if (!id) return;
+      set.add(id);
+      const resolved = resolveFicha(id).pid;
+      if (resolved) set.add(resolved);
+    };
+    const crisisPids = new Set<string>();
+    // Alertas aún en cola (por tomar / en atención / colega).
+    S.alerts.forEach((a) => {
+      if (a.sev !== "crisis") return;
+      const st = String(a.status || "");
+      if (st === "closed") return;
+      if (a.pid) pushCrisisPid(crisisPids, a.pid);
+      const m = String(a.id || "").match(/^a-(.+?)-(?:crisis-btn|crisis-cuid)/);
+      if (m?.[1]) pushCrisisPid(crisisPids, m[1]);
+      // TEO / id estable a-{pid}
+      const teo = String(a.id || "").match(/^a-([^-]+)$/);
+      if (teo?.[1]) pushCrisisPid(crisisPids, teo[1]);
+    });
+    // Ya gestionadas por clínico pero esperando «estoy bien»: siguen en crisis.
+    (S.closedToday || []).forEach((c) => {
+      if (c.sev !== "crisis" || !c.pid || c.patientConfirmedAt) return;
+      const st = String(c.status || "");
+      if (st === "awaiting_patient" || (!c.closedAt && st !== "closed")) {
+        pushCrisisPid(crisisPids, c.pid);
+      }
+    });
 
     const readAttendedAtSafe = (v: unknown) => {
       const n = Number(v);
@@ -1184,12 +1238,12 @@ export function useClinicoScreen() {
       profile: P.profile || "Sin perfil",
       risk: pc.r >= 0 && A.RISK[pc.r] ? A.RISK[pc.r].k : "Sin perfil",
       rc: pc.r >= 0 && A.RISK[pc.r] ? A.RISK[pc.r].c : "#C4BDB3",
-      rbg: pc.r >= 0 && A.RISK[pc.r] ? A.RISK[pc.r].bg : "#F0ECE6",
+      rbg: pc.r >= 0 && A.RISK[pc.r] ? A.RISK[pc.r].bg : "#FBFAF3",
       dig: pc.d >= 0 && A.DIG[pc.d] ? A.DIG[pc.d].k : "—",
       dc: pc.d >= 0 && A.DIG[pc.d] ? A.DIG[pc.d].c : "#C4BDB3",
-      dbg: pc.d >= 0 && A.DIG[pc.d] ? A.DIG[pc.d].bg : "#F0ECE6",
+      dbg: pc.d >= 0 && A.DIG[pc.d] ? A.DIG[pc.d].bg : "#FBFAF3",
       consText: consent ? "Autorizó remisión" : "No autorizó compartir su caso",
-      consBg: consent ? "#FFF4CC" : "#F0ECE6",
+      consBg: consent ? "#FDF2B3" : "#FBFAF3",
       consFg: consent ? C.verde : C.tinta,
       kpis: [
         {
@@ -1233,10 +1287,14 @@ export function useClinicoScreen() {
           (ref.contra ? " Contrarreferencia recibida." : "")
         : "",
     };
-    const ruleLines = (pd) => {
+    const ruleLines = (pd, livePack) => {
       const L = [];
-      pd.draft.risk.forEach((r, i) => {
-        const o = S.rules.risk[i];
+      const liveRisk = (livePack && livePack.risk) || S.rules.risk || [];
+      const liveDig = (livePack && livePack.dig) || S.rules.dig || {};
+      const livePhq = (livePack && livePack.phq) || S.rules.phq;
+      const liveCtx = (livePack && livePack.ctx) || S.rules.ctx;
+      (pd.draft.risk || []).forEach((r, i) => {
+        const o = liveRisk[i] || { k: "?", min: "?", max: "?", c: "" };
         if (r.k !== o.k || r.min !== o.min || r.max !== o.max || r.c !== o.c)
           L.push(
             "Nivel " +
@@ -1256,30 +1314,49 @@ export function useClinicoScreen() {
               (r.c !== o.c ? " · color nuevo" : ""),
           );
       });
-      pd.draft.dig.cuts.forEach((c, i) => {
-        const o = S.rules.dig.cuts[i];
+      ((pd.draft.dig && pd.draft.dig.cuts) || []).forEach((c, i) => {
+        const o = (liveDig.cuts || [])[i] || { k: "?", min: "?", max: "?" };
         if (c.min !== o.min || c.max !== o.max)
           L.push("Digital " + o.k + ": " + o.min + "–" + o.max + " → " + c.min + "–" + c.max);
       });
-      pd.draft.dig.q.forEach((q, qi) =>
-        q.o.forEach((x, oi) => {
-          const o = S.rules.dig.q[qi].o[oi];
-          if (x.o !== o.o || x.p !== o.p)
-            L.push(
-              "Pregunta «" +
-                q.q +
-                "»: «" +
-                o.o +
-                "» (" +
-                o.p +
-                " pts) → «" +
-                x.o +
-                "» (" +
-                x.p +
-                " pts)",
-            );
-        }),
-      );
+      const diffQ = (label, draftQ, liveQ) => {
+        const dQ = (draftQ && draftQ.q) || [];
+        const lQ = (liveQ && liveQ.q) || [];
+        if (dQ.length !== lQ.length) L.push(label + ": " + lQ.length + " → " + dQ.length + " preguntas");
+        dQ.forEach((q, qi) => {
+          const oq = lQ[qi];
+          if (!oq) {
+            L.push(label + " · nueva: «" + q.q + "»");
+            return;
+          }
+          if (q.q !== oq.q) L.push(label + ": «" + oq.q + "» → «" + q.q + "»");
+          (q.o || []).forEach((x, oi) => {
+            const o = (oq.o || [])[oi];
+            if (!o) {
+              L.push(label + " · «" + q.q + "»: opción nueva «" + x.o + "» (" + x.p + " pts)");
+              return;
+            }
+            if (x.o !== o.o || x.p !== o.p)
+              L.push(
+                label +
+                  " · «" +
+                  q.q +
+                  "»: «" +
+                  o.o +
+                  "» (" +
+                  o.p +
+                  " pts) → «" +
+                  x.o +
+                  "» (" +
+                  x.p +
+                  " pts)",
+              );
+          });
+        });
+      };
+      diffQ("PHQ-9", pd.draft.phq, livePhq);
+      diffQ("Digital", pd.draft.dig, liveDig);
+      diffQ("Contexto", pd.draft.ctx, liveCtx);
       return L.length ? L : ["Sin diferencias con las reglas vigentes."];
     };
     const approvals = [];
@@ -1314,7 +1391,7 @@ export function useClinicoScreen() {
         pid: ev.id,
         riskLabel: r >= 0 ? A.RISK[r]?.k : "",
         digLabel: d >= 0 ? (A.DIG[d]?.k || "").toLowerCase() : "",
-        riskColor: r >= 0 ? A.RISK[r]?.c : "#161413",
+        riskColor: r >= 0 ? A.RISK[r]?.c : "#27683A",
         title: "Evaluación · " + ev.name + " · " + ev.profile,
         meta:
           "Enviada por " +
@@ -1634,71 +1711,132 @@ export function useClinicoScreen() {
         },
       });
     });
+    const pendingRulePacks: { terr: string | null; pd: any; live: any }[] = [];
     if (S.rules.pending) {
-      const pd = S.rules.pending;
+      pendingRulePacks.push({ terr: null, pd: S.rules.pending, live: S.rules });
+    }
+    Object.entries((S.rules.byTerr || {}) as Record<string, any>).forEach(([terr, pack]) => {
+      if (pack && pack.pending) pendingRulePacks.push({ terr, pd: pack.pending, live: pack });
+    });
+    pendingRulePacks.forEach(({ terr, pd, live }) => {
+      const terrLabel = terr || "Programa (global)";
       approvals.push({
-        title: "Reglas de clasificación",
+        title: "Reglas de clasificación · " + terrLabel,
         meta: "Enviado por " + pd.by + " · " + A.agoText(pd.at),
-        lines: ruleLines(pd).concat([
+        lines: ruleLines(pd, live).concat([
+          "Territorio: " + terrLabel,
           "La crisis solo se activa desde el botón «Estoy en crisis» en la app del paciente.",
         ]),
         kind: "rules",
         approve: () => {
           try {
             A.set((s) => {
-              const p = s.rules.pending;
-              if (!p?.draft) return;
-              s.rules.risk = p.draft.risk;
-              s.rules.dig = p.draft.dig;
-              s.rules.pending = null;
-              s.rules.pendingClearedAt = Date.now();
-              s.rules.versions = Array.isArray(s.rules.versions) ? s.rules.versions : [];
-              const prevV = (s.rules.versions[0] && s.rules.versions[0].v) || 1;
-              s.rules.versions.unshift({
-                v: prevV + 1,
-                by: "Dra. Lucía Marín (líder clínica)",
-                at: Date.now(),
-                what:
-                  "Aprobó el cambio de reglas enviado por " +
-                  p.by +
-                  ": " +
-                  ruleLines(p).join(" · "),
-              });
+              if (terr) {
+                const pack = A.ensureTerrRules
+                  ? A.ensureTerrRules(s, terr)
+                  : (s.rules.byTerr && s.rules.byTerr[terr]);
+                const p = pack && pack.pending;
+                if (!p?.draft) return;
+                pack.risk = p.draft.risk;
+                pack.dig = p.draft.dig;
+                if (p.draft.phq) pack.phq = p.draft.phq;
+                if (p.draft.ctx) pack.ctx = p.draft.ctx;
+                if (Array.isArray(p.draft.custom)) pack.custom = p.draft.custom;
+                pack.pending = null;
+                pack.pendingClearedAt = Date.now();
+                pack.versions = Array.isArray(pack.versions) ? pack.versions : [];
+                const prevV = (pack.versions[0] && pack.versions[0].v) || 1;
+                pack.versions.unshift({
+                  v: prevV + 1,
+                  by: "Dra. Lucía Marín (líder clínica)",
+                  at: Date.now(),
+                  what:
+                    "Aprobó reglas de " +
+                    terr +
+                    " enviadas por " +
+                    p.by +
+                    ": " +
+                    ruleLines(p, pack).join(" · "),
+                });
+                if (typeof A.applyRules === "function") A.applyRules(s, terr);
+              } else {
+                const p = s.rules.pending;
+                if (!p?.draft) return;
+                s.rules.risk = p.draft.risk;
+                s.rules.dig = p.draft.dig;
+                if (p.draft.phq) s.rules.phq = p.draft.phq;
+                if (p.draft.ctx) s.rules.ctx = p.draft.ctx;
+                if (typeof A.applyRules === "function") A.applyRules(s);
+                else if (typeof A.ensure === "function") A.ensure(s);
+                s.rules.pending = null;
+                s.rules.pendingClearedAt = Date.now();
+                s.rules.versions = Array.isArray(s.rules.versions) ? s.rules.versions : [];
+                const prevV = (s.rules.versions[0] && s.rules.versions[0].v) || 1;
+                s.rules.versions.unshift({
+                  v: prevV + 1,
+                  by: "Dra. Lucía Marín (líder clínica)",
+                  at: Date.now(),
+                  what:
+                    "Aprobó el cambio de reglas enviado por " +
+                    p.by +
+                    ": " +
+                    ruleLines(p, s.rules).join(" · "),
+                });
+              }
               A.pushNotif(
                 s,
                 "admin",
-                "La líder clínica aprobó el cambio en las reglas de clasificación",
-                "/rutas?tab=2",
+                "La líder clínica aprobó las reglas" + (terr ? " de " + terr : ""),
+                "/rutas",
               );
-              A.logActivity(s, "lucia", "Aprobó un cambio en las reglas de clasificación");
+              A.logActivity(
+                s,
+                "lucia",
+                "Aprobó reglas de clasificación" + (terr ? " · " + terr : ""),
+              );
             });
-            setState({ msg: "Reglas aprobadas. Ya aplican en el programa.", tick: Date.now() });
+            setState({
+              msg: "Reglas aprobadas" + (terr ? " para " + terr : "") + ". Ya aplican.",
+              tick: Date.now(),
+            });
           } catch (e) {
             setState({ msg: "No se pudo aprobar el cambio de reglas." });
           }
         },
         reject: () => {
           A.set((s) => {
-            s.rules.pending = null;
-            s.rules.pendingClearedAt = Date.now();
+            if (terr && s.rules.byTerr && s.rules.byTerr[terr]) {
+              s.rules.byTerr[terr].pending = null;
+              s.rules.byTerr[terr].pendingClearedAt = Date.now();
+            } else {
+              s.rules.pending = null;
+              s.rules.pendingClearedAt = Date.now();
+            }
             A.pushNotif(
               s,
               "admin",
-              "La líder clínica devolvió sin aprobar el cambio en las reglas",
-              "/rutas?tab=2",
+              "La líder clínica devolvió sin aprobar las reglas" + (terr ? " de " + terr : ""),
+              "/rutas",
             );
-            A.logActivity(s, "lucia", "Devolvió un cambio en las reglas de clasificación");
+            A.logActivity(
+              s,
+              "lucia",
+              "Devolvió reglas sin aprobar" + (terr ? " · " + terr : ""),
+            );
           });
           setState({ msg: "Cambio de reglas devuelto sin aprobar.", tick: Date.now() });
         },
       });
-    }
+    });
     (S.pathRequests || []).forEach((rq) => {
       const stRq = String(rq.status || "pending").toLowerCase();
       if (stRq !== "pending") return;
       const { r, d } = A.parseCode(rq.code);
-      const curPath = A.pathList(r, d);
-      const nx = A.pathList(r, d, rq.draft);
+      const pathCtx = {
+        terr: rq.scope && rq.scope !== "all" ? rq.scope : null,
+      };
+      const curPath = A.pathList(r, d, null, pathCtx);
+      const nx = A.pathList(r, d, rq.draft, pathCtx);
       const kept = nx.filter((x) => curPath.find((c) => c.id === x.id && c.freq === x.freq));
       const changed = nx.filter((x) => {
         const prev = curPath.find((c) => c.id === x.id);
@@ -1713,7 +1851,7 @@ export function useClinicoScreen() {
         code: rq.code,
         riskLabel,
         digLabel,
-        riskColor: A.RISK[r]?.c || "#161413",
+        riskColor: A.RISK[r]?.c || "#27683A",
         title: "Ruta " + rq.code + " · " + riskLabel + " × digital " + digLabel,
         meta: rq.scope === "all" ? "Todos los territorios" : "Solo " + rq.scope,
         months: rq.draft?.months || 3,
@@ -1774,12 +1912,18 @@ export function useClinicoScreen() {
               if (typeof A.normalizePathS === "function") {
                 approved.s = A.normalizePathS(approved.s);
               }
-              s.pathOverrides[rq.code] = approved;
-              // Pacientes de este perfil: alinear app con servicios activos (freq truthy).
+              const ovKey =
+                typeof A.pathOverrideKey === "function"
+                  ? A.pathOverrideKey(rq.code, rq.scope || "all")
+                  : rq.code;
+              s.pathOverrides[ovKey] = approved;
+              // Pacientes de este perfil (y territorio si aplica): alinear app.
               const { r: pr, d: pd } = A.parseCode(rq.code);
               const approvedIds = new Set(
                 (typeof A.appModuleIdsFromPath === "function"
-                  ? (A.appModuleIdsFromPath(pr, pd, approved, null) as string[])
+                  ? (A.appModuleIdsFromPath(pr, pd, approved, {
+                      terr: rq.scope !== "all" ? rq.scope : null,
+                    }) as string[])
                   : Object.keys(approved.s || {}).filter(
                       (k) => approved.s[k] && String(approved.s[k]).trim(),
                     )
@@ -1789,6 +1933,13 @@ export function useClinicoScreen() {
               Object.keys(s.patients || {}).forEach((pid) => {
                 const pat = s.patients[pid];
                 if (!pat || String(pat.profile || "") !== String(rq.code)) return;
+                if (
+                  rq.scope &&
+                  rq.scope !== "all" &&
+                  String(pat.terr || "") !== String(rq.scope)
+                ) {
+                  return;
+                }
                 pat.modulesEnabled = mods.slice();
                 pat.modulesVisible = mods.slice();
                 syncedPatients.push({
@@ -1823,7 +1974,7 @@ export function useClinicoScreen() {
               A.pushNotif(
                 s,
                 "admin",
-                "Ruta " + rq.code + " aprobada por la líder clínica",
+                "Ruta " + rq.code + (rq.scope && rq.scope !== "all" ? " · " + rq.scope : "") + " aprobada por la líder clínica",
                 "/rutas",
               );
               A.logActivity(s, "lucia", "Aprobó la ruta " + rq.code);
@@ -1950,17 +2101,17 @@ export function useClinicoScreen() {
 
     const TYPE_META: Record<string, { label: string; bg: string; fg: string }> = {
       created: { label: "Alerta creada", bg: "#FDE7E4", fg: "#8A1C14" },
-      taken: { label: "Caso tomado", bg: "#FFF4CC", fg: "#161413" },
+      taken: { label: "Caso tomado", bg: "#FDF2B3", fg: "#27683A" },
       retry: { label: "Reintento", bg: "#F7E2D2", fg: "#7A3A10" },
       awaiting_patient: {
         label: "Esperando al paciente",
-        bg: "#FFF4CC",
-        fg: "#161413",
+        bg: "#FDF2B3",
+        fg: "#27683A",
       },
-      closed: { label: "Crisis cerrada", bg: "#E3F1E8", fg: "#161413" },
-      dismissed: { label: "Marcada vista", bg: "#E6E1D9", fg: "#5E5750" },
-      status_changed: { label: "Cambio de estado", bg: "#E6E1D9", fg: "#161413" },
-      notified: { label: "Aviso al experto", bg: "#A9D4FF", fg: "#161413" },
+      closed: { label: "Crisis cerrada", bg: "#C0DFC8", fg: "#27683A" },
+      dismissed: { label: "Marcada vista", bg: "#C0DFC8", fg: "#5A5A52" },
+      status_changed: { label: "Cambio de estado", bg: "#C0DFC8", fg: "#27683A" },
+      notified: { label: "Aviso al experto", bg: "#A9D4FF", fg: "#27683A" },
     };
     const fmtCrisisWhen = (at: number) => {
       if (!at) return "—";
@@ -2021,8 +2172,8 @@ export function useClinicoScreen() {
         seen.add(key);
         const meta = TYPE_META[String(e.type || "")] || {
           label: String(e.type || "Evento"),
-          bg: "#E6E1D9",
-          fg: "#161413",
+          bg: "#C0DFC8",
+          fg: "#27683A",
         };
         const roleLabel =
           e.byRole === "paciente"
@@ -2237,13 +2388,8 @@ export function useClinicoScreen() {
           file: "Ficha de " + P.name,
         }[st.view] || "Inicio"),
       goAlerts: () => {
-        const toTakeN = alertasCola.filter(
-          (a) => a.sev === "crisis" && a.status === "new",
-        ).length;
-        const mineN = S.alerts.filter(
-          (a) =>
-            a.sev === "crisis" && (a.status === "mine" || a.status === "retry"),
-        ).length;
+        const toTakeN = alerts.filter((a) => a.canTake).length;
+        const mineN = alerts.filter((a) => a.isMine).length;
         navigateView("alerts", {
           crisisTab: toTakeN > 0 ? "take" : mineN > 0 ? "mine" : "all",
         });
@@ -2373,43 +2519,71 @@ export function useClinicoScreen() {
       fRoute: (() => {
         const pc2 = A.parseCode(P.profile);
         if (pc2.r < 0 || pc2.d < 0) return [];
-        return A.pathList(pc2.r, pc2.d, null, P.ctx).map((x) => ({
+        const terr =
+          String(P.terr || "").trim() ||
+          String((P.ctx as { terr?: string } | undefined)?.terr || "").trim() ||
+          "";
+        const ctx = {
+          ...(P.ctx && typeof P.ctx === "object" ? P.ctx : {}),
+          terr: terr || undefined,
+        };
+        // Misma fuente que la app del paciente: pathOverrides del territorio ('' = off).
+        const list = A.pathList(pc2.r, pc2.d, null, ctx) || [];
+        return list.map((x: { name: string; freq: string; channel?: string }) => ({
           name: x.name,
           freq: x.freq + (x.channel ? " · " + x.channel : ""),
         }));
       })(),
-      /** Servicios del paciente para la sección Herramientas (2 por fila). */
+      /** Herramientas = ruta aprobada del territorio (igual que el paciente). */
       fHerramientas: (() => {
         const pc2 = A.parseCode(P.profile);
         if (pc2.r < 0 || pc2.d < 0) return [];
-        return A.pathList(pc2.r, pc2.d, null, P.ctx).map((x) => ({
-          id: x.id,
-          name: x.name,
-          freq: x.freq,
-          channel: x.channel || "",
-        }));
+        const terr =
+          String(P.terr || "").trim() ||
+          String((P.ctx as { terr?: string } | undefined)?.terr || "").trim() ||
+          "";
+        const ctx = {
+          ...(P.ctx && typeof P.ctx === "object" ? P.ctx : {}),
+          terr: terr || undefined,
+        };
+        const list = A.pathList(pc2.r, pc2.d, null, ctx) || [];
+        return list.map(
+          (x: { id: string; name: string; freq: string; channel?: string }) => ({
+            id: x.id,
+            name: x.name,
+            freq: x.freq,
+            channel: x.channel || "",
+          }),
+        );
       })(),
       alerts,
       noAlerts: alerts.length === 0,
-      closed,
-      noClosed: closed.length === 0,
+      closed: closedDone,
+      awaiting: awaitingPatient,
+      noClosed: closedDone.length === 0,
       crisisTab: st.crisisTab || "take",
       crisisBoard: (() => {
         const toTake = alerts.filter((a) => a.canTake);
         const mine = alerts.filter((a) => a.isMine);
         const others = alerts.filter((a) => a.isOther);
         const info = alerts.filter((a) => a.isInfo);
+        /** Cola abierta = esperan «estoy bien» del paciente (ya gestionadas por clínico). */
         const late = alerts.filter((a) => a.isCrisis && a.isLate && a.status !== "closed");
         const tab = st.crisisTab || "take";
         const tabs = [
-          { id: "take", label: "Por tomar", n: toTake.length, hint: "Esperan que alguien las tome" },
-          { id: "mine", label: "En atención", n: mine.length, hint: "Casos que usted tomó" },
-          { id: "all", label: "Cola abierta", n: alerts.length, hint: "Todas las alertas abiertas" },
+          { id: "take", label: "Por tomar", n: toTake.length, hint: "Aún no las ha tomado nadie" },
+          { id: "mine", label: "En atención", n: mine.length, hint: "Casos que usted está gestionando" },
+          {
+            id: "all",
+            label: "Cola abierta",
+            n: awaitingPatient.length,
+            hint: "Esperan confirmación «estoy bien» del paciente",
+          },
           {
             id: "done",
             label: "Gestionadas hoy",
-            n: closed.length,
-            hint: "Atendidas por el clínico · cerradas solo tras «estoy bien»",
+            n: closedDone.length,
+            hint: "Ya cerradas hoy (paciente confirmó o salió de crisis)",
           },
         ].map((t) => ({
           ...t,
@@ -2423,20 +2597,21 @@ export function useClinicoScreen() {
           others,
           info,
           late,
-          closed,
+          awaiting: awaitingPatient,
+          closed: closedDone,
           counts: {
             toTake: toTake.length,
             mine: mine.length,
             others: others.length,
             info: info.length,
             late: late.length,
-            done: closed.length,
-            open: alerts.length,
+            done: closedDone.length,
+            open: awaitingPatient.length,
           },
           emptyTake: toTake.length === 0,
           emptyMine: mine.length === 0,
-          emptyAll: alerts.length === 0,
-          emptyDone: closed.length === 0,
+          emptyAll: awaitingPatient.length === 0,
+          emptyDone: closedDone.length === 0,
         };
       })(),
       patients,

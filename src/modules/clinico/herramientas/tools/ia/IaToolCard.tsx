@@ -27,14 +27,14 @@ function estadoTone(estado: Conversation["estadoMental"]) {
   if (estado === "crisis")
     return "bg-[#FDE7E4] text-[#8A1C14] border-[#E8B4B4]";
   if (estado === "malo")
-    return "bg-[#FFF4CC] text-[#5E5750] border-[#E0D4A8]";
+    return "bg-[#FDF2B3] text-[#5A5A52] border-[#E0D4A8]";
   return "bg-[#E8F0E4] text-[#2F6F4E] border-[#C5D4A8]";
 }
 
 function teoFace(estado: Conversation["estadoMental"]) {
-  if (estado === "crisis") return "/nara/marca/personajes/teo-calma.svg";
-  if (estado === "malo") return "/nara/marca/personajes/teo-duda.svg";
-  return "/nara/marca/personajes/teo-curiosidad.svg";
+  if (estado === "crisis") return "/parienta/aurelia/aurelia-base.svg";
+  if (estado === "malo") return "/parienta/aurelia/aurelia-piensa.svg";
+  return "/parienta/aurelia/aurelia-escucha.svg";
 }
 
 async function loadConversations(
@@ -56,7 +56,7 @@ async function loadConversations(
   return data.conversations;
 }
 
-/** Acompañante con IA (TEO) — casilla + modal; datos solo desde BD. */
+/** Acompañante con IA (Aurelia) — casilla + modal; datos solo desde BD. */
 export function IaToolCard({ item, patientId }: HerramientaCardProps) {
   const store = useNaraStore();
   const stored = store.PATIENTS?.[patientId] as { name?: string } | undefined;
@@ -110,7 +110,7 @@ export function IaToolCard({ item, patientId }: HerramientaCardProps) {
           className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-3 sm:items-center sm:p-6"
           role="dialog"
           aria-modal="true"
-          aria-label="Acompañante con IA (TEO)"
+          aria-label="Acompañante con IA (Aurelia)"
           onClick={() => {
             setOpen(false);
             setSelected(null);
@@ -127,7 +127,7 @@ export function IaToolCard({ item, patientId }: HerramientaCardProps) {
               />
               <div className="relative flex items-start gap-3">
                 <img
-                  src="/nara/marca/personajes/teo-curiosidad.svg"
+                  src="/parienta/aurelia/aurelia-escucha.svg"
                   alt=""
                   className="h-14 w-14 shrink-0 object-contain"
                 />
@@ -136,7 +136,7 @@ export function IaToolCard({ item, patientId }: HerramientaCardProps) {
                     Acompañante con IA
                   </p>
                   <p className="m-0 mt-0.5 text-[13px] text-texto-secundario">
-                    TEO · {patientName || "Paciente"}
+                    Aurelia · {patientName || "Paciente"}
                   </p>
                 </div>
                 <button
@@ -199,12 +199,12 @@ export function IaToolCard({ item, patientId }: HerramientaCardProps) {
                   {!loading && !rows.length ? (
                     <div className="rounded-[22px] border border-dashed border-linea bg-nara-blanco px-5 py-10 text-center">
                       <img
-                        src="/nara/marca/personajes/teo-calma.svg"
+                        src="/parienta/aurelia/aurelia-base.svg"
                         alt=""
                         className="mx-auto mb-3 h-16 w-16 object-contain"
                       />
                       <p className="m-0 font-titulos text-[17px] font-semibold">
-                        Aún no hay chats con TEO
+                        Aún no hay chats con Aurelia
                       </p>
                       <p className="m-0 mt-1.5 text-[13px] leading-snug text-texto-secundario">
                         Cuando {patientName || "la persona"} converse en la app,
@@ -281,8 +281,8 @@ export function IaToolCard({ item, patientId }: HerramientaCardProps) {
                             <img
                               src={
                                 m.crisis
-                                  ? "/nara/marca/personajes/teo-calma.svg"
-                                  : "/nara/marca/personajes/teo-curiosidad.svg"
+                                  ? "/parienta/aurelia/aurelia-base.svg"
+                                  : "/parienta/aurelia/aurelia-escucha.svg"
                               }
                               alt=""
                               className="mt-1 h-8 w-8 shrink-0 object-contain"
@@ -299,7 +299,7 @@ export function IaToolCard({ item, patientId }: HerramientaCardProps) {
                           >
                             {!me ? (
                               <span className="mb-1 block text-[11px] font-medium text-texto-secundario">
-                                TEO
+                                Aurelia
                               </span>
                             ) : null}
                             {m.text}

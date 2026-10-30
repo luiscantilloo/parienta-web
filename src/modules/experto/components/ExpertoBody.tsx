@@ -13,36 +13,41 @@ import { UserMenu } from "@/components/shared/user-menu/UserMenu";
 
 export function ExpertoTopbar({ v }: { v: Record<string, any> }) {
   return (
-    <header className="box-border flex h-16 shrink-0 items-center justify-between gap-2 border-b border-linea bg-nara-blanco px-3 sm:gap-4 sm:px-6">
+    <header className="nara-topbar gap-2 px-3 sm:gap-4 sm:px-6">
       <button
         type="button"
         onClick={() => v.goList?.()}
-        className="flex shrink-0 cursor-pointer items-center border-none bg-transparent p-0 text-nara-tinta"
+        className="flex shrink-0 cursor-pointer items-center border-none bg-transparent p-0 text-[#27683A]"
       >
         <img
-          src="/nara/marca/logo/nara-logo.svg"
-          alt="NARA"
+          src="/parienta/logo/parienta-horizontal-principal.svg"
+          alt="Parienta"
           className="block h-7 w-auto sm:h-[34px]"
         />
       </button>
       <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
         {v.dev ? (
-          <span className="hidden rounded-[5px] border border-linea px-1.5 py-0.5 font-mono text-[11px] text-texto-secundario md:inline">
+          <span className="hidden rounded-[5px] border border-[#C0DFC8] px-1.5 py-0.5 font-mono text-[11px] text-[#5A5A52] md:inline">
             {v.screenCode}
           </span>
         ) : null}
         <button
           type="button"
           onClick={() => v.openAgent?.()}
-          aria-label="Abrir TEO"
-          className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-nara-tinta bg-nara-blanco px-2.5 font-texto text-sm font-medium text-nara-tinta sm:h-11 sm:px-4 sm:text-base"
+          aria-label="Abrir Aurelia, asistente de Parienta"
+          className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-[#C0DFC8] bg-[#FBFAF3] px-2.5 font-texto text-sm font-medium text-[#27683A] transition hover:bg-[#C0DFC8]/70 sm:h-11 sm:px-4 sm:text-base"
         >
           <img
-            src="/nara/marca/logo/teo-isotipo.svg"
+            src="/parienta/aurelia/aurelia-base.svg"
             alt=""
             className="block h-7 w-7 sm:-ml-2 sm:h-8 sm:w-8"
           />
-          <span className="hidden sm:inline">TEO</span>
+          <span className="hidden flex-col items-start leading-none sm:flex">
+            <span>Aurelia</span>
+            <span className="mt-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-[#5A5A52]">
+              asistente
+            </span>
+          </span>
         </button>
         <div
           className="flex max-w-[42vw] items-center gap-2 truncate rounded-full border border-linea px-2.5 py-1.5 text-xs font-medium sm:max-w-none sm:px-3.5 sm:py-2 sm:text-[15px]"
@@ -62,7 +67,6 @@ export function ExpertoTopbar({ v }: { v: Record<string, any> }) {
 }
 
 export function ExpertoBody({ v }: { v: Record<string, any> }) {
-  const er = v.er || {};
   const [worklistQ, setWorklistQ] = useState("");
   const worklistRows = useMemo(
     () => filterRowsBySearch(v.worklist || [], worklistQ),
@@ -76,7 +80,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
       <NaraMsgAlert msg={v.reasonErr} onClear={() => v.clearReasonErr?.()} />
       <div
         data-screen-label="Experto"
-        className="min-w-0 w-full bg-nara-crema font-texto text-nara-tinta"
+        className="min-w-0 w-full bg-[#FBFAF3] font-texto text-[#27683A]"
       >
             <div ref={v.scrollRef} className="relative">
               <div className="mx-auto box-border w-full max-w-[1280px] px-3 sm:px-7">
@@ -94,7 +98,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       key={i}
                       style={{
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 12,
                         padding: "14px 18px",
                         display: "flex",
@@ -122,11 +126,11 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         type="button"
                         onClick={() => n.dismiss?.()}
                         style={{
-                          fontFamily: "Figtree,system-ui,sans-serif",
+                          fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                           fontSize: 15,
                           border: "none",
                           background: "none",
-                          color: "#161413",
+                          color: "#27683A",
                           cursor: "pointer",
                           padding: "4px 8px",
                         }}
@@ -135,94 +139,38 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       </button>
                     </div>
                   ))}
-                  <div
-                    style={{
-                      background: "#fff",
-                      border: "1px solid #DCD6CD",
-                      borderRadius: 12,
-                      padding: "10px 12px 10px 16px",
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "center",
-                    }}
-                  >
+                  <div className="flex items-center gap-3.5 rounded-xl border border-[#C0DFC8] bg-white px-4 py-2.5">
                     <img
-                      src="/nara/marca/logo/teo-isotipo.svg"
+                      src="/parienta/aurelia/aurelia-base.svg"
                       alt=""
-                      style={{
-                        flex: "none",
-                        width: 36,
-                        height: 36,
-                        display: "block",
-                      }}
+                      className="block h-9 w-9 shrink-0"
                     />
-                    <div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 16,
-                          lineHeight: 1.4,
-                          textWrap: "pretty",
-                        }}
-                      >
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-pretty font-texto text-base leading-snug text-[#27683A]">
                         {v.briefLine}
                       </span>
-                      <span style={{ fontSize: 13, color: "#5E5750" }}>
+                      <span className="font-mono text-[12px] text-[#5A5A52]">
                         {v.briefSub}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => v.openAgent?.()}
-                      style={{
-                        flex: "none",
-                        fontFamily: "Figtree,system-ui,sans-serif",
-                        fontSize: 16,
-                        fontWeight: 500,
-                        height: 46,
-                        padding: "0 20px",
-                        borderRadius: 14,
-                        border: "none",
-                        background: "#FDCD22",
-                        color: "#161413",
-                        cursor: "pointer",
-                      }}
+                      className="h-11 shrink-0 cursor-pointer rounded-md border-0 bg-[#F26B3A] px-5 font-texto text-base font-bold !text-[#FBFAF3] transition hover:bg-[#e05a2a]"
                     >
                       Preguntar
                     </button>
                   </div>
-                  <div
-                    className="nara-page-head flex flex-wrap items-end justify-between gap-3"
-                    style={{
-                      flexDirection: "row",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 4,
-                        minWidth: 0,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                          fontWeight: 600,
-                          fontSize: 28,
-                        }}
-                      >
+                  <div className="nara-page-head flex flex-wrap items-end justify-between gap-3">
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <h1 className="m-0 font-titulos text-[clamp(24px,4vw,28px)] font-extrabold leading-tight text-[#27683A]">
                         Visitas de hoy
-                      </span>
+                      </h1>
                       {/* H-009: fecha real de hoy; la capa de fechas relativas no debe volver a correrla. */}
-                      <span style={{ fontSize: 16, color: "#5E5750" }} data-real-date>
+                      <span
+                        className="font-mono text-sm text-[#5A5A52]"
+                        data-real-date
+                      >
                         {(v.quotaDateLabel as string) || "Hoy"} · Solo cuentan
                         las visitas validadas
                       </span>
@@ -230,76 +178,32 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <button
                       type="button"
                       onClick={() => v.goNew?.()}
-                      style={{
-                        fontFamily: "Figtree,system-ui,sans-serif",
-                        fontSize: 17,
-                        fontWeight: 500,
-                        height: 52,
-                        padding: "0 22px",
-                        borderRadius: 12,
-                        border: "1.5px solid #161413",
-                        background: "#fff",
-                        color: "#161413",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                      }}
+                      className="h-12 cursor-pointer whitespace-nowrap rounded-md border-[1.5px] border-[#27683A] bg-white px-5 font-texto text-[17px] font-bold !text-[#27683A] transition hover:bg-[#C0DFC8]/40"
                     >
                       + Nueva persona
                     </button>
                   </div>
-                  <div className="nara-kpi-grid" style={{ gap: 14 }}>
+                  <div className="nara-kpi-grid gap-3.5">
                     {(v.quotaCards || []).map((q: Record<string, any>, i: number) => (
                       <div
                         key={i}
-                        style={{
-                          background: "#fff",
-                          border: "1px solid #DCD6CD",
-                          borderRadius: 20,
-                          padding: "16px 18px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                        }}
+                        className="flex flex-col gap-2 rounded-2xl border border-[#C0DFC8] bg-white px-[18px] py-4"
                       >
-                        <span style={{ fontSize: 15, color: "#5E5750" }}>
+                        <span className="font-mono text-[12px] font-medium uppercase tracking-[0.1em] text-[#5A5A52]">
                           {q.label}
                         </span>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "baseline",
-                            gap: 6,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                              fontWeight: 600,
-                              fontSize: 34,
-                              lineHeight: 1,
-                            }}
-                          >
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="font-titulos text-[34px] font-extrabold leading-none text-[#27683A]">
                             {q.val}
                           </span>
-                          <span style={{ fontSize: 16, color: "#5E5750" }}>
+                          <span className="font-texto text-base text-[#5A5A52]">
                             de {q.target}
                           </span>
                         </div>
-                        <div
-                          style={{
-                            height: 8,
-                            borderRadius: 4,
-                            background: "#E6E1D9",
-                            overflow: "hidden",
-                          }}
-                        >
+                        <div className="h-2 overflow-hidden rounded-sm bg-[#C0DFC8]">
                           <div
-                            style={{
-                              height: "100%",
-                              width: q.pct,
-                              background: "#161413",
-                              borderRadius: 4,
-                            }}
+                            className="h-full rounded-sm bg-[#27683A]"
+                            style={{ width: q.pct }}
                           />
                         </div>
                       </div>
@@ -314,7 +218,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                   <div
                     style={{
                       background: "#fff",
-                      border: "1px solid #DCD6CD",
+                      border: "1px solid #C0DFC8",
                       borderRadius: 20,
                       overflow: "hidden",
                     }}
@@ -331,7 +235,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           alignItems: "center",
                           gap: 14,
                           padding: "14px 20px",
-                          borderBottom: "1px solid #E6E1D9",
+                          borderBottom: "1px solid #C0DFC8",
                           background: w.rowBg,
                           boxShadow: w.rowShadow,
                         }}
@@ -339,16 +243,16 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         <span style={{ fontSize: 17, fontWeight: 500 }}>
                           {w.time}
                         </span>
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span style={{ fontSize: 17, fontWeight: 500 }}>
+                        <div className="flex flex-col">
+                          <span className="font-titulos text-[17px] font-extrabold text-[#27683A]">
                             {w.name}
                           </span>
-                          <span style={{ fontSize: 15, color: "#5E5750" }}>
+                          <span className="font-mono text-[13px] text-[#5A5A52]">
                             {w.age} años
                           </span>
                         </div>
                         <span style={{ fontSize: 16 }}>{w.place}</span>
-                        <span style={{ fontSize: 15, color: "#5E5750" }}>
+                        <span style={{ fontSize: 15, color: "#5A5A52" }}>
                           {w.zone}
                         </span>
                         <div
@@ -360,11 +264,8 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           }}
                         >
                           <span
+                            className="rounded-md px-2.5 py-1 font-mono text-[12px] font-medium"
                             style={{
-                              fontSize: 14,
-                              fontWeight: 500,
-                              padding: "5px 10px",
-                              borderRadius: 6,
                               background: w.tagBg,
                               color: w.tagFg,
                             }}
@@ -378,7 +279,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 fontWeight: 500,
                                 padding: "5px 10px",
                                 borderRadius: 6,
-                                border: "1px solid #DCD6CD",
+                                border: "1px solid #C0DFC8",
                                 background: "#fff",
                               }}
                             >
@@ -391,18 +292,10 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                             <button
                               type="button"
                               onClick={() => w.onAction?.()}
+                              className="h-12 cursor-pointer whitespace-nowrap rounded-md border-[1.5px] border-[#27683A] px-[18px] font-texto text-base font-bold transition hover:opacity-90"
                               style={{
-                                fontFamily: "Figtree,system-ui,sans-serif",
-                                fontSize: 16,
-                                fontWeight: 500,
-                                height: 48,
-                                padding: "0 18px",
-                                borderRadius: 10,
-                                border: "1.5px solid #161413",
                                 background: w.btnBg,
                                 color: w.btnFg,
-                                cursor: "pointer",
-                                whiteSpace: "nowrap",
                               }}
                             >
                               {w.action}
@@ -418,8 +311,8 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           padding: "28px 20px",
                           textAlign: "center",
                           fontSize: 15,
-                          color: "#5E5750",
-                          borderTop: "1px solid #E6E1D9",
+                          color: "#5A5A52",
+                          borderTop: "1px solid #C0DFC8",
                         }}
                       >
                         {worklistQ.trim()
@@ -440,8 +333,8 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     >
                       <span
                         style={{
-                          fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                          fontWeight: 600,
+                          fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+                        fontWeight: 800,
                           fontSize: 22,
                         }}
                       >
@@ -452,7 +345,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           key={g.id ?? gi}
                           style={{
                             background: "#fff",
-                            border: "1px solid #DCD6CD",
+                            border: "1px solid #C0DFC8",
                             borderRadius: 20,
                             padding: "14px 20px",
                             display: "flex",
@@ -491,8 +384,8 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                     fontWeight: 500,
                                     padding: "4px 9px",
                                     borderRadius: 6,
-                                    background: "#E6E1D9",
-                                    color: "#161413",
+                                    background: "#C0DFC8",
+                                    color: "#27683A",
                                   }}
                                 >
                                   {g.kind}
@@ -501,7 +394,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                   {g.title}
                                 </span>
                               </div>
-                              <span style={{ fontSize: 15, color: "#5E5750" }}>
+                              <span style={{ fontSize: 15, color: "#5A5A52" }}>
                                 {g.place} · {g.attText}
                               </span>
                             </div>
@@ -510,15 +403,15 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 type="button"
                                 onClick={() => g.close?.()}
                                 style={{
-                                  fontFamily: "Figtree,system-ui,sans-serif",
+                                  fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                   fontSize: 16,
                                   fontWeight: 500,
                                   height: 46,
                                   padding: "0 16px",
                                   borderRadius: 10,
-                                  border: "1.5px solid #161413",
+                                  border: "1.5px solid #27683A",
                                   background: "#fff",
-                                  color: "#161413",
+                                  color: "#27683A",
                                   cursor: "pointer",
                                 }}
                               >
@@ -530,7 +423,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 style={{
                                   fontSize: 15,
                                   fontWeight: 500,
-                                  color: "#161413",
+                                  color: "#27683A",
                                 }}
                               >
                                 Asistencia guardada
@@ -542,7 +435,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                               type="button"
                               onClick={() => g.tabAtt?.()}
                               style={{
-                                fontFamily: "Figtree,system-ui,sans-serif",
+                                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                 fontSize: 15,
                                 fontWeight: 500,
                                 height: 44,
@@ -550,7 +443,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 border: "none",
                                 background: "none",
                                 borderBottom: `3px solid ${g.attBd}`,
-                                color: "#161413",
+                                color: "#27683A",
                                 cursor: "pointer",
                                 marginBottom: -1,
                               }}
@@ -561,7 +454,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                               type="button"
                               onClick={() => g.tabGuide?.()}
                               style={{
-                                fontFamily: "Figtree,system-ui,sans-serif",
+                                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                 fontSize: 15,
                                 fontWeight: 500,
                                 height: 44,
@@ -569,7 +462,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 border: "none",
                                 background: "none",
                                 borderBottom: `3px solid ${g.guideBd}`,
-                                color: "#161413",
+                                color: "#27683A",
                                 cursor: "pointer",
                                 marginBottom: -1,
                               }}
@@ -578,110 +471,26 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                             </button>
                           </div>
                           {g.isGuide ? (
-                            <div className="nara-split-panel-start">
-                              <img
-                                src={g.cover}
-                                alt={g.cuento}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 10,
+                              }}
+                            >
+                              <span
                                 style={{
-                                  width: 120,
-                                  aspectRatio: "600/780",
-                                  objectFit: "cover",
-                                  borderRadius: 12,
-                                  boxShadow: "0 4px 12px rgba(22,20,19,.22)",
-                                  display: "block",
-                                }}
-                              />
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: 10,
+                                  fontSize: 15,
+                                  fontWeight: 600,
                                 }}
                               >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    gap: 10,
-                                    alignItems: "center",
-                                    flexWrap: "wrap",
-                                  }}
-                                >
-                                  <span style={{ fontSize: 13, color: "#5E5750" }}>
-                                    Cuento del día
-                                  </span>
-                                  <span
-                                    style={{
-                                      fontSize: 13,
-                                      fontWeight: 600,
-                                      padding: "3px 10px",
-                                      borderRadius: 999,
-                                      background: "#E3F1E8",
-                                      color: "#161413",
-                                    }}
-                                  >
-                                    Disponible sin señal
-                                  </span>
-                                </div>
-                                <span
-                                  style={{
-                                    fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                                    fontWeight: 600,
-                                    fontSize: 21,
-                                  }}
-                                >
-                                  {g.cuento}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => g.read?.()}
-                                  style={{
-                                    fontFamily: "Figtree,system-ui,sans-serif",
-                                    fontSize: 16,
-                                    fontWeight: 500,
-                                    minHeight: 46,
-                                    padding: "0 16px",
-                                    borderRadius: 14,
-                                    border: "1.5px solid #161413",
-                                    background: "#fff",
-                                    color: "#161413",
-                                    cursor: "pointer",
-                                    alignSelf: "flex-start",
-                                  }}
-                                >
-                                  Abrir para leer en voz alta
-                                </button>
-                                <span
-                                  style={{
-                                    fontSize: 15,
-                                    fontWeight: 600,
-                                    marginTop: 4,
-                                  }}
-                                >
-                                  Preguntas para conversar
-                                </span>
-                                {(g.qs || []).map((q: Record<string, any>, qi: number) => (
-                                  <span
-                                    key={qi}
-                                    style={{ fontSize: 16, lineHeight: 1.4 }}
-                                  >
-                                    {q.n}. {q.t}
-                                  </span>
-                                ))}
-                                <span
-                                  style={{
-                                    fontSize: 15,
-                                    fontWeight: 600,
-                                    marginTop: 4,
-                                  }}
-                                >
-                                  Técnica de cierre
-                                </span>
-                                <span style={{ fontSize: 16 }}>{g.tech}</span>
-                                <span style={{ fontSize: 14, color: "#5E5750" }}>
-                                  La lista de asistencia está en la pestaña
-                                  «Asistencia».
-                                </span>
-                              </div>
+                                Técnica de cierre
+                              </span>
+                              <span style={{ fontSize: 16 }}>{g.tech}</span>
+                              <span style={{ fontSize: 14, color: "#5A5A52" }}>
+                                La lista de asistencia está en la pestaña
+                                «Asistencia».
+                              </span>
                             </div>
                           ) : null}
                           {g.isAtt ? (
@@ -699,7 +508,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                     type="button"
                                     onClick={() => p.toggle?.()}
                                     style={{
-                                      fontFamily: "Figtree,system-ui,sans-serif",
+                                      fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                       fontSize: 15,
                                       height: 44,
                                       padding: "0 14px",
@@ -790,6 +599,25 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                     </option>
                                   ))}
                                 </select>
+                              ) : f.onGenerate ? (
+                                <div className="relative">
+                                  <input
+                                    type={f.kind === "email" ? "email" : "text"}
+                                    value={f.value}
+                                    onChange={f.readOnly || f.kind === "readonly" ? undefined : f.onChange}
+                                    readOnly={!!f.readOnly || f.kind === "readonly"}
+                                    placeholder={f.ph}
+                                    autoComplete={f.kind === "password" ? "new-password" : undefined}
+                                    className={`${inputClass} pr-[5.5rem]`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => f.onGenerate?.()}
+                                    className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+                                  >
+                                    Generar
+                                  </button>
+                                </div>
                               ) : (
                                 <input
                                   type={f.kind === "date" ? "date" : f.kind === "email" ? "email" : "text"}
@@ -839,14 +667,14 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span
                       style={{
-                        fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                        fontWeight: 600,
+                        fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+                        fontWeight: 800,
                         fontSize: 24,
                       }}
                     >
                       {v.personName}
                     </span>
-                    <span style={{ fontSize: 15, color: "#5E5750" }}>
+                    <span style={{ fontSize: 15, color: "#5A5A52" }}>
                       {v.personMeta}
                     </span>
                   </div>
@@ -876,7 +704,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           {s.label}
                         </span>
                         {s.arrow ? (
-                          <span style={{ color: "#5E5750", padding: "0 6px" }}>
+                          <span style={{ color: "#5A5A52", padding: "0 6px" }}>
                             →
                           </span>
                         ) : null}
@@ -897,7 +725,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                   <div
                     style={{
                       background: "#fff",
-                      border: "1px solid #DCD6CD",
+                      border: "1px solid #C0DFC8",
                       borderRadius: 20,
                       padding: "20px 22px",
                       display: "flex",
@@ -905,7 +733,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       gap: 10,
                     }}
                   >
-                    <span style={{ fontSize: 16, color: "#5E5750" }}>
+                    <span style={{ fontSize: 16, color: "#5A5A52" }}>
                       Lea cada punto en voz alta y marque lo que la persona acepta.
                     </span>
                     {(v.consentItems || []).map(
@@ -978,7 +806,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <div
                       style={{
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 20,
                         padding: "20px 22px",
                         display: "flex",
@@ -1000,11 +828,11 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           type="button"
                           onClick={() => v.sigClear?.()}
                           style={{
-                            fontFamily: "Figtree,system-ui,sans-serif",
+                            fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                             fontSize: 15,
                             border: "none",
                             background: "none",
-                            color: "#161413",
+                            color: "#27683A",
                             cursor: "pointer",
                           }}
                         >
@@ -1018,14 +846,14 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         style={{
                           width: "100%",
                           height: 150,
-                          border: "1.5px dashed #5E5750",
+                          border: "1.5px dashed #5A5A52",
                           borderRadius: 10,
                           background: "#FAF8F5",
                           touchAction: "none",
                           cursor: "crosshair",
                         }}
                       />
-                      <span style={{ fontSize: 14, color: "#5E5750" }}>
+                      <span style={{ fontSize: 14, color: "#5A5A52" }}>
                         {v.sigHint}
                       </span>
                       <div
@@ -1066,7 +894,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           style={{
                             height: 50,
                             borderRadius: 10,
-                            border: "1.5px solid #DCD6CD",
+                            border: "1.5px solid #C0DFC8",
                             padding: "0 14px",
                             fontSize: 16,
                           }}
@@ -1076,7 +904,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <div
                       style={{
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 20,
                         padding: "16px 22px",
                         display: "flex",
@@ -1098,7 +926,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                               gap: 12,
                             }}
                           >
-                            <span style={{ color: "#5E5750" }}>{e.k}</span>
+                            <span style={{ color: "#5A5A52" }}>{e.k}</span>
                             <span>{e.v}</span>
                           </div>
                         ),
@@ -1108,7 +936,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       type="button"
                       onClick={() => v.consentNext?.()}
                       style={{
-                        fontFamily: "Figtree,system-ui,sans-serif",
+                        fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                         fontSize: 17,
                         fontWeight: 500,
                         height: 56,
@@ -1169,8 +997,8 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         </span>
                         <span
                           style={{
-                            fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                            fontWeight: 600,
+                            fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+                        fontWeight: 800,
                             fontSize: 24,
                           }}
                         >
@@ -1241,14 +1069,14 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           type="button"
                           onClick={() => v.goResult?.()}
                           style={{
-                            fontFamily: "Figtree,system-ui,sans-serif",
+                            fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                             fontSize: 16,
                             fontWeight: 500,
                             height: 54,
                             borderRadius: 12,
-                            border: "1.5px solid #161413",
+                            border: "1.5px solid #27683A",
                             background: "#fff",
-                            color: "#161413",
+                            color: "#27683A",
                             cursor: "pointer",
                           }}
                         >
@@ -1267,13 +1095,13 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                   >
                     <span style={{ fontSize: 16 }}>
                       <b style={{ fontWeight: 500 }}>{v.progressOk}</b>
-                      <span style={{ color: "#161413" }}>{v.progressDraft}</span>
+                      <span style={{ color: "#27683A" }}>{v.progressDraft}</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => v.calc?.()}
                       style={{
-                        fontFamily: "Figtree,system-ui,sans-serif",
+                        fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                         fontSize: 17,
                         fontWeight: 500,
                         height: 50,
@@ -1291,169 +1119,13 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                   <div
                     style={{ display: "flex", gap: 16, alignItems: "stretch" }}
                   >
-                    {v.isChat ? (
-                      <div
-                        style={{
-                          flex: 1.05,
-                          minWidth: 0,
-                          background: "#fff",
-                          border: "1px solid #DCD6CD",
-                          borderRadius: 20,
-                          display: "flex",
-                          flexDirection: "column",
-                          height: 540,
-                        }}
-                      >
-                        <div
-                          style={{
-                            padding: "12px 16px",
-                            borderBottom: "1px solid #E6E1D9",
-                            fontSize: 15,
-                            color: "#5E5750",
-                          }}
-                        >
-                          Escriba con sus palabras lo que la persona le cuenta. TEO
-                          propone borradores; usted los confirma.
-                        </div>
-                        <div
-                          ref={v.chatRef}
-                          style={{
-                            flex: 1,
-                            overflow: "auto",
-                            padding: "14px 16px",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 12,
-                          }}
-                        >
-                          {(v.chat || []).map(
-                            (m: Record<string, any>, mi: number) => (
-                              <div key={mi}>
-                                {m.isAi ? (
-                                  <div
-                                    style={{
-                                      alignSelf: "flex-start",
-                                      maxWidth: "88%",
-                                      background: "#D8FBE3",
-                                      border: "1.5px dashed #3FEA73",
-                                      borderRadius: "4px 14px 14px 14px",
-                                      padding: "10px 14px",
-                                      display: "flex",
-                                      flexDirection: "column",
-                                      gap: 6,
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        fontSize: 13,
-                                        fontWeight: 600,
-                                        color: "#161413",
-                                      }}
-                                    >
-                                      <img
-                                        src="/nara/marca/logo/teo-isotipo.svg"
-                                        alt=""
-                                        style={{
-                                          flex: "none",
-                                          width: 32,
-                                          height: 32,
-                                          display: "block",
-                                        }}
-                                      />
-                                      {m.label}
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: 16,
-                                        lineHeight: 1.45,
-                                        color: "#161413",
-                                        whiteSpace: "pre-wrap",
-                                      }}
-                                    >
-                                      {m.text}
-                                    </span>
-                                  </div>
-                                ) : null}
-                                {m.isExp ? (
-                                  <div
-                                    style={{
-                                      alignSelf: "flex-end",
-                                      maxWidth: "85%",
-                                      background: "#FFF4CC",
-                                      borderRadius: "14px 4px 14px 14px",
-                                      padding: "10px 14px",
-                                      fontSize: 16,
-                                      lineHeight: 1.45,
-                                    }}
-                                    data-real-date="1"
-                                  >
-                                    {m.text}
-                                  </div>
-                                ) : null}
-                              </div>
-                            ),
-                          )}
-                          {v.thinking ? (
-                            <span style={{ fontSize: 15, color: "#161413" }}>
-                              La IA está leyendo su nota…
-                            </span>
-                          ) : null}
-                        </div>
-                        <div
-                          style={{
-                            borderTop: "1px solid #E6E1D9",
-                            padding: "12px 14px",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 10,
-                          }}
-                        >
-                          <div style={{ display: "flex", gap: 10 }}>
-                            <textarea
-                              value={v.chatInput}
-                              onChange={v.setChatInput}
-                              placeholder="Escriba lo que la persona le cuenta…"
-                              rows={2}
-                              style={{
-                                flex: 1,
-                                border: "1.5px solid #DCD6CD",
-                                borderRadius: 10,
-                                padding: "10px 12px",
-                                fontSize: 16,
-                                resize: "none",
-                                color: "#161413",
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => v.sendChat?.()}
-                              style={{
-                                fontFamily: "Figtree,system-ui,sans-serif",
-                                fontSize: 16,
-                                fontWeight: 500,
-                                padding: "0 18px",
-                                borderRadius: 14,
-                                border: "none",
-                                background: "#FDCD22",
-                                color: "#161413",
-                                cursor: "pointer",
-                              }}
-                            >
-                              Enviar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
                     <div
                       style={{
                         flex: 1,
                         minWidth: 0,
+                        width: "100%",
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 20,
                         display: "flex",
                         flexDirection: "column",
@@ -1463,7 +1135,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       <div
                         style={{
                           display: "flex",
-                          borderBottom: "1px solid #E6E1D9",
+                          borderBottom: "1px solid #C0DFC8",
                         }}
                       >
                         {(v.secTabs || []).map(
@@ -1474,7 +1146,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                               onClick={() => t.go?.()}
                               style={{
                                 flex: 1,
-                                fontFamily: "Figtree,system-ui,sans-serif",
+                                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                 fontSize: 16,
                                 fontWeight: 500,
                                 height: 54,
@@ -1489,7 +1161,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                               <span
                                 style={{
                                   fontSize: 14,
-                                  color: "#5E5750",
+                                  color: "#5A5A52",
                                   fontWeight: 400,
                                 }}
                               >
@@ -1551,7 +1223,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                             {r.sensitive ? (
                               <div
                                 style={{
-                                  background: "#F0ECE6",
+                                  background: "#FBFAF3",
                                   borderLeft: 0,
                                   borderRadius: 8,
                                   padding: "10px 12px",
@@ -1564,7 +1236,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                   style={{
                                     fontSize: 13,
                                     fontWeight: 500,
-                                    color: "#161413",
+                                    color: "#27683A",
                                   }}
                                 >
                                   Pregunta sensible · lea esta redacción exacta
@@ -1588,7 +1260,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                     type="button"
                                     onClick={() => o.pick?.()}
                                     style={{
-                                      fontFamily: "Figtree,system-ui,sans-serif",
+                                      fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                       fontSize: 15,
                                       minHeight: 44,
                                       padding: "0 14px",
@@ -1608,15 +1280,15 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                   type="button"
                                   onClick={() => r.confirm?.()}
                                   style={{
-                                    fontFamily: "Figtree,system-ui,sans-serif",
+                                    fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                                     fontSize: 15,
                                     fontWeight: 500,
                                     minHeight: 44,
                                     padding: "0 14px",
                                     borderRadius: 14,
                                     border: "none",
-                                    background: "#FDCD22",
-                                    color: "#161413",
+                                    background: "#F26B3A",
+                                    color: "#FBFAF3",
                                     cursor: "pointer",
                                     marginLeft: "auto",
                                   }}
@@ -1630,29 +1302,29 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       </div>
                       <div
                         style={{
-                          borderTop: "1px solid #E6E1D9",
+                          borderTop: "1px solid #C0DFC8",
                           padding: "10px 16px",
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
                         }}
                       >
-                        <span style={{ fontSize: 14, color: "#5E5750" }}>
+                        <span style={{ fontSize: 14, color: "#5A5A52" }}>
                           {v.secNote}
                         </span>
                         <button
                           type="button"
                           onClick={() => v.confirmSection?.()}
                           style={{
-                            fontFamily: "Figtree,system-ui,sans-serif",
+                            fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                             fontSize: 15,
                             fontWeight: 500,
                             height: 44,
                             padding: "0 16px",
                             borderRadius: 10,
-                            border: `1.5px solid ${(v.confirmBtnBd as string) || "#161413"}`,
+                            border: `1.5px solid ${(v.confirmBtnBd as string) || "#27683A"}`,
                             background: (v.confirmBtnBg as string) || "#fff",
-                            color: (v.confirmBtnFg as string) || "#161413",
+                            color: (v.confirmBtnFg as string) || "#27683A",
                             cursor: "pointer",
                           }}
                         >
@@ -1679,11 +1351,11 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <button
                       type="button"
                       onClick={() => v.saveVisit?.()}
-                      className="h-[58px] w-full shrink-0 cursor-pointer rounded-[14px] border-0 bg-[#FDCD22] px-6 font-texto text-lg font-medium text-[#161413] sm:w-auto sm:min-w-[220px]"
+                      className="h-[58px] w-full shrink-0 cursor-pointer rounded-[14px] border-0 bg-[#F26B3A] px-6 font-texto text-lg font-medium text-[#FBFAF3] sm:w-auto sm:min-w-[220px]"
                     >
                       Guardar visita
                     </button>
-                    <span className="text-[15px] text-[#5E5750]">
+                    <span className="text-[15px] text-[#5A5A52]">
                       {v.saveNote as string}
                     </span>
                   </div>
@@ -1781,7 +1453,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       <div
                         style={{
                           background: "#fff",
-                          border: "1px solid #DCD6CD",
+                          border: "1px solid #C0DFC8",
                           borderRadius: 20,
                           padding: "18px 20px",
                           display: "flex",
@@ -1789,7 +1461,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           gap: 12,
                         }}
                       >
-                        <span style={{ fontSize: 15, color: "#5E5750" }}>
+                        <span style={{ fontSize: 15, color: "#5A5A52" }}>
                           Salud mental · PHQ-9
                         </span>
                         <div
@@ -1801,14 +1473,14 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         >
                           <span
                             style={{
-                              fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                              fontWeight: 600,
+                              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+                        fontWeight: 800,
                               fontSize: 30,
                             }}
                           >
                             {v.riskName}
                           </span>
-                          <span style={{ fontSize: 17, color: "#5E5750" }}>
+                          <span style={{ fontSize: 17, color: "#5A5A52" }}>
                             {v.phqTotal} de 27
                           </span>
                         </div>
@@ -1851,7 +1523,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       <div
                         style={{
                           background: "#fff",
-                          border: "1px solid #DCD6CD",
+                          border: "1px solid #C0DFC8",
                           borderRadius: 20,
                           padding: "18px 20px",
                           display: "flex",
@@ -1859,7 +1531,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           gap: 10,
                         }}
                       >
-                        <span style={{ fontSize: 15, color: "#5E5750" }}>
+                        <span style={{ fontSize: 15, color: "#5A5A52" }}>
                           Capacidad digital
                         </span>
                         <div
@@ -1871,14 +1543,14 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         >
                           <span
                             style={{
-                              fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                              fontWeight: 600,
+                              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+                        fontWeight: 800,
                               fontSize: 30,
                             }}
                           >
                             {v.digName}
                           </span>
-                          <span style={{ fontSize: 17, color: "#5E5750" }}>
+                          <span style={{ fontSize: 17, color: "#5A5A52" }}>
                             {v.digTotal} de 11
                           </span>
                         </div>
@@ -1917,7 +1589,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                             ),
                           )}
                         </div>
-                        <span style={{ fontSize: 15, color: "#161413" }}>
+                        <span style={{ fontSize: 15, color: "#27683A" }}>
                           {v.digNote}
                         </span>
                       </div>
@@ -1925,7 +1597,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <div
                       style={{
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 20,
                         padding: "18px 20px",
                         display: "flex",
@@ -1933,7 +1605,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         gap: 10,
                       }}
                     >
-                      <span style={{ fontSize: 15, color: "#5E5750" }}>Perfil</span>
+                      <span style={{ fontSize: 15, color: "#5A5A52" }}>Perfil</span>
                       <div className="nara-scroll-x">
                       <div
                         style={{
@@ -1945,13 +1617,13 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         }}
                       >
                         <span />
-                        <span style={{ textAlign: "center", color: "#5E5750" }}>
+                        <span style={{ textAlign: "center", color: "#5A5A52" }}>
                           Baja
                         </span>
-                        <span style={{ textAlign: "center", color: "#5E5750" }}>
+                        <span style={{ textAlign: "center", color: "#5A5A52" }}>
                           Media
                         </span>
-                        <span style={{ textAlign: "center", color: "#5E5750" }}>
+                        <span style={{ textAlign: "center", color: "#5A5A52" }}>
                           Alta
                         </span>
                         {(v.matrix || []).flatMap(
@@ -1962,7 +1634,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 6,
-                                color: "#5E5750",
+                                color: "#5A5A52",
                               }}
                             >
                               <span
@@ -2006,7 +1678,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <div
                       style={{
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 20,
                         padding: "16px 18px",
                         display: "flex",
@@ -2028,7 +1700,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                               gap: 12,
                             }}
                           >
-                            <span style={{ color: "#5E5750" }}>{e.k}</span>
+                            <span style={{ color: "#5A5A52" }}>{e.k}</span>
                             <span style={{ textAlign: "right" }}>{e.v}</span>
                           </div>
                         ),
@@ -2039,7 +1711,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     <div
                       style={{
                         background: "#fff",
-                        border: "1px solid #DCD6CD",
+                        border: "1px solid #C0DFC8",
                         borderRadius: 20,
                         padding: "18px 20px",
                         display: "flex",
@@ -2056,14 +1728,14 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                       >
                         <span
                           style={{
-                            fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
-                            fontWeight: 600,
+                            fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+                        fontWeight: 800,
                             fontSize: 22,
                           }}
                         >
                           {v.pathTitle}
                         </span>
-                        <span style={{ fontSize: 16, color: "#5E5750" }}>
+                        <span style={{ fontSize: 16, color: "#5A5A52" }}>
                           {v.pathDuration}
                         </span>
                       </div>
@@ -2075,7 +1747,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                             alignItems: "center",
                             gap: 12,
                             padding: "10px 0",
-                            borderTop: "1px solid #E6E1D9",
+                            borderTop: "1px solid #C0DFC8",
                           }}
                         >
                           <div
@@ -2089,7 +1761,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                             <span style={{ fontSize: 16, fontWeight: 500 }}>
                               {p.name}
                             </span>
-                            <span style={{ fontSize: 14, color: "#5E5750" }}>
+                            <span style={{ fontSize: 14, color: "#5A5A52" }}>
                               {p.sub}
                             </span>
                           </div>
@@ -2100,7 +1772,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                                 fontWeight: 500,
                                 padding: "4px 9px",
                                 borderRadius: 6,
-                                background: "#161413",
+                                background: "#27683A",
                                 color: "#fff",
                               }}
                             >
@@ -2118,80 +1790,6 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                           </span>
                         </div>
                       ))}
-                      {v.notCrisis && v.cp ? (
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 14,
-                            alignItems: "center",
-                            background: "#F0ECE6",
-                            borderRadius: 14,
-                            padding: "12px 14px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <img
-                            src={v.cp.cover}
-                            alt=""
-                            style={{
-                              flex: "none",
-                              width: 52,
-                              height: 68,
-                              objectFit: "cover",
-                              borderRadius: 8,
-                              boxShadow: "0 2px 6px rgba(22,20,19,.2)",
-                            }}
-                          />
-                          <div
-                            style={{
-                              flex: 1,
-                              minWidth: 220,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 2,
-                            }}
-                          >
-                            <span style={{ fontSize: 16, fontWeight: 600 }}>
-                              Curso: {v.cp.title} · {v.cp.motivo}
-                            </span>
-                            <span style={{ fontSize: 14, color: "#5E5750" }}>
-                              {v.cp.sub}
-                            </span>
-                          </div>
-                          <label
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 4,
-                              fontSize: 13,
-                              fontWeight: 500,
-                            }}
-                          >
-                            Cambiar curso
-                            <select
-                              value={v.cp.sel}
-                              onChange={v.cp.set}
-                              style={{
-                                height: 44,
-                                borderRadius: 10,
-                                border: "1.5px solid #DCD6CD",
-                                padding: "0 10px",
-                                fontSize: 15,
-                                background: "#fff",
-                                color: "#161413",
-                              }}
-                            >
-                              {(v.cp.opts || []).map(
-                                (o: Record<string, any>, oi: number) => (
-                                  <option key={oi} value={o.v}>
-                                    {o.l}
-                                  </option>
-                                ),
-                              )}
-                            </select>
-                          </label>
-                        </div>
-                      ) : null}
                     </div>
                     <div
                       style={{
@@ -2204,20 +1802,20 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                         type="button"
                         onClick={() => v.saveVisit?.()}
                         style={{
-                          fontFamily: "Figtree,system-ui,sans-serif",
+                          fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                           fontSize: 18,
                           fontWeight: 500,
                           height: 58,
                           borderRadius: 14,
                           border: "none",
-                          background: "#FDCD22",
-                          color: "#161413",
+                          background: "#F26B3A",
+                          color: "#FBFAF3",
                           cursor: "pointer",
                         }}
                       >
                         Guardar visita
                       </button>
-                      <span style={{ fontSize: 15, color: "#5E5750" }}>
+                      <span style={{ fontSize: 15, color: "#5A5A52" }}>
                         {v.saveNote}
                       </span>
                     </div>
@@ -2233,7 +1831,7 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
                     margin: "0 auto",
                     width: "max-content",
                     maxWidth: "90%",
-                    background: "#161413",
+                    background: "#27683A",
                     color: "#fff",
                     borderRadius: 12,
                     padding: "14px 20px",
@@ -2247,113 +1845,39 @@ export function ExpertoBody({ v }: { v: Record<string, any> }) {
             </div>
       </div>
 
-      {v.erOpen ? (
-        <div
-          role="dialog"
-          aria-label="Lector de cuentos"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 80,
-            background: "#161413",
-            color: "#fff",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            style={{
-              flex: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "10px 16px",
-            }}
-          >
+      <FormModal
+        open={!!v.crisisConfirmOpen}
+        title="Confirmar respuesta de crisis"
+        description="Marcó una respuesta distinta de «Nunca» en la pregunta 9. Si confirma, se activará el protocolo de crisis y se avisará a la clínica de turno."
+        size="sm"
+        footer={
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={() => er.close?.()}
-              style={{
-                fontFamily: "Figtree,system-ui,sans-serif",
-                fontSize: 16,
-                fontWeight: 500,
-                height: 48,
-                padding: "0 18px",
-                borderRadius: 14,
-                border: "none",
-                background: "#fff",
-                color: "#161413",
-                cursor: "pointer",
-              }}
+              onClick={() => v.cancelCrisisPick?.()}
+              className="h-11 w-full rounded-xl border border-[#C0DFC8] bg-white px-4 font-texto text-sm text-[#27683A] sm:w-auto"
             >
-              Cerrar
+              Cancelar
             </button>
-            <span style={{ flex: 1, fontWeight: 600, fontSize: 18 }}>
-              {er.title}
-            </span>
-            <span style={{ fontSize: 16 }}>{er.counter}</span>
-          </div>
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16,
-              padding: "0 16px 20px",
-            }}
-          >
             <button
               type="button"
-              onClick={() => er.prev?.()}
-              aria-label="Página anterior"
-              style={{
-                flex: "none",
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                border: "none",
-                background: "#fff",
-                color: "#161413",
-                fontSize: 26,
-                cursor: "pointer",
-              }}
+              onClick={() => v.confirmCrisisPick?.()}
+              className="h-11 w-full rounded-xl bg-[#B42318] px-4 font-texto text-sm font-medium text-white sm:w-auto"
             >
-              ‹
-            </button>
-            <img
-              src={er.img}
-              alt={er.alt}
-              style={{
-                maxHeight: "100%",
-                maxWidth: "calc(100% - 160px)",
-                objectFit: "contain",
-                borderRadius: 8,
-                display: "block",
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => er.next?.()}
-              aria-label="Página siguiente"
-              style={{
-                flex: "none",
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                border: "none",
-                background: "#fff",
-                color: "#161413",
-                fontSize: 26,
-                cursor: "pointer",
-              }}
-            >
-              ›
+              Confirmar y activar crisis
             </button>
           </div>
-        </div>
-      ) : null}
+        }
+      >
+        <p className="font-texto text-[15px] leading-snug text-[#27683A]">
+          Respuesta elegida:{" "}
+          <span className="font-medium">{v.crisisConfirmLabel || "—"}</span>
+        </p>
+        <p className="mt-2 font-texto text-sm text-[#5A5A52]">
+          Si fue un toque por error, cancele y elija de nuevo.
+        </p>
+      </FormModal>
+
     </>
   );
 }

@@ -13,14 +13,21 @@ export function ClinicoScreen() {
   return (
     <>
       <style>{`
-        body { margin: 0; background: #F0ECE6 }
-        a { color: #161413; text-decoration: none }
-        textarea, select, input { font-family: Figtree, system-ui, sans-serif }
+        body { margin: 0; background: #FBFAF3 }
+        a { color: #27683A; text-decoration: none }
+        textarea, select, input { font-family: Bricolage Grotesque, system-ui, sans-serif }
       `}</style>
       <AgentDrawerShell
         open={!!v.agentOpen}
         drawerWidth={String(v.drawerW || "480px")}
         onClose={() => v.closeAgent?.()}
+        style={{
+          minWidth: 0,
+          fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+          color: "#27683A",
+          fontSize: 15,
+          background: "#FBFAF3",
+        }}
         drawer={
           <AgentPanel
             role="clin"

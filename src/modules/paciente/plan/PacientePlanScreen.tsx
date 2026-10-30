@@ -45,16 +45,6 @@ export function PacientePlanScreen() {
     };
     const day = 86400000;
     const t0 = A.today0().getTime();
-    const ocp = A.courseProgress(S, pid);
-    const ocM = ocp && ocp.mod;
-    const story = ocM
-      ? {
-          hasStory: true,
-          storyCover: A.REC.cover(ocM.cuento),
-          storyTitle: A.REC.cuento(ocM.cuento).title,
-        }
-      : { hasStory: false, storyCover: "", storyTitle: "" };
-
     const series = [
       {
         mark: "D",
@@ -110,7 +100,7 @@ export function PacientePlanScreen() {
       fg: string;
     }[] = [];
     for (let i = 0; i < lead; i++)
-      cells.push({ n: "", marks: [], bg: "#fff", fw: 400, fg: "#161413" });
+      cells.push({ n: "", marks: [], bg: "#fff", fw: 400, fg: "#27683A" });
     for (let d = 1; d <= dim; d++) {
       const isToday = todayIn && d === now.getDate();
       cells.push({
@@ -118,16 +108,15 @@ export function PacientePlanScreen() {
         marks: (marks[d] || []).map(
           (m) => ({ D: "D · Doctora", L: "L · Llamada", A: "A · Andrés" })[m] || m,
         ),
-        bg: isToday ? "#FFF4CC" : "#fff",
+        bg: isToday ? "#FDF2B3" : "#fff",
         fw: isToday ? 700 : 500,
-        fg: "#161413",
+        fg: "#27683A",
       });
     }
     while (cells.length % 7)
-      cells.push({ n: "", marks: [], bg: "#fff", fw: 400, fg: "#161413" });
+      cells.push({ n: "", marks: [], bg: "#fff", fw: 400, fg: "#27683A" });
     const pr = S.oscarPlan && S.oscarPlan.printedAt;
     return {
-      ...story,
       todayNote: todayIn
         ? "El día sombreado es el día en que se imprimió esta hoja."
         : "Este es el mes de sus próximas citas.",
@@ -163,8 +152,8 @@ export function PacientePlanScreen() {
     <div
       data-screen-label="Paciente · Plan impreso"
       style={{
-        fontFamily: "Figtree, system-ui, sans-serif",
-        color: "#161413",
+        fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+        color: "#27683A",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -184,7 +173,7 @@ export function PacientePlanScreen() {
         }
       `}</style>
 
-      <div data-noprint="1" style={{ width: "100%", background: "#fff", borderBottom: "1px solid #DCD6CD" }}>
+      <div data-noprint="1" style={{ width: "100%", background: "#fff", borderBottom: "1px solid #C0DFC8" }}>
         <div
           style={{
             maxWidth: 816,
@@ -198,28 +187,28 @@ export function PacientePlanScreen() {
             boxSizing: "border-box",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#161413" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#27683A" }}>
             <img
-              src="/nara/marca/logo/nara-logo.svg"
-              alt="NARA"
+              src="/parienta/logo/parienta-horizontal-principal.svg"
+              alt="Parienta"
               style={{ height: 34, width: "auto", display: "block" }}
             />
           </div>
-          <span style={{ fontSize: 15, color: "#5E5750" }}>Mi plan impreso</span>
+          <span style={{ fontSize: 15, color: "#5A5A52" }}>Mi plan impreso</span>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
             <button
               type="button"
               onClick={print}
               style={{
-                fontFamily: "Figtree, system-ui, sans-serif",
+                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                 fontSize: 17,
                 fontWeight: 500,
                 height: 48,
                 padding: "0 22px",
                 borderRadius: 14,
                 border: "none",
-                background: "#FDCD22",
-                color: "#161413",
+                background: "#F26B3A",
+                color: "#27683A",
                 cursor: "pointer",
               }}
             >
@@ -236,7 +225,7 @@ export function PacientePlanScreen() {
           width: 816,
           maxWidth: "calc(100% - 32px)",
           fontSize: 16,
-          color: "#161413",
+          color: "#27683A",
           lineHeight: 1.5,
         }}
       >
@@ -267,15 +256,15 @@ export function PacientePlanScreen() {
             justifyContent: "space-between",
             alignItems: "flex-start",
             gap: 20,
-            borderBottom: "3px solid #161413",
+            borderBottom: "3px solid #27683A",
             paddingBottom: 18,
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 22, color: "#161413", fontWeight: 500 }}>Mi plan</span>
+            <span style={{ fontSize: 22, color: "#27683A", fontWeight: 500 }}>Mi plan</span>
             <span
               style={{
-                fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                 fontWeight: 600,
                 fontSize: 46,
                 lineHeight: 1.1,
@@ -285,8 +274,8 @@ export function PacientePlanScreen() {
             </span>
           </div>
           <img
-            src="/nara/marca/logo/monocromatico/nara-logo-mono-positivo.svg"
-            alt="NARA"
+            src="/parienta/logo/parienta-horizontal-principal.svg"
+            alt="Parienta"
             style={{ height: 48, width: "auto", display: "block" }}
           />
         </div>
@@ -294,7 +283,7 @@ export function PacientePlanScreen() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <span
             style={{
-              fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
               fontWeight: 600,
               fontSize: 32,
             }}
@@ -305,7 +294,7 @@ export function PacientePlanScreen() {
             <b style={{ fontWeight: 600 }}>Dra. Lucía Marín</b>, su psicóloga. Lo visita en su casa.
           </span>
           <span>
-            <b style={{ fontWeight: 600 }}>Andrés Ocampo</b>, su acompañante de NARA. Le trae esta hoja.
+            <b style={{ fontWeight: 600 }}>Andrés Ocampo</b>, su acompañante de Parienta. Le trae esta hoja.
           </span>
           {model.hasSocial ? (
             <span>
@@ -315,7 +304,7 @@ export function PacientePlanScreen() {
           ) : null}
           <span
             style={{
-              border: "3px solid #161413",
+              border: "3px solid #27683A",
               borderRadius: 14,
               padding: "12px 18px",
               alignSelf: "flex-start",
@@ -328,7 +317,7 @@ export function PacientePlanScreen() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <span
             style={{
-              fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
               fontWeight: 600,
               fontSize: 32,
             }}
@@ -344,7 +333,7 @@ export function PacientePlanScreen() {
                     width: 44,
                     height: 44,
                     borderRadius: "50%",
-                    border: "3px solid #161413",
+                    border: "3px solid #27683A",
                     display: "grid",
                     placeItems: "center",
                     fontWeight: 700,
@@ -364,13 +353,13 @@ export function PacientePlanScreen() {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <img
-              src="/nara/marca/personajes/nara-calma.svg"
+              src="/parienta/aurelia/aurelia-base.svg"
               alt=""
               style={{ flex: "none", width: 56, height: "auto", display: "block" }}
             />
             <span
               style={{
-                fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                 fontWeight: 600,
                 fontSize: 32,
               }}
@@ -410,59 +399,6 @@ export function PacientePlanScreen() {
           </div>
         </div>
 
-        {model.hasStory ? (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "150px minmax(0,1fr)",
-              gap: 24,
-              alignItems: "center",
-              border: "3px solid #161413",
-              borderRadius: 16,
-              padding: "18px 22px",
-            }}
-          >
-            <img
-              src={
-                model.storyCover.startsWith("http") || model.storyCover.startsWith("/")
-                  ? model.storyCover
-                  : `/nara/${model.storyCover.replace(/^\.\//, "")}`
-              }
-              alt="Portada del cuento"
-              style={{
-                width: 150,
-                aspectRatio: "600/780",
-                objectFit: "cover",
-                borderRadius: 12,
-                filter: "grayscale(1)",
-                display: "block",
-              }}
-            />
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <span
-                style={{
-                  fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
-                  fontWeight: 600,
-                  fontSize: 28,
-                }}
-              >
-                Su cuento de esta semana
-              </span>
-              <span
-                style={{
-                  fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
-                  fontWeight: 600,
-                  fontSize: 36,
-                  lineHeight: 1.1,
-                }}
-              >
-                {model.storyTitle}
-              </span>
-              <span>Andrés le trae el cuadernillo y se lo lee en la visita del jueves.</span>
-            </div>
-          </div>
-        ) : null}
-
         <div
           style={{
             marginTop: "auto",
@@ -476,7 +412,7 @@ export function PacientePlanScreen() {
         >
           <span
             style={{
-              fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
               fontWeight: 600,
               fontSize: 32,
               color: "#8A1C14",
@@ -496,7 +432,7 @@ export function PacientePlanScreen() {
           ))}
           <span>
             También puede ir donde su vecina, <b style={{ fontWeight: 600 }}>{model.neighbor}</b>, y
-            pedirle que llame a NARA al {model.teamPhone}.
+            pedirle que llame a Parienta al {model.teamPhone}.
           </span>
         </div>
       </div>
@@ -523,13 +459,13 @@ export function PacientePlanScreen() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "baseline",
-            borderBottom: "3px solid #161413",
+            borderBottom: "3px solid #27683A",
             paddingBottom: 14,
           }}
         >
           <span
             style={{
-              fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
               fontWeight: 600,
               fontSize: 40,
             }}
@@ -543,21 +479,21 @@ export function PacientePlanScreen() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(7,minmax(0,1fr))",
-            borderTop: "2px solid #161413",
-            borderLeft: "2px solid #161413",
+            borderTop: "2px solid #27683A",
+            borderLeft: "2px solid #27683A",
           }}
         >
           {model.weekdays.map((w: string) => (
             <span
               key={w}
               style={{
-                borderRight: "2px solid #161413",
-                borderBottom: "2px solid #161413",
+                borderRight: "2px solid #27683A",
+                borderBottom: "2px solid #27683A",
                 padding: "8px 6px",
                 fontWeight: 600,
                 fontSize: 20,
                 textAlign: "center",
-                background: "#F0ECE6",
+                background: "#FBFAF3",
               }}
             >
               {w}
@@ -571,8 +507,8 @@ export function PacientePlanScreen() {
               <div
                 key={i}
                 style={{
-                  borderRight: "2px solid #161413",
-                  borderBottom: "2px solid #161413",
+                  borderRight: "2px solid #27683A",
+                  borderBottom: "2px solid #27683A",
                   minHeight: 118,
                   padding: "6px 8px",
                   display: "flex",

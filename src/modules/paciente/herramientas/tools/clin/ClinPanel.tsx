@@ -50,7 +50,7 @@ export function ClinPanel({ patientId }: { patientId: string }) {
       {titulo}
       <section className="overflow-hidden rounded-[24px] border border-linea bg-nara-blanco" aria-label="Su psicóloga">
         <div className="flex items-center gap-4 bg-nara-calma px-5 py-5">
-          <img src={naraAsset("marca/personajes/nara-calma.svg")} alt="" className="h-16 w-auto" />
+          <img src={naraAsset("marca/teo/teo-calma.svg")} alt="" className="h-16 w-auto" />
           <div>
             <p className="m-0 text-sm text-nara-tinta/75">Su próxima cita con {datos.clinico}</p>
             {prox ? (

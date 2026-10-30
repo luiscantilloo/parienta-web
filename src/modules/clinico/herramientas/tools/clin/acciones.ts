@@ -43,7 +43,7 @@ export async function listarAgenda(): Promise<Respuesta<Agenda>> {
 }
 
 /* ---------- Organizar con IA ---------- */
-const SISTEMA = `Eres el asistente de agenda del programa NARA (salud mental, Colombia).
+const SISTEMA = `Eres el asistente de agenda del programa Parienta (salud mental, Colombia).
 Organizas las citas de un paciente con su psicóloga clínica.
 Responde SOLO con un objeto JSON con esta forma exacta:
 {"citas":[{"fecha":"AAAA-MM-DD","hora":"HH:MM"}],"notas":["..."]}

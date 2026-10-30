@@ -9,7 +9,6 @@ type Props = {
   active: string;
   onOpenAgent: () => void;
   screenCode?: string;
-  /** TEO abierto: ayuda a compactar si hace falta. */
   agentOpen?: boolean;
 };
 
@@ -35,15 +34,14 @@ export function AdminTopbar({ active, onOpenAgent, screenCode, agentOpen = false
   return (
     <header
       ref={headerRef}
-      className="box-border flex h-16 w-full min-w-0 shrink-0 items-center justify-between gap-2 border-0 bg-nara-blanco px-3 sm:gap-3 sm:px-5 md:px-6"
+      className="nara-topbar gap-2 px-3 sm:gap-3 sm:px-5 md:px-6"
     >
       <div className="flex h-full min-w-0 items-stretch gap-2 sm:gap-3 md:gap-4">
-        {/* Logo solo en desktop; en hamburguesa vive dentro del drawer */}
         {!compact ? (
-          <Link href="/inicio" className="flex shrink-0 items-center text-nara-tinta">
+          <Link href="/inicio" className="flex shrink-0 items-center">
             <img
-              src="/nara/marca/logo/nara-logo.svg"
-              alt="NARA"
+              src="/parienta/logo/parienta-horizontal-principal.svg"
+              alt="Parienta"
               className="block h-7 w-auto sm:h-[34px]"
             />
           </Link>
@@ -52,22 +50,27 @@ export function AdminTopbar({ active, onOpenAgent, screenCode, agentOpen = false
       </div>
       <div className="flex shrink-0 items-center gap-2.5 sm:gap-3.5">
         {screenCode ? (
-          <span className="hidden rounded-[5px] border border-linea px-1.5 py-0.5 font-mono text-[11px] text-texto-secundario xl:inline">
+          <span className="hidden rounded-md border border-[#C0DFC8] bg-[#FDF2B3]/50 px-1.5 py-0.5 font-mono text-[11px] text-[#5A5A52] xl:inline">
             {screenCode}
           </span>
         ) : null}
         <button
           type="button"
           onClick={onOpenAgent}
-          aria-label="Abrir TEO"
-          className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-nara-tinta bg-nara-blanco px-2.5 font-texto text-sm font-medium text-nara-tinta sm:h-11 sm:px-3.5 sm:text-[15px]"
+          aria-label="Abrir Aurelia"
+          className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-[#C0DFC8] bg-[#FBFAF3] px-2.5 font-texto text-sm font-medium text-[#27683A] transition hover:bg-[#C0DFC8]/70 sm:h-11 sm:px-3.5 sm:text-[15px]"
         >
           <img
-            src="/nara/marca/logo/teo-isotipo.svg"
+            src="/parienta/aurelia/aurelia-base.svg"
             alt=""
             className="block h-7 w-7 sm:-ml-1.5 sm:h-8 sm:w-8"
           />
-          <span className="hidden sm:inline">TEO</span>
+          <span className="hidden flex-col items-start leading-none sm:flex">
+            <span>Aurelia</span>
+            <span className="mt-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-[#5A5A52]">
+              asistente
+            </span>
+          </span>
         </button>
         <UserMenu notifKey="admin" />
       </div>

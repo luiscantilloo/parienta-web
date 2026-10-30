@@ -1,5 +1,5 @@
 /**
- * Esquema NARA en MongoDB.
+ * Esquema Parienta en MongoDB.
  * Las colecciones se crean al primer documento o vía `npm run db:init`.
  * Los índices definen la forma operativa esperada.
  */
@@ -213,7 +213,7 @@ export const NARA_COLLECTIONS: CollectionDef[] = [
   },
   {
     name: "recursos",
-    description: "Asignación y progreso de cursos / cuentos / técnicas",
+    description: "Asignación y progreso de recursos (técnicas / videos; cursos retirados)",
     indexes: [
       { key: { personId: 1 }, options: { unique: true, sparse: true, name: "recursos_person_unique" } },
       { key: { course: 1 }, options: { sparse: true, name: "recursos_course" } },
@@ -244,7 +244,7 @@ export const NARA_COLLECTIONS: CollectionDef[] = [
   },
   {
     name: "agent_log",
-    description: "Historial del agente NARA",
+    description: "Historial del agente Parienta",
     indexes: [
       { key: { role: 1, at: -1 }, options: { name: "agent_role_at" } },
       { key: { at: -1 }, options: { name: "agent_at" } },
@@ -252,7 +252,7 @@ export const NARA_COLLECTIONS: CollectionDef[] = [
   },
   {
     name: "ai_log",
-    description: "Historial de interacciones con IA / TEO",
+    description: "Historial de interacciones con IA / Aurelia",
     indexes: [
       { key: { pid: 1, at: -1 }, options: { name: "ai_pid_at" } },
       { key: { at: -1 }, options: { name: "ai_at" } },

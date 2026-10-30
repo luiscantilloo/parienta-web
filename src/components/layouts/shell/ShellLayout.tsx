@@ -34,12 +34,19 @@ export function ShellLayout({
   return (
     <div
       data-shell-root
-      className="fixed inset-0 flex min-h-0 flex-col overflow-hidden bg-nara-crema"
+      className="fixed inset-0 flex min-h-0 flex-col overflow-hidden bg-pl-hueso"
     >
       {denegado ? (
-        <div role="alert" className="flex items-center justify-between gap-3 bg-amber-100 px-4 py-2 text-sm text-amber-950">
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 border-b border-pl-linea bg-pl-blanco px-4 py-2 font-texto text-sm text-pl-tinta"
+        >
           <span>Acceso denegado: esa pantalla es de otro rol. Su sesión sigue abierta.</span>
-          <button type="button" className="font-medium underline" onClick={() => setDenegado(false)}>
+          <button
+            type="button"
+            className="font-medium text-pl-teal underline underline-offset-2"
+            onClick={() => setDenegado(false)}
+          >
             Cerrar
           </button>
         </div>

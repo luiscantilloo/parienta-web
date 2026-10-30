@@ -6,7 +6,7 @@ import AlientoAI from "@/lib/ai/ai";
 import { redactTextForTeo } from "@/lib/ai/redactForTeo";
 import { logIntegration } from "@/lib/observability/integration-log";
 import { BreathExercise } from "@/modules/paciente/app/BreathExercise";
-import { naraAsset } from "@/modules/paciente/app/naraAsset";
+import { aureliaAsset } from "@/lib/brand";
 import { useNaraStore } from "@/providers/nara-provider";
 
 type Turn = { role: "paciente" | "teo"; text: string; crisis?: boolean };
@@ -36,7 +36,7 @@ type ChatVm = {
 };
 
 function btnFont(): CSSProperties {
-  return { fontFamily: "Figtree, system-ui, sans-serif" };
+  return { fontFamily: "Bricolage Grotesque, system-ui, sans-serif" };
 }
 
 function newId() {
@@ -50,7 +50,7 @@ function mentionsBreath(text: string) {
   return /respir/i.test(text);
 }
 
-/** Misma lectura que el webhook de TEO: respuesta, text, output o message. */
+/** Misma lectura que el webhook de Aurelia: respuesta, text, output o message. */
 function readN8nRespuesta(raw: string) {
   try {
     const data = JSON.parse(raw) as Record<string, unknown> | Array<Record<string, unknown>>;
@@ -72,7 +72,7 @@ function turnsFromChat(msgs: ChatVm["chatMsgs"]): Turn[] {
   return turns;
 }
 
-/** TEO (IA) — el chat que antes vivía en DianaChat. */
+/** Aurelia (IA) — el chat que antes vivía en DianaChat. */
 export function IaPanel({ vm }: { vm: ChatVm }) {
   const store = useNaraStore();
   const [conversationId, setConversationId] = useState(newId);
@@ -141,7 +141,7 @@ export function IaPanel({ vm }: { vm: ChatVm }) {
     const history = redactTextForTeo(
       prior
         .slice(-8)
-        .map((m) => `${m.role === "teo" ? "TEO" : "Paciente"}: ${m.text}`)
+        .map((m) => `${m.role === "teo" ? "Aurelia" : "Paciente"}: ${m.text}`)
         .join("\n"),
     );
     const message = redactTextForTeo(text.trim());
@@ -206,7 +206,7 @@ export function IaPanel({ vm }: { vm: ChatVm }) {
 
     try {
       const out = await AlientoAI.complete(
-        `Eres TEO, acompañante con IA de un programa de salud mental post-sismo en el Eje Cafetero (Colombia). Hablas con una persona del programa (perfil ${ctx.profile || "P01"}). Trátala de usted, con calidez, frases cortas y palabras sencillas, sin jerga clínica. No das diagnósticos ni reemplazas a su psicóloga. Puedes ofrecer la respiración 4-6, anotar un tema para la sesión o recomendar un video. Voz de TEO: escucha primero, valida y ofrece una sola cosa concreta. Una sola pregunta por mensaje. Nunca diagnostiques, recetes, hables de medicamentos ni contradigas a la psicóloga. Nunca minimices («no es para tanto»), culpes («debería»), prometas («se va a sentir mejor») ni finjas ser humano o sentir emociones. Sin chistes; en temas de miedo, sueño o respiración, frases lentas y sin signos de exclamación. Si detectas cualquier señal de riesgo suicida o peligro inmediato, responde solo con la palabra CRISIS. Responde en máximo 3 frases.\n\n${history}\nPaciente: ${message}\nTEO:`,
+        `Eres Aurelia, acompañante con IA de Parienta, un programa de acompañamiento para personas mayores en Colombia. Hablas con una persona del programa (perfil ${ctx.profile || "P01"}). Trátala de usted, con calidez, frases cortas y palabras sencillas, sin jerga clínica. No das diagnósticos ni reemplazas a su psicóloga. Puedes ofrecer la respiración 4-6, anotar un tema para la sesión o recomendar un video. Voz de Aurelia: escucha primero, valida y ofrece una sola cosa concreta. Una sola pregunta por mensaje. Nunca diagnostiques, recetes, hables de medicamentos ni contradigas a la psicóloga. Nunca minimices («no es para tanto»), culpes («debería»), prometas («se va a sentir mejor») ni finjas ser humano o sentir emociones. Sin chistes; en temas de miedo, sueño o respiración, frases lentas y sin signos de exclamación. Si detectas cualquier señal de riesgo suicida o peligro inmediato, responde solo con la palabra CRISIS. Responde en máximo 3 frases.\n\n${history}\nPaciente: ${message}\nTEO:`,
       );
       const reply = String(out || "").trim();
       if (reply) return reply;
@@ -239,16 +239,16 @@ export function IaPanel({ vm }: { vm: ChatVm }) {
         age: ctx.age,
         place: ctx.place,
         profile: ctx.profile,
-        what: `Escribió a TEO: «${text}». TEO pausó la conversación y levantó la alerta.`,
+        what: `Escribió a Aurelia: «${text}». Aurelia pausó la conversación y levantó la alerta.`,
         term: crisisHit,
-        source: "Conversación con TEO (IA)",
+        source: "Conversación con Aurelia (IA)",
         phone: ctx.phone,
       });
     } else {
       const reply = await askN8n(text, base);
       crisis = /^\s*CRISIS/.test(reply);
       teoText = crisis ? AlientoAI.crisisText(ctx.fname) : reply;
-      if (!crisis) store.logAi?.(ctx.id, "Chat con TEO", teoText);
+      if (!crisis) store.logAi?.(ctx.id, "Chat con Aurelia", teoText);
     }
     if (crisis) setLocalPaused(true);
     const full: Turn[] = [...withPatient, { role: "teo", text: teoText, ...(crisis ? { crisis: true } : {}) }];
@@ -277,8 +277,8 @@ export function IaPanel({ vm }: { vm: ChatVm }) {
         crisis: !!turn.crisis,
         breath: false,
         text: turn.text,
-        avatar: naraAsset(
-          `marca/personajes/teo-${turn.crisis || mentionsBreath(turn.text) ? "calma" : "curiosidad"}.svg`,
+        avatar: aureliaAsset(
+          turn.crisis || mentionsBreath(turn.text) ? "base" : "escucha",
         ),
       };
     }
@@ -318,21 +318,21 @@ export function IaPanel({ vm }: { vm: ChatVm }) {
               <div style={{ alignSelf: "flex-start", maxWidth: "90%", display: "flex", gap: 8, alignItems: "flex-start" }}>
                 <img src={m.avatar} alt="" style={{ flex: "none", width: 36, height: 36, display: "block", marginTop: 18 }} />
                 <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 12, color: "#5E5750", display: "flex", gap: 6, alignItems: "center" }}>
-                    TEO <span style={{ fontSize: 11, fontWeight: 500, border: "1px solid #5E5750", borderRadius: 4, padding: "0 4px" }}>IA</span>
+                  <span style={{ fontSize: 12, color: "#5A5A52", display: "flex", gap: 6, alignItems: "center" }}>
+                    Aurelia <span style={{ fontSize: 11, fontWeight: 500, border: "1px solid #5A5A52", borderRadius: 4, padding: "0 4px" }}>IA</span>
                   </span>
-                  <div style={{ background: "#fff", border: "1px solid #DCD6CD", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", lineHeight: 1.45 }}>{m.text}</div>
+                  <div style={{ background: "#fff", border: "1px solid #C0DFC8", borderRadius: "4px 18px 18px 18px", padding: "11px 14px", lineHeight: 1.45 }}>{m.text}</div>
                 </div>
               </div>
             ) : null}
             {m.me ? (
-              <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: "#161413", color: "#fff", borderRadius: "18px 4px 18px 18px", padding: "11px 14px", lineHeight: 1.45, marginLeft: "auto" }}>{m.text}</div>
+              <div style={{ alignSelf: "flex-end", maxWidth: "82%", background: "#27683A", color: "#fff", borderRadius: "18px 4px 18px 18px", padding: "11px 14px", lineHeight: 1.45, marginLeft: "auto" }}>{m.text}</div>
             ) : null}
             {m.crisis ? (
               <div style={{ alignSelf: "stretch", background: "#FDE7E4", border: "1.5px solid #B42318", borderRadius: 16, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 500, color: "#8A1C14" }}>
-                  <img src={naraAsset("marca/personajes/teo-calma.svg")} alt="" style={{ width: 36, height: 36, display: "block" }} />
-                  TEO · IA · mensaje de cuidado
+                  <img src={aureliaAsset("base")} alt="" style={{ width: 36, height: 36, display: "block" }} />
+                  Aurelia · IA · mensaje de cuidado
                 </span>
                 <span style={{ lineHeight: 1.45 }}>{m.text}</span>
                 {vm.dianaLines.map((cl) => (
@@ -344,56 +344,52 @@ export function IaPanel({ vm }: { vm: ChatVm }) {
               </div>
             ) : null}
             {m.breath ? (
-              <div style={{ alignSelf: "stretch", background: "#fff", border: "1px solid #DCD6CD", borderRadius: 20, padding: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              <div style={{ alignSelf: "stretch", background: "#fff", border: "1px solid #C0DFC8", borderRadius: 20, padding: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                 <BreathExercise onDone={vm.onBreathDone} />
               </div>
             ) : null}
           </div>
         ))}
         {breathOn ? (
-          <div style={{ alignSelf: "stretch", background: "#fff", border: "1px solid #DCD6CD", borderRadius: 20, padding: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div style={{ alignSelf: "stretch", background: "#fff", border: "1px solid #C0DFC8", borderRadius: 20, padding: 18, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <BreathExercise />
           </div>
         ) : null}
         {sending || vm.typing ? (
-          <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#5E5750" }}>
-            <img src={naraAsset("marca/personajes/teo-duda.svg")} alt="" style={{ width: 32, height: 32, display: "block" }} />
-            TEO está escribiendo…
+          <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#5A5A52" }}>
+            <img src={aureliaAsset("piensa")} alt="" style={{ width: 32, height: 32, display: "block" }} />
+            Aurelia está escribiendo…
           </span>
         ) : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
           {vm.quick.map((q) => (
-            <button key={q.label} type="button" onClick={q.go} style={{ ...btnFont(), fontSize: 16, minHeight: 48, padding: "0 16px", borderRadius: 22, border: "1.5px solid #161413", background: "#fff", color: "#161413", cursor: "pointer" }}>
+            <button key={q.label} type="button" onClick={q.go} style={{ ...btnFont(), fontSize: 16, minHeight: 48, padding: "0 16px", borderRadius: 22, border: "1.5px solid #27683A", background: "#fff", color: "#27683A", cursor: "pointer" }}>
               {q.label}
             </button>
           ))}
         </div>
       </div>
       {vm.paused || localPaused ? (
-        <div style={{ position: "sticky", bottom: 0, background: "#fff", borderTop: "1px solid #DCD6CD", padding: 14, textAlign: "center", fontWeight: 500, fontSize: 16 }}>
+        <div style={{ position: "sticky", bottom: 0, background: "#fff", borderTop: "1px solid #C0DFC8", padding: 14, textAlign: "center", fontWeight: 500, fontSize: 16 }}>
           Conversación en pausa · el equipo la llamará
         </div>
       ) : null}
       {vm.notPaused && !localPaused ? (
-        <div className="sticky bottom-0 border-t border-linea bg-nara-crema px-3 py-2.5">
-          <div className="flex items-center gap-1 rounded-[28px] border border-linea bg-nara-blanco pl-4 pr-1.5 shadow-[0_1px_0_rgba(22,20,19,0.04)] focus-within:border-nara-tinta/35">
+        <div className="sticky bottom-0 border-t border-[#C0DFC8] bg-[#FBFAF3] px-3 py-2.5">
+          <div className="pl-composer font-texto">
             <input
               value={vm.input}
               onChange={(e) => vm.setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void send()}
-              placeholder="Escríbale a TEO"
-              className="min-w-0 flex-1 border-0 bg-transparent py-3 font-texto text-[16px] text-nara-tinta outline-none placeholder:text-texto-secundario/70"
+              placeholder="Escríbale a Aurelia"
+              aria-label="Escríbale a Aurelia"
             />
             <button
               type="button"
               onClick={() => void send()}
               disabled={!canSend}
               aria-label="Enviar"
-              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border-0 transition ${
-                canSend
-                  ? "cursor-pointer bg-nara-amarillo text-nara-tinta active:scale-95"
-                  : "cursor-not-allowed bg-superficie-2 text-texto-secundario/50"
-              }`}
+              className={`pl-composer__send ${canSend ? "pl-composer__send--on" : "pl-composer__send--off"}`}
             >
               <svg
                 width="18"

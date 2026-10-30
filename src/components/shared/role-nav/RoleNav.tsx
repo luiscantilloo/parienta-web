@@ -16,7 +16,7 @@ export function roleNavTabClass(active: boolean) {
     "relative flex h-full shrink-0 cursor-pointer items-center whitespace-nowrap bg-transparent px-2.5 font-texto text-[15px] font-medium text-nara-tinta sm:px-3.5",
     "border-0 outline-none",
     "after:pointer-events-none after:absolute after:right-2.5 after:bottom-0 after:left-2.5 after:h-[3px] after:content-['']",
-    active ? "after:bg-[#FDCD22]" : "after:bg-transparent",
+    active ? "after:bg-pl-naranja" : "after:bg-transparent",
   ].join(" ");
 }
 

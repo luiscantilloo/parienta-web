@@ -7,6 +7,7 @@ import {
   SITE_TAGLINE,
   getSiteUrl,
 } from "@/lib/site";
+import { bricolage, dmMono } from "@/styles/fonts";
 import "@/styles/globals.css";
 
 const siteUrl = getSiteUrl();
@@ -19,17 +20,17 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  authors: [{ name: "Proyecto NARA" }],
-  creator: "Proyecto NARA",
-  publisher: "Proyecto NARA",
+  authors: [{ name: "Núcleo Care · Parienta" }],
+  creator: "Núcleo Care",
+  publisher: "Núcleo Care",
   keywords: [
-    "NARA",
-    "salud mental",
-    "Eje Cafetero",
-    "post-sismo",
-    "Quindío",
+    "Parienta",
+    "Aurelia",
+    "personas mayores",
+    "cuidadores",
+    "VITALIA",
+    "Núcleo Care",
     "Colombia",
-    "cuidado comunitario",
   ],
   category: "health",
   alternates: {
@@ -49,22 +50,16 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
     googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
+      index: false,
+      follow: false,
     },
   },
   icons: {
-    icon: [
-      { url: "/nara/marca/favicon.svg", type: "image/svg+xml" },
-      { url: "/nara/marca/favicon.ico" },
-    ],
-    apple: [{ url: "/nara/marca/favicon.svg" }],
+    icon: [{ url: "/parienta/favicon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/parienta/favicon.svg" }],
   },
   appleWebApp: {
     capable: true,
@@ -83,8 +78,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F0ECE6" },
-    { media: "(prefers-color-scheme: dark)", color: "#FDCD22" },
+    { media: "(prefers-color-scheme: light)", color: "#FBFAF3" },
+    { media: "(prefers-color-scheme: dark)", color: "#27683A" },
   ],
 };
 
@@ -97,19 +92,22 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
-    alternateName: "Proyecto NARA",
+    alternateName: "Núcleo Care · Parienta",
     url: siteUrl,
     description: SITE_DESCRIPTION,
     areaServed: {
-      "@type": "AdministrativeArea",
-      name: "Eje Cafetero, Colombia",
+      "@type": "Country",
+      name: "Colombia",
     },
     inLanguage: "es-CO",
   };
 
   return (
-    <html lang="es-CO">
-      <body>
+    <html
+      lang="es-CO"
+      className={`${bricolage.variable} ${dmMono.variable} font-texto`}
+    >
+      <body className={`${bricolage.className} font-texto antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -4,7 +4,7 @@ import { pageTitle } from "@/lib/page-title";
 export const metadata = pageTitle("Política de privacidad", {
   index: true,
   description:
-    "Política de privacidad de NARA: qué datos usamos, para qué, quién puede verlos y sus derechos.",
+    "Política de privacidad de Parienta: qué datos usamos, para qué, quién puede verlos y sus derechos.",
 });
 
 export default function PrivacidadPage() {

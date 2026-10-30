@@ -3,9 +3,7 @@ export type PacienteHerramientaId =
   | "mood"
   | "clin"
   | "ia"
-  | "tech"
-  | "revisit"
-  | "cursos";
+  | "juegos";
 
 export type PacienteHerramientaMeta = {
   id: PacienteHerramientaId;

@@ -44,7 +44,7 @@ function Contenido({ vm }: { vm: AgendaVM }) {
     return (
       <div className="grid place-items-center py-10 text-center" role="status">
         <img
-          src={naraAsset("marca/personajes/nara-curiosidad.svg")}
+          src={naraAsset("marca/teo/teo-curiosidad.svg")}
           alt=""
           className="mb-3 h-16 w-auto"
         />
@@ -90,7 +90,7 @@ function Contenido({ vm }: { vm: AgendaVM }) {
       {!ps.length ? (
         <section className="mt-4 flex flex-col items-center gap-3 rounded-[20px] border border-linea bg-nara-blanco px-6 py-8 text-center">
           <img
-            src={naraAsset("marca/personajes/nara-duda.svg")}
+            src={naraAsset("marca/teo/teo-duda.svg")}
             alt=""
             className="h-20 w-auto"
           />
@@ -165,7 +165,7 @@ export function AgendaModal({
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-linea bg-nara-blanco px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">
             <img
-              src={naraAsset("marca/logo/nara-isotipo.svg")}
+              src={naraAsset("marca/logo/plateado-isotipo.svg")}
               alt=""
               className="h-9 w-9 shrink-0 object-contain"
             />
@@ -177,7 +177,7 @@ export function AgendaModal({
                 Agenda de citas
               </h2>
               <p className="m-0 truncate text-[12px] text-texto-secundario sm:hidden">
-                NARA · clínico
+                Parienta · clínico
               </p>
             </div>
           </div>

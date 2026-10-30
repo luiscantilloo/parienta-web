@@ -13,12 +13,19 @@ export function ExpertoScreen() {
   return (
     <>
       <style>{`
-        textarea, input { font-family: Figtree, system-ui, sans-serif }
+        textarea, input { font-family: Bricolage Grotesque, system-ui, sans-serif }
       `}</style>
       <AgentDrawerShell
         open={!!v.agentOpen}
         drawerWidth={String(v.drawerW || "460px")}
         onClose={() => v.closeAgent?.()}
+        style={{
+          minWidth: 0,
+          fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
+          color: "#27683A",
+          fontSize: 15,
+          background: "#FBFAF3",
+        }}
         drawer={
           <AgentPanel
             role={String(v.agentRole)}

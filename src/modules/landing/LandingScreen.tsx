@@ -1,84 +1,141 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { landingAssets } from "./assets";
 import { IngresarCta, LandingFooter, LandingHeader } from "./LandingChrome";
 
-const CANALES = [
+const SERVICIOS = [
   {
-    label: "Usuario 1",
-    title: "Con su app y TEO.",
-    webp: landingAssets.canal1Webp,
-    jpg: landingAssets.canal1Jpg,
-    alt: "Manos de una persona sosteniendo un celular, con una taza de café y un valle cafetero al amanecer.",
+    label: "Parienta en casa",
+    title: "Unidades móviles y equipos en territorio.",
+    detail: "Visitas cada semana · Pereira y Roldanillo",
+    surface: "bg-pl-menta text-pl-verde-raiz",
+    accent: "text-pl-naranja",
   },
   {
-    label: "Usuario 2",
-    title: "Por WhatsApp, con audios.",
-    webp: landingAssets.canal2Webp,
-    jpg: landingAssets.canal2Jpg,
-    alt: "Mesa de cocina con luz de mañana, un celular con audífonos, una taza y flores, y manos descansando.",
+    label: "Parienta acompaña",
+    title: "Valoración, plan individual y seguimiento.",
+    detail: "Movilidad y bienestar",
+    surface: "bg-pl-crema-sol text-pl-verde-raiz",
+    accent: "text-pl-naranja",
   },
   {
-    label: "Usuario 3",
-    title: "Con visitas, llamadas y papel.",
-    webp: landingAssets.canal3Webp,
-    jpg: landingAssets.canal3Jpg,
-    alt: "Calendario de papel con puntos de colores, un lápiz, flores y hojas de cafeto sobre una mesa de madera.",
-  },
-] as const;
-
-const PASOS = [
-  {
-    text: "Lo visitamos en casa.",
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
-        <path d="M3.5 11 12 4l8.5 7" />
-        <path d="M6 9.5V20h12V9.5" />
-        <path d="M10 20v-5h4v5" />
-      </svg>
-    ),
+    label: "Escuela Parienta",
+    title: "Formación y certificación de cuidadores.",
+    detail: "Talleres · acompañamiento emocional",
+    surface: "bg-pl-lima text-pl-verde-raiz",
+    accent: "text-pl-verde-raiz",
   },
   {
-    text: "Armamos una ruta a su medida.",
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
-        <circle cx="5.5" cy="18.5" r="2" />
-        <circle cx="18.5" cy="5.5" r="2" />
-        <path d="M7.5 18.5H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7.5" />
-      </svg>
-    ),
-  },
-  {
-    text: "Lo acompañamos, a su ritmo.",
-    icon: (
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
-        <circle cx="8" cy="8" r="3" />
-        <circle cx="16.5" cy="9" r="2.5" />
-        <path d="M2.5 20a5.5 5.5 0 0 1 11 0" />
-        <path d="M13.5 15.2A4.5 4.5 0 0 1 21 18.5" />
-      </svg>
-    ),
+    label: "Aurelia con VITALIA",
+    title: "Asistente con IA: orienta, recuerda y conecta.",
+    detail: "Memoria, juego y orientación",
+    surface: "bg-pl-naranja text-pl-hueso",
+    accent: "text-pl-crema-sol",
   },
 ] as const;
 
-function mixHex(a: string, b: string, t: number) {
-  const parse = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-  const A = parse(a);
-  const B = parse(b);
-  return `rgb(${A.map((v, i) => Math.round(v + (B[i]! - v) * t)).join(",")})`;
+const AFICHES = [
+  {
+    q: "¿Cómo amaneció, pariente?",
+    s: "Parienta en casa · visitas cada semana",
+    surface: "bg-pl-menta",
+    ink: "text-pl-verde-raiz",
+    dark: false,
+  },
+  {
+    q: "El tinto sabe mejor entre parientes.",
+    s: "Parienta acompaña · movilidad y bienestar",
+    surface: "bg-pl-crema-sol",
+    ink: "text-pl-verde-raiz",
+    dark: false,
+  },
+  {
+    q: "Pariente que cuida, pariente que se cuida.",
+    s: "Escuela Parienta · talleres para cuidadores",
+    surface: "bg-pl-lima",
+    ink: "text-pl-verde-raiz",
+    dark: false,
+  },
+  {
+    q: "Cuénteme otra vez la del río, pariente.",
+    s: "Aurelia con VITALIA · memoria y juego",
+    surface: "bg-pl-verde-vivo",
+    ink: "text-pl-hueso",
+    dark: true,
+  },
+  {
+    q: "Cuidar cansa. Aquí también la cuidamos.",
+    s: "Escuela Parienta · acompañamiento emocional",
+    surface: "bg-pl-naranja",
+    ink: "text-pl-hueso",
+    dark: true,
+  },
+  {
+    q: "Escuchar también es cuidar.",
+    s: "Equipo Parienta · Pereira y Roldanillo",
+    surface: "bg-pl-verde-raiz",
+    ink: "text-pl-crema-sol",
+    dark: true,
+  },
+] as const;
+
+const AURELIA_MOODS = [
+  { id: "base", label: "Base", src: landingAssets.aurelia.base, verde: landingAssets.aureliaVerde.base },
+  { id: "escucha", label: "Escucha", src: landingAssets.aurelia.escucha, verde: landingAssets.aureliaVerde.escucha },
+  { id: "piensa", label: "Piensa", src: landingAssets.aurelia.piensa, verde: landingAssets.aureliaVerde.piensa },
+  { id: "responde", label: "Responde", src: landingAssets.aurelia.responde, verde: landingAssets.aureliaVerde.responde },
+  { id: "celebra", label: "Celebra", src: landingAssets.aurelia.celebra, verde: landingAssets.aureliaVerde.celebra },
+] as const;
+
+const PUBLICOS = [
+  {
+    label: "Personas mayores",
+    quote: "Don Jaime, el martes vamos a su casa.",
+    note: "De usted. Frases cortas. Letra grande y alto contraste.",
+    surface: "bg-pl-menta",
+  },
+  {
+    label: "Cuidadores",
+    quote: "Cuidar cansa. Aquí también te cuidamos a ti.",
+    note: "De tú. Reconoce el esfuerzo antes de enseñar.",
+    surface: "bg-pl-crema-sol",
+  },
+  {
+    label: "Equipo y aliados",
+    quote: "Evidencia que vuelve al territorio.",
+    note: "Claro y riguroso, sin frialdad institucional.",
+    surface: "bg-pl-lima",
+  },
+] as const;
+
+const NIVELES = [
+  "Tecnológico",
+  "Atención territorial",
+  "Caracterización",
+  "Intervención",
+  "Formadores",
+  "Recuperación integral",
+  "Gestión del conocimiento",
+  "Escalabilidad",
+] as const;
+
+function BrandLine({ className = "", stroke = "#F26B3A" }: { className?: string; stroke?: string }) {
+  return (
+    <svg aria-hidden className={className} viewBox="0 0 600 200" fill="none">
+      <path
+        d="M20 40 C 120 20, 180 90, 260 110 C 340 130, 400 80, 480 100 C 520 110, 560 140, 580 170"
+        stroke={stroke}
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 export function LandingScreen() {
-  const [videoOpen, setVideoOpen] = useState(false);
-  const [mainBg, setMainBg] = useState("#F0ECE6");
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const openRef = useRef<HTMLButtonElement>(null);
-  const threadWrapRef = useRef<HTMLDivElement>(null);
-  const threadPathRef = useRef<SVGPathElement>(null);
-  const knotRefs = useRef<(SVGCircleElement | null)[]>([]);
-  const threadLenRef = useRef(0);
+  const [mood, setMood] = useState<(typeof AURELIA_MOODS)[number]["id"]>("base");
+  const activeMood = AURELIA_MOODS.find((m) => m.id === mood) ?? AURELIA_MOODS[0];
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -92,8 +149,8 @@ export function LandingScreen() {
     if (!reduce && "IntersectionObserver" in window) {
       reveals.forEach((el) => {
         el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        el.style.transition = "opacity .7s ease, transform .7s ease";
+        el.style.transform = "translateY(18px)";
+        el.style.transition = "opacity .8s ease, transform .8s ease";
         el.style.transitionDelay = `${el.dataset.delay || 0}ms`;
       });
       io = new IntersectionObserver(
@@ -102,439 +159,384 @@ export function LandingScreen() {
             const t = e.target as HTMLElement;
             if (!e.isIntersecting) {
               t.style.opacity = "0";
-              t.style.transform = "translateY(24px)";
+              t.style.transform = "translateY(22px)";
               return;
             }
             t.style.opacity = "1";
             t.style.transform = "none";
           });
         },
-        { threshold: 0.15 },
+        { threshold: 0.1 },
       );
       reveals.forEach((el) => io!.observe(el));
     }
 
-    const layoutThread = () => {
-      const wrap = threadWrapRef.current;
-      const path = threadPathRef.current;
-      if (!wrap || !path) return;
-      const cards = Array.from(wrap.querySelectorAll<HTMLElement>("[data-thread-grid] > article"));
-      const w = wrap.getBoundingClientRect();
-      const pts = cards.map((c) => {
-        const r = c.getBoundingClientRect();
-        return [r.left - w.left + r.width / 2, r.top - w.top] as const;
-      });
-      const oneCol = pts.some((p) => Math.abs(p[1] - pts[0]![1]) > 4);
-      const svg = wrap.querySelector<SVGElement>("[data-thread-svg]");
-      if (svg) svg.style.display = oneCol ? "none" : "";
-      if (oneCol || !pts.length) return;
-      const lift = 34;
-      let d = `M ${-24} ${pts[0]![1] + 10} C ${pts[0]![0] * 0.4} ${pts[0]![1] + 10}, ${pts[0]![0] * 0.7} ${pts[0]![1]}, ${pts[0]![0]} ${pts[0]![1]}`;
-      for (let i = 1; i < pts.length; i++) {
-        const [x0, y0] = pts[i - 1]!;
-        const [x1, y1] = pts[i]!;
-        const mx = (x0 + x1) / 2;
-        d += ` C ${x0 + (mx - x0) * 0.6} ${y0 - lift * 1.6}, ${x1 - (x1 - mx) * 0.6} ${y1 - lift * 1.6}, ${x1} ${y1}`;
-      }
-      const last = pts[pts.length - 1]!;
-      d += ` C ${last[0] + (w.width - last[0]) * 0.3} ${last[1]}, ${last[0] + (w.width - last[0]) * 0.6} ${last[1] + 10}, ${w.width + 24} ${last[1] + 10}`;
-      path.setAttribute("d", d);
-      knotRefs.current.forEach((k, i) => {
-        if (k && pts[i]) {
-          k.setAttribute("cx", String(pts[i]![0]));
-          k.setAttribute("cy", String(pts[i]![1]));
-        }
-      });
-      threadLenRef.current = path.getTotalLength();
-      path.style.strokeDasharray = String(threadLenRef.current);
-    };
-
-    const onScroll = () => {
-      const vh = window.innerHeight;
-      const mid = vh / 2;
-      const secs = Array.from(document.querySelectorAll<HTMLElement>("[data-bg]"));
-      if (secs.length) {
-        const c = secs.map((s) => {
-          const r = s.getBoundingClientRect();
-          return { col: s.dataset.bg!, y: r.top + r.height / 2 };
-        });
-        let col = c[0]!.col;
-        if (mid >= c[c.length - 1]!.y) col = c[c.length - 1]!.col;
-        else {
-          for (let i = 0; i < c.length - 1; i++) {
-            if (mid >= c[i]!.y && mid < c[i + 1]!.y) {
-              const t = (mid - c[i]!.y) / (c[i + 1]!.y - c[i]!.y);
-              const e = t * t * (3 - 2 * t);
-              col = mixHex(c[i]!.col, c[i + 1]!.col, e);
-              break;
-            }
-          }
-        }
-        setMainBg(col);
-      }
-
-      const wrap = threadWrapRef.current;
-      const path = threadPathRef.current;
-      if (path && wrap && threadLenRef.current) {
-        const r = wrap.getBoundingClientRect();
-        const t = Math.max(0, Math.min(1, (vh * 0.95 - r.top) / (vh * 0.6)));
-        path.style.strokeDashoffset = (threadLenRef.current * (1 - t)).toFixed(1);
-        knotRefs.current.forEach((k, i, all) => {
-          if (!k) return;
-          const on = t >= (i + 0.5) / (all.length + 1);
-          k.style.opacity = on ? "1" : "0";
-        });
-      }
-    };
-
-    let raf = 0;
-    const onScrollRaf = () => {
-      if (!raf) raf = requestAnimationFrame(() => {
-        raf = 0;
-        onScroll();
-      });
-    };
-
-    layoutThread();
-    onScroll();
-    window.addEventListener("resize", layoutThread);
-    window.addEventListener("scroll", onScrollRaf, { passive: true });
-    const t = window.setTimeout(layoutThread, 800);
-
     return () => {
       io?.disconnect();
-      window.clearTimeout(t);
-      window.removeEventListener("resize", layoutThread);
-      window.removeEventListener("scroll", onScrollRaf);
       root.style.scrollSnapType = "";
       root.style.scrollBehavior = "";
     };
   }, []);
 
-  useEffect(() => {
-    document.documentElement.style.overflow = videoOpen ? "hidden" : "";
-    if (videoOpen) {
-      const v = videoRef.current;
-      if (v) {
-        try {
-          v.currentTime = 0;
-        } catch {
-          /* ignore */
-        }
-        void v.play().catch(() => {});
-      }
-      closeRef.current?.focus();
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape") closeVideo();
-      };
-      window.addEventListener("keydown", onKey);
-      return () => {
-        window.removeEventListener("keydown", onKey);
-        document.documentElement.style.overflow = "";
-      };
-    }
-    return () => {
-      document.documentElement.style.overflow = "";
-    };
-  }, [videoOpen]);
-
-  function openVideo() {
-    setVideoOpen(true);
-  }
-
-  function closeVideo() {
-    videoRef.current?.pause();
-    setVideoOpen(false);
-    openRef.current?.focus();
-  }
-
   return (
-    <div className="min-h-svh overflow-x-clip bg-nara-crema text-nara-tinta">
-      <div data-chrome="">
-        <LandingHeader />
-      </div>
+    <div className="min-h-svh overflow-x-clip bg-pl-hueso font-texto text-pl-verde-raiz">
+      <LandingHeader />
 
-      <main style={{ background: mainBg }} className="transition-colors duration-300">
-        {/* 01 Portada */}
+      <main>
+        {/* 01 Hero — verde raíz + lima + naranja */}
         <section
           id="inicio"
-          className="relative flex min-h-svh snap-start snap-always items-center px-[clamp(16px,6vw,96px)] pb-12 pt-[110px]"
+          className="relative flex min-h-svh snap-start snap-always flex-col justify-end overflow-hidden bg-pl-verde-raiz px-[clamp(16px,6vw,96px)] pb-16 pt-[120px]"
         >
-          <picture className="absolute inset-0 overflow-hidden">
-            <source srcSet={landingAssets.heroWebp} type="image/webp" />
-            <img
-              src={landingAssets.heroJpg}
-              alt="Amanecer sobre colinas verdes de cafetales, con palmas de cera y casas de campo."
-              fetchPriority="high"
-              className="h-full w-full object-cover object-[25%_50%] motion-safe:animate-[nara-kenburns_22s_ease-in-out_infinite_alternate]"
-            />
-          </picture>
           <div
-            data-reveal=""
-            className="relative flex w-full max-w-[580px] flex-col gap-5 rounded-[20px] bg-nara-crema/90 p-[clamp(24px,4vw,44px)]"
-          >
-            <div className="flex items-start gap-4">
-              <h1 className="min-w-0 flex-1 text-balance font-titulos text-[clamp(32px,5.4vw,56px)] font-semibold leading-[1.08] tracking-[-0.01em]">
-                Cada persona, en el canal que puede usar.
-              </h1>
-              <img
-                src={landingAssets.teoEnergia}
-                alt=""
-                aria-hidden
-                className="h-auto w-[clamp(56px,8vw,84px)] shrink-0 motion-safe:animate-[nara-float_3.6s_ease-in-out_infinite_alternate]"
-              />
-            </div>
-            <p className="text-pretty font-texto text-[clamp(18px,1.6vw,21px)] leading-[1.45]">
-              Programa de acompañamiento post-sismo del Eje Cafetero.
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.18]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 18% 22%, #E0DB55 0%, transparent 42%), radial-gradient(circle at 88% 18%, #F26B3A 0%, transparent 38%), radial-gradient(circle at 70% 78%, #C0DFC8 0%, transparent 45%)",
+            }}
+          />
+          <BrandLine
+            className="pointer-events-none absolute -right-8 top-24 h-[42%] w-[58%] opacity-70 motion-safe:animate-[pl-pulse_9s_ease-in-out_infinite]"
+            stroke="#E0DB55"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-0 h-2 w-full bg-gradient-to-r from-pl-lima via-pl-naranja to-pl-menta"
+          />
+
+          <div data-reveal="" className="relative z-10 flex max-w-[740px] flex-col gap-5">
+            <img
+              src={landingAssets.logoClaro}
+              alt="Parienta"
+              className="h-[clamp(48px,8vw,72px)] w-auto self-start"
+            />
+            <h1 className="text-balance font-titulos text-[clamp(30px,5vw,52px)] font-extrabold leading-[1.08] tracking-[-0.02em] text-pl-hueso">
+              No hace falta ser familia para sentirse parte.
+            </h1>
+            <p className="max-w-[34rem] text-pretty font-mono text-[clamp(16px,1.8vw,20px)] leading-[1.5] text-pl-crema-sol">
+              Hola, pariente. Acompañamos a mayores y a quienes cuidan — en casa, en la Escuela y con
+              Aurelia.
             </p>
-            <div className="flex">
+            <div className="flex flex-wrap items-center gap-4 pt-1">
               <IngresarCta />
+              <a
+                href="#aurelia"
+                className="inline-flex min-h-14 items-center rounded-md border-2 border-[#E0DB55] bg-transparent px-6 font-texto text-[18px] font-bold !text-[#E0DB55] transition hover:bg-[#E0DB55] hover:!text-[#27683A]"
+              >
+                Conocer a Aurelia
+              </a>
             </div>
           </div>
         </section>
 
-        {/* 02 El problema */}
-        <section
-          data-bg="#FFC28F"
-          className="flex min-h-svh snap-start snap-always items-center justify-center bg-transparent px-[clamp(16px,6vw,96px)] pb-16 pt-[110px]"
-        >
-          <div className="flex w-full max-w-[1180px] flex-wrap items-center justify-center gap-[clamp(32px,6vw,88px)]">
-            <div data-reveal="" className="flex flex-none items-end justify-center gap-[clamp(12px,2vw,28px)]">
+        {/* 02 Concepto */}
+        <section className="relative flex min-h-svh snap-start snap-always items-center overflow-hidden bg-pl-menta px-[clamp(16px,6vw,96px)] pb-16 pt-[110px]">
+          <BrandLine
+            className="pointer-events-none absolute -left-10 bottom-10 w-[50%] opacity-50"
+            stroke="#27683A"
+          />
+          <div className="relative z-10 mx-auto grid w-full max-w-[1100px] gap-12 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.2fr)] md:items-center">
+            <div data-reveal="" className="relative mx-auto w-full max-w-[300px]">
+              <div className="absolute -inset-6 rounded-full bg-pl-crema-sol/70 blur-2xl" />
               <img
-                src={landingAssets.naraDuda}
-                alt="NARA, con expresión de duda."
-                className="h-auto w-[clamp(130px,20vw,240px)] motion-safe:animate-[nara-float_3.6s_ease-in-out_infinite_alternate]"
-              />
-              <img
-                src={landingAssets.teoDuda}
-                alt="TEO, con expresión de duda."
-                className="h-auto w-[clamp(130px,20vw,240px)] motion-safe:animate-[nara-float_4.1s_ease-in-out_1.4s_infinite_alternate]"
+                src={landingAssets.simbolo}
+                alt=""
+                aria-hidden
+                className="relative w-full motion-safe:animate-[pl-pulse_7s_ease-in-out_infinite]"
               />
             </div>
-            <div data-reveal="" className="flex max-w-[600px] flex-1 basis-[380px] flex-col gap-[22px]">
-              <h2 className="text-balance font-titulos text-[clamp(30px,4.6vw,52px)] font-semibold leading-[1.1]">
-                Pedir ayuda no debería depender de tener celular, señal o cómo llegar.
+            <div data-reveal="" className="flex flex-col gap-5">
+              <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-naranja">
+                La línea que acompaña
+              </p>
+              <h2 className="text-balance font-titulos text-[clamp(30px,4.2vw,48px)] font-extrabold leading-[1.12] text-pl-verde-raiz">
+                Una sola línea que no se corta.
               </h2>
-              <p className="text-pretty font-texto text-[clamp(18px,1.6vw,21px)] leading-[1.5]">
-                Después del sismo, el miedo puede quedarse. El acompañamiento tiene que llegar a todas las personas.
+              <p className="text-pretty font-texto text-[clamp(18px,1.8vw,22px)] leading-[1.55] text-pl-verde-raiz/80">
+                Une a quien necesita cuidado y a quien cuida. Recorre el modelo y dibuja a cada
+                pariente. No habla de un servicio: habla de pertenecer.
+              </p>
+              <p className="font-mono text-[14px] leading-snug text-pl-verde-raiz/70">
+                Dos cabezas · un abrazo · un nudo infinito. El cuidado va en las dos direcciones.
               </p>
             </div>
           </div>
         </section>
 
-        {/* 03 Tres canales */}
-        <section
-          data-bg="#F0ECE6"
-          className="flex min-h-svh snap-start snap-always flex-col items-center justify-center gap-[clamp(32px,5vw,56px)] bg-transparent px-[clamp(16px,5vw,80px)] pb-16 pt-[110px]"
-        >
-          <h2
-            data-reveal=""
-            className="text-balance text-center font-titulos text-[clamp(32px,5vw,56px)] font-semibold leading-[1.1]"
-          >
-            Nadie se queda por fuera.
-          </h2>
-          <div ref={threadWrapRef} className="relative w-full max-w-[1200px]">
-            <div
-              data-thread-grid=""
-              className="grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-[clamp(16px,2.4vw,28px)]"
-            >
-              {CANALES.map((c) => (
-                <article
-                  key={c.label}
-                  data-reveal=""
-                  className="flex flex-col overflow-hidden rounded-[20px] border border-linea bg-nara-blanco"
-                >
-                  <picture className="block aspect-[3/2]">
-                    <source srcSet={c.webp} type="image/webp" />
-                    <img src={c.jpg} loading="lazy" alt={c.alt} className="h-full w-full object-cover" />
-                  </picture>
-                  <div className="flex flex-col gap-2 px-6 pb-[26px] pt-[22px]">
-                    <p className="font-texto text-sm font-semibold uppercase tracking-[0.06em] text-texto-secundario">
-                      {c.label}
-                    </p>
-                    <p className="font-titulos text-[clamp(22px,2vw,26px)] font-medium leading-[1.2]">{c.title}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <svg
-              data-thread-svg=""
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-[2] h-full w-full overflow-visible"
-            >
-              <path
-                ref={threadPathRef}
-                data-thread=""
-                d=""
-                fill="none"
-                stroke="#161413"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              {(["#FFA3D0", "#FDCD22", "#3FEA73"] as const).map((fill, i) => (
-                <circle
-                  key={fill}
-                  ref={(el) => {
-                    knotRefs.current[i] = el;
-                  }}
-                  r="7"
-                  fill={fill}
-                  stroke="#161413"
-                  strokeWidth="2"
-                  cx="-99"
-                  cy="-99"
-                  className="opacity-0 transition-opacity duration-[400ms]"
-                />
-              ))}
-            </svg>
+        {/* 04 Servicios — cada uno con color de marca */}
+        <section className="flex min-h-svh snap-start snap-always flex-col justify-center gap-10 bg-pl-hueso px-[clamp(16px,5vw,80px)] py-24">
+          <div data-reveal="" className="mx-auto max-w-[40rem] text-center">
+            <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-naranja">
+              Una marca, cuatro servicios
+            </p>
+            <h2 className="mt-3 text-balance font-titulos text-[clamp(30px,4.5vw,48px)] font-extrabold leading-[1.12] text-pl-verde-raiz">
+              Entre parientes nos cuidamos.
+            </h2>
           </div>
-          <button
-            ref={openRef}
-            type="button"
-            onClick={openVideo}
-            className="inline-flex min-h-12 items-center gap-2.5 rounded-full border border-linea bg-transparent px-5 font-texto text-[17px] font-semibold text-nara-tinta hover:bg-nara-blanco"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="12" r="10" />
-              <path d="M10 8.5v7l5.5-3.5z" />
-            </svg>
-            Ver cómo funciona
-          </button>
+          <div className="mx-auto grid w-full max-w-[1200px] gap-4 md:grid-cols-2">
+            {SERVICIOS.map((s, i) => (
+              <article
+                key={s.label}
+                data-reveal=""
+                data-delay={String(i * 90)}
+                className={`flex min-h-[220px] flex-col justify-between gap-4 rounded-[28px] p-8 ${s.surface}`}
+              >
+                <p className={`font-mono text-sm font-medium uppercase tracking-[0.12em] ${s.accent}`}>
+                  {s.label}
+                </p>
+                <div>
+                  <p className="font-titulos text-[clamp(22px,2.2vw,28px)] font-extrabold leading-[1.2]">
+                    {s.title}
+                  </p>
+                  <p className="mt-3 font-mono text-[14px] opacity-80">{s.detail}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
 
-        {/* 04 Cómo funciona */}
-        <section
-          data-bg="#FFE189"
-          className="flex min-h-svh snap-start snap-always items-center justify-center bg-transparent px-[clamp(16px,6vw,96px)] pb-16 pt-[110px]"
-        >
-          <div className="flex w-full max-w-[1180px] flex-wrap items-center justify-center gap-[clamp(32px,6vw,88px)]">
-            <img
-              data-reveal=""
-              src={landingAssets.teoEnergia}
-              alt="TEO, con expresión de curiosidad."
-              loading="lazy"
-              className="h-auto w-[clamp(170px,26vw,320px)] shrink-0 motion-safe:animate-[nara-float_3.6s_ease-in-out_infinite_alternate]"
-            />
-            <div className="flex max-w-[620px] flex-1 basis-[400px] flex-col gap-7">
-              <h2
+        {/* 05 Campaña afiches — bloques de color del PDF */}
+        <section className="flex min-h-svh snap-start snap-always flex-col justify-center gap-10 bg-pl-crema-sol px-[clamp(16px,5vw,80px)] py-24">
+          <div data-reveal="" className="mx-auto max-w-[36rem] text-center">
+            <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-naranja">
+              Campaña Los Parientes
+            </p>
+            <h2 className="mt-3 text-balance font-titulos text-[clamp(30px,4.5vw,48px)] font-extrabold leading-[1.12] text-pl-verde-raiz">
+              La línea llega a cada pariente y le da voz.
+            </h2>
+          </div>
+          <div className="mx-auto grid w-full max-w-[1200px] gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {AFICHES.map((a, i) => (
+              <article
+                key={a.q}
                 data-reveal=""
-                className="text-balance font-titulos text-[clamp(32px,5vw,56px)] font-semibold leading-[1.1]"
+                data-delay={String(i * 70)}
+                className={`relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-[24px] p-7 ${a.surface} ${a.ink}`}
               >
-                Siempre hay una persona detrás.
+                <img
+                  src={a.dark ? landingAssets.logoClaro : landingAssets.logo}
+                  alt=""
+                  aria-hidden
+                  className="h-7 w-auto self-start"
+                />
+                <div>
+                  <p className="font-titulos text-[clamp(22px,2.2vw,28px)] font-extrabold leading-[1.2]">
+                    {a.q}
+                  </p>
+                  <p className="mt-4 font-mono text-[13px] opacity-85">{a.s}</p>
+                </div>
+                <svg
+                  aria-hidden
+                  className="pointer-events-none absolute -bottom-4 -right-4 h-28 w-40 opacity-40"
+                  viewBox="0 0 160 100"
+                  fill="none"
+                >
+                  <path
+                    d="M10 70 C 40 20, 90 20, 120 50 C 140 70, 145 85, 150 95"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* 05b Fotografía + línea (PPT p.33) — viewport completo; el verde de abajo es Aurelia */}
+        <section className="relative flex min-h-svh snap-start snap-always items-center overflow-hidden bg-[#1a1a18]">
+          <div className="absolute inset-0">
+            <img
+              src={landingAssets.canal1Jpg}
+              alt=""
+              className="h-full w-full scale-105 object-cover grayscale contrast-[1.08]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-pl-verde-raiz/45 via-pl-verde-raiz/30 to-[#1a1a18]/80" />
+          </div>
+          <BrandLine
+            className="pointer-events-none absolute inset-x-[6%] top-[12%] z-10 h-[76%] w-[88%] opacity-95"
+            stroke="#E0DB55"
+          />
+          <div data-reveal="" className="relative z-10 mx-auto flex min-h-svh w-full max-w-[40rem] flex-col items-center justify-center px-[clamp(16px,6vw,96px)] py-28 text-center">
+            <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-lima">
+              Fotografía + línea
+            </p>
+            <h2 className="mt-3 text-balance font-titulos text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.12] text-pl-hueso">
+              Blanco y negro, un objeto en color, la línea encima.
+            </h2>
+            <p className="mt-4 font-mono text-[15px] leading-snug text-pl-crema-sol">
+              La misma línea que une a los parientes rodea y abraza a las personas.
+            </p>
+          </div>
+        </section>
+
+        {/* 06 Aurelia — verde raíz + mock celular */}
+        <section
+          id="aurelia"
+          className="flex min-h-svh snap-start snap-always items-center bg-pl-verde-raiz px-[clamp(16px,6vw,96px)] py-24 text-pl-hueso"
+        >
+          <div className="mx-auto grid w-full max-w-[1100px] gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div data-reveal="" className="flex flex-col gap-5">
+              <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-lima">
+                Aurelia · con tecnología VITALIA
+              </p>
+              <h2 className="text-balance font-titulos text-[clamp(32px,4.5vw,50px)] font-extrabold leading-[1.1]">
+                Hola, soy Aurelia.
               </h2>
-              <ol className="m-0 flex list-none flex-col gap-4 p-0">
-                {PASOS.map((p, i) => (
-                  <li
-                    key={p.text}
-                    data-reveal=""
-                    data-delay={String(i * 260)}
-                    className="flex items-center gap-4"
-                  >
-                    {p.icon}
-                    <span className="font-texto text-[clamp(19px,1.7vw,22px)] font-medium leading-[1.35]">
-                      {p.text}
+              <p className="max-w-[36rem] text-pretty font-texto text-[20px] leading-[1.55] text-pl-menta">
+                La pariente que siempre contesta. Habla como un pariente, no como un sistema. Siempre
+                dice que es digital y, si hace falta, pasa con una persona del equipo.
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-end gap-4">
+                <div className="flex h-28 w-28 items-center justify-center rounded-[22px] border border-pl-lima/30 bg-pl-verde-vivo/40">
+                  <img
+                    key={activeMood.id}
+                    src={activeMood.verde}
+                    alt={`Aurelia · ${activeMood.label}`}
+                    className="h-[78%] w-[78%] object-contain"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2" role="tablist" aria-label="Estados de Aurelia">
+                  {AURELIA_MOODS.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={mood === m.id}
+                      onClick={() => setMood(m.id)}
+                      className={`min-h-11 rounded-md px-3.5 font-mono text-sm font-medium transition ${
+                        mood === m.id
+                          ? "bg-pl-naranja text-pl-hueso"
+                          : "bg-pl-hueso/10 text-pl-menta hover:bg-pl-hueso/20"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Mock celular — p.31 */}
+            <div data-reveal="" className="mx-auto w-full max-w-[340px]">
+              <div className="overflow-hidden rounded-[32px] border-[3px] border-pl-lima/40 bg-pl-hueso text-pl-verde-raiz shadow-[0_24px_60px_rgba(0,0,0,0.25)]">
+                <div className="flex items-center gap-3 border-b border-pl-linea bg-pl-menta px-4 py-3">
+                  <img src={landingAssets.aurelia.base} alt="" className="h-10 w-10" />
+                  <div>
+                    <p className="font-titulos text-[15px] font-bold leading-none">Aurelia</p>
+                    <p className="mt-1 font-mono text-[11px] text-pl-texto2">asistente de Parienta</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 px-4 py-4 font-texto text-[15px] leading-snug">
+                  <div className="max-w-[90%] rounded-[4px_16px_16px_16px] bg-pl-menta px-3.5 py-2.5">
+                    ¡Buenos días, Doña Gloria! ¿Cómo amaneció?
+                  </div>
+                  <div className="ml-auto max-w-[85%] rounded-[16px_4px_16px_16px] bg-pl-crema-sol px-3.5 py-2.5">
+                    Bien, mija. ¿Cuándo viene la visita?
+                  </div>
+                  <div className="max-w-[92%] rounded-[4px_16px_16px_16px] bg-pl-menta px-3.5 py-2.5">
+                    El martes a las 9 llega Parienta en casa. ¿Le recuerdo el lunes?
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <span className="rounded-full bg-pl-naranja px-3.5 py-2 font-mono text-[12px] font-medium text-pl-hueso">
+                      Sí, recuérdeme
                     </span>
-                  </li>
-                ))}
-              </ol>
-              <div data-reveal="" className="rounded-[20px] bg-nara-blanco p-[clamp(20px,3vw,28px)]">
-                <p className="text-pretty font-texto text-lg leading-[1.55]">
-                  TEO acompaña; no reemplaza a su psicóloga. Nada cuenta hasta que una persona lo confirma. Si hay una
-                  crisis, una persona del equipo lo llama: nuestra meta es en menos de 30 minutos.
-                </p>
+                    <span className="rounded-full border border-pl-verde-raiz/30 px-3.5 py-2 font-mono text-[12px] text-pl-verde-raiz">
+                      Hablar con alguien
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t border-pl-linea bg-pl-hueso px-4 py-3">
+                  <p className="rounded-full bg-pl-menta/60 px-4 py-2.5 font-mono text-[13px] text-pl-texto2">
+                    Escriba aquí…
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 05 Datos y cierre */}
-        <section className="relative flex min-h-svh snap-start snap-always items-center justify-end px-[clamp(16px,7vw,120px)] pb-12 pt-[110px]">
-          <picture className="absolute inset-0 overflow-hidden">
-            <source srcSet={landingAssets.cierreWebp} type="image/webp" />
-            <img
-              src={landingAssets.cierreJpg}
-              loading="lazy"
-              alt="Ramas de cafeto con cerezas rojas y gotas de rocío, con el sol saliendo sobre las colinas."
-              className="h-full w-full object-cover object-[15%_50%] motion-safe:animate-[nara-kenburns_22s_ease-in-out_infinite_alternate]"
-            />
-          </picture>
-          <div
-            data-reveal=""
-            className="relative flex w-full max-w-[480px] flex-col gap-4 rounded-[20px] bg-nara-crema/90 p-[clamp(24px,4vw,40px)]"
-          >
-            <div className="flex items-end gap-2.5">
-              <img
-                src={landingAssets.char1}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="h-16 w-auto motion-safe:animate-[nara-float_3.6s_ease-in-out_infinite_alternate]"
-              />
-              <img
-                src={landingAssets.char2}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="h-[58px] w-auto motion-safe:animate-[nara-float_4.1s_ease-in-out_0.9s_infinite_alternate]"
-              />
-              <img
-                src={landingAssets.char3}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="h-16 w-auto motion-safe:animate-[nara-float_4.6s_ease-in-out_1.8s_infinite_alternate]"
-              />
-            </div>
-            <h2 className="text-balance font-titulos text-[clamp(32px,4.6vw,52px)] font-semibold leading-[1.1]">
-              Sus datos son suyos.
-            </h2>
-            <p className="text-pretty font-texto text-[clamp(18px,1.6vw,21px)] leading-[1.5]">
-              Usted decide quién los ve y puede retirar su permiso cuando quiera.
+        {/* 07 Tres públicos */}
+        <section className="flex min-h-svh snap-start snap-always flex-col justify-center gap-10 bg-pl-hueso px-[clamp(16px,5vw,80px)] py-24">
+          <div data-reveal="" className="mx-auto max-w-[36rem] text-center">
+            <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-naranja">
+              Tres públicos, una voz
             </p>
-            <p className="font-texto text-[15px] text-texto-secundario">Ley 1581 de 2012.</p>
-            <div className="flex pt-1.5">
-              <IngresarCta />
-            </div>
+            <h2 className="mt-3 text-balance font-titulos text-[clamp(30px,4.5vw,48px)] font-extrabold leading-[1.12] text-pl-verde-raiz">
+              Cada pariente, con el tono que merece.
+            </h2>
+          </div>
+          <div className="mx-auto grid w-full max-w-[1100px] gap-4 md:grid-cols-3">
+            {PUBLICOS.map((p, i) => (
+              <article
+                key={p.label}
+                data-reveal=""
+                data-delay={String(i * 100)}
+                className={`flex min-h-[260px] flex-col justify-between rounded-[24px] p-7 ${p.surface}`}
+              >
+                <p className="font-mono text-sm font-medium uppercase tracking-[0.12em] text-pl-naranja">
+                  {p.label}
+                </p>
+                <p className="font-titulos text-[clamp(22px,2vw,26px)] font-extrabold leading-[1.25] text-pl-verde-raiz">
+                  {p.quote}
+                </p>
+                <p className="font-mono text-[14px] text-pl-verde-raiz/75">{p.note}</p>
+              </article>
+            ))}
           </div>
         </section>
-      </main>
 
-      <LandingFooter />
-
-      {videoOpen ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Video: cómo funciona NARA"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(22,20,19,0.82)] p-4"
-          onClick={closeVideo}
-        >
-          <div
-            className="relative flex w-[min(1100px,100%,calc((100svh-112px)*16/9))] flex-col gap-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-end">
-              <button
-                ref={closeRef}
-                type="button"
-                onClick={closeVideo}
-                className="min-h-12 rounded-[14px] bg-nara-crema px-5 font-texto text-[17px] font-semibold text-nara-tinta"
-              >
-                Cerrar
-              </button>
-            </div>
-            <video
-              ref={videoRef}
-              src={landingAssets.video}
-              poster={landingAssets.videoPoster}
-              controls
-              playsInline
-              preload="metadata"
-              className="block aspect-video max-h-[calc(100svh-112px)] w-full rounded-[20px] bg-nara-tinta"
-            />
+        {/* 08 Modelo — ocho niveles sobre verde vivo */}
+        <section className="flex min-h-svh snap-start snap-always flex-col justify-center gap-10 bg-pl-verde-vivo px-[clamp(16px,5vw,80px)] py-24 text-pl-hueso">
+          <div data-reveal="" className="mx-auto max-w-[40rem] text-center">
+            <p className="font-mono text-sm font-medium uppercase tracking-[0.16em] text-pl-lima">
+              La línea recorre el modelo
+            </p>
+            <h2 className="mt-3 text-balance font-titulos text-[clamp(30px,4.5vw,48px)] font-extrabold leading-[1.12]">
+              Ocho niveles, una sola línea.
+            </h2>
           </div>
-        </div>
-      ) : null}
+          <ol className="mx-auto grid w-full max-w-[1100px] list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-4">
+            {NIVELES.map((n, i) => (
+              <li
+                key={n}
+                data-reveal=""
+                data-delay={String(i * 50)}
+                className="flex items-start gap-3 rounded-2xl bg-pl-verde-raiz/35 px-4 py-4"
+              >
+                <span className="font-mono text-lg font-medium text-pl-lima">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="font-titulos text-[17px] font-bold leading-snug">{n}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* 09 Cierre — naranja abrazo */}
+        <section className="relative flex min-h-svh snap-start snap-always flex-col">
+          <div className="relative flex flex-1 items-center overflow-hidden bg-pl-naranja px-[clamp(16px,7vw,120px)] py-24">
+            <BrandLine
+              className="pointer-events-none absolute -right-16 top-10 h-[55%] w-[60%] opacity-40"
+              stroke="#FDF2B3"
+            />
+            <div data-reveal="" className="relative z-10 flex max-w-[560px] flex-col gap-5">
+              <h2 className="text-balance font-titulos text-[clamp(34px,5vw,54px)] font-extrabold leading-[1.08] text-pl-hueso">
+                Cuidar y ser cuidado.
+              </h2>
+              <p className="text-pretty font-mono text-[clamp(16px,1.8vw,20px)] leading-[1.5] text-pl-crema-sol">
+                Sus datos son suyos. Usted decide quién los ve. Ley 1581 de 2012.
+              </p>
+              <div className="pt-2">
+                <IngresarCta tone="verde" />
+              </div>
+            </div>
+          </div>
+          <LandingFooter />
+        </section>
+      </main>
     </div>
   );
 }

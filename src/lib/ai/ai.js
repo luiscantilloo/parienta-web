@@ -1,4 +1,4 @@
-// NARA · asistente de IA.
+// Parienta · asistente de IA.
 // Usa el servicio de IA cuando está disponible; si no, responde con el motor local
 // (reglas y frases), para que la plataforma funcione abriéndola con doble clic.
 // En la prueba de concepto, los desarrolladores reemplazan complete() por la función /ai del servidor.
@@ -83,10 +83,10 @@ var norm = function (t) { return String(t || '').toLowerCase().normalize('NFD').
     else if (has(t, ['si usaria', 'le gustaria la app', 'hablaria con la app', 'si hablaria'])) add('dig', 4, 2, 'app: sí');
     if (has(t, ['vive sola', 'vive solo', 'nadie le ayuda', 'no tiene quien'])) add('dig', 5, 0, 'ayuda en casa: no');
     else if (has(t, ['le ayuda', 'hija vive con', 'hijo vive con', 'vive con la hija', 'vive con el hijo', 'nieta le', 'nieto le'])) add('dig', 5, 1, 'ayuda en casa: sí');
-    if (has(t, ['perdio la casa', 'se cayo la casa', 'casa destruida', 'quedo sin casa'])) add('ctx', 0, 2, 'vivienda: daño total');
-    else if (has(t, ['grieta', 'se agriet', 'se rajo']) || (has(t, ['dano', 'se dano']) && has(t, ['casa', 'cocina', 'pared', 'techo', 'vivienda', 'habitacion', 'bano', 'piso']))) add('ctx', 0, 1, 'vivienda: daño parcial');
-    else if (has(t, ['casa esta bien', 'no le paso nada a la casa', 'sin dano'])) add('ctx', 0, 0, 'vivienda: sin daño');
-    if (has(t, ['fallecio', 'murio', 'perdio a su', 'perdio al', 'perdio a la'])) add('ctx', 1, 1, 'perdió a un familiar: sí');
+    if (has(t, ['vive sola', 'vive solo', 'casi siempre sola', 'casi siempre solo', 'sin compania', 'nadie vive con'])) add('ctx', 0, 2, 'convivencia: solo/a casi siempre');
+    else if (has(t, ['a ratos sola', 'a ratos solo', 'a veces sola', 'a veces solo', 'cuando la hija trabaja', 'cuando el hijo trabaja'])) add('ctx', 0, 1, 'convivencia: a ratos solo/a');
+    else if (has(t, ['vive con', 'cuidador', 'cuidadora', 'con la hija', 'con el hijo', 'con la familia', 'no vive sola', 'no vive solo'])) add('ctx', 0, 0, 'convivencia: con familia o cuidador');
+    if (has(t, ['fallecio', 'murio', 'duelo', 'perdio a su', 'perdio al', 'perdio a la', 'perdida reciente', 'viudo', 'viuda'])) add('ctx', 1, 1, 'duelo o pérdida: sí');
 
     var after = { phq: cur.phq.slice(), dig: cur.dig.slice() };
     drafts.forEach(function (d) { if (after[d[0]]) after[d[0]][d[1]] = d[2]; });
@@ -105,7 +105,7 @@ var norm = function (t) { return String(t || '').toLowerCase().normalize('NFD').
   }
 
   // ---------- Acompañante del paciente (app y WhatsApp) ----------
-  // Voz de TEO (nara-voz-teo.md): usted, frases cortas, una idea y una sola pregunta por mensaje,
+  // Voz de Aurelia (Parienta): usted, frases cortas, una idea y una sola pregunta por mensaje,
   // sin diagnósticos, promesas ni exclamaciones. App: hasta 3 frases. WhatsApp: hasta 2.
   var TOPICS = [
     [['hola', 'buenas', 'buenos dias', 'buenas tardes', 'buenas noches', 'hey'], [
@@ -167,7 +167,7 @@ var norm = function (t) { return String(t || '').toLowerCase().normalize('NFD').
   // ---------- Punto único de entrada ----------
   function local(prompt) {
     var p = String(prompt);
-    if (p.indexOf('asistente de evaluación de NARA') > -1) {
+    if (p.indexOf('asistente de evaluación de Parienta') > -1) {
       var note = (p.match(/Nota del experto: "([\s\S]*?)"\nResponde/) || [])[1] || '';
       var cur = { phq: [], dig: [] };
       try { cur = JSON.parse((p.match(/Valores actuales \(null = sin respuesta\): (\{[\s\S]*?\})\.\n/) || [])[1]); } catch (e) { }

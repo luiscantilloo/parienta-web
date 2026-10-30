@@ -178,13 +178,13 @@ function AdminExpertoInner() {
             ) : null}
           </div>
           {v.noPeople ? (
-            <p className="border-t border-[#E6E1D9] px-5 py-4 text-[15px] text-texto-secundario">
+            <p className="border-t border-[#C0DFC8] px-5 py-4 text-[15px] text-texto-secundario">
               Aún no tiene personas. Aparecerán cuando registre visitas de campo.
             </p>
           ) : (
             <div className="nara-scroll-x">
               <div className="min-w-[640px]">
-                <div className="grid grid-cols-[1fr_1.2fr_1fr_1fr_1fr] gap-3 bg-nara-crema px-5 py-3 text-sm font-medium text-texto-secundario">
+                <div className="grid grid-cols-[1fr_1.2fr_1fr_1fr_1fr] gap-3 border-b border-[#C0DFC8] bg-[#FBFAF3] px-5 py-3 text-sm font-medium text-[#5A5A52]">
                   <span>Código</span>
                   <span>Nombre</span>
                   <span>Lugar</span>
@@ -196,7 +196,7 @@ function AdminExpertoInner() {
                     key={p.code + p.name}
                     type="button"
                     onClick={() => p.open()}
-                    className="grid w-full cursor-pointer grid-cols-[1fr_1.2fr_1fr_1fr_1fr] gap-3 border-t border-[#E6E1D9] bg-nara-blanco px-5 py-3 text-left font-texto text-[15px] text-nara-tinta"
+                    className="grid w-full cursor-pointer grid-cols-[1fr_1.2fr_1fr_1fr_1fr] gap-3 border-t border-[#C0DFC8] bg-nara-blanco px-5 py-3 text-left font-texto text-[15px] text-nara-tinta"
                   >
                     <span className="font-medium">{p.code}</span>
                     <span>{p.name}</span>
@@ -206,7 +206,7 @@ function AdminExpertoInner() {
                   </button>
                 ))}
                 {!peopleRows.length ? (
-                  <p className="border-t border-[#E6E1D9] px-5 py-6 text-center text-[15px] text-texto-secundario">
+                  <p className="border-t border-[#C0DFC8] px-5 py-6 text-center text-[15px] text-texto-secundario">
                     Ninguna persona coincide con la búsqueda.
                   </p>
                 ) : null}
@@ -220,13 +220,13 @@ function AdminExpertoInner() {
             <h2 className="font-titulos text-xl font-semibold">Visitas marcadas</h2>
           </div>
           {v.noFlags ? (
-            <p className="border-t border-[#E6E1D9] px-5 py-4 text-[15px] text-texto-secundario">
+            <p className="border-t border-[#C0DFC8] px-5 py-4 text-[15px] text-texto-secundario">
               Sin visitas marcadas por control de calidad.
             </p>
           ) : (
-            <ul className="flex flex-col border-t border-[#E6E1D9]">
+            <ul className="flex flex-col border-t border-[#C0DFC8]">
               {v.flags.map((f) => (
-                <li key={f.key} className="flex flex-col gap-1 border-b border-[#E6E1D9] px-5 py-3 last:border-none">
+                <li key={f.key} className="flex flex-col gap-1 border-b border-[#C0DFC8] px-5 py-3 last:border-none">
                   <div className="flex flex-wrap justify-between gap-2">
                     <span className="font-medium">{f.person}</span>
                     <span className="text-sm text-texto-secundario">{f.when} · {f.status}</span>

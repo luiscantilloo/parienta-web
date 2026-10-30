@@ -8,20 +8,20 @@ export default function manifest(): MetadataRoute.Manifest {
     description: SITE_DESCRIPTION,
     start_url: "/landing",
     display: "standalone",
-    background_color: "#F0ECE6",
-    theme_color: "#FDCD22",
+    background_color: "#FBFAF3",
+    theme_color: "#27683A",
     lang: "es-CO",
     icons: [
       {
-        src: "/nara/marca/favicon.svg",
+        src: "/parienta/favicon.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
       },
       {
-        src: "/nara/marca/favicon.ico",
+        src: "/parienta/favicon.svg",
         sizes: "48x48",
-        type: "image/x-icon",
+        type: "image/svg+xml",
       },
     ],
   };

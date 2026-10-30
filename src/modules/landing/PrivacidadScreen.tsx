@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { landingAssets } from "./assets";
 import { LandingFooter, LandingHeader } from "./LandingChrome";
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
@@ -37,8 +36,8 @@ function Ul({ items }: { items: React.ReactNode[] }) {
 
 export function PrivacidadScreen() {
   return (
-    <div className="min-h-svh overflow-x-clip bg-nara-crema text-nara-tinta">
-      <LandingHeader logoSrc={landingAssets.logoPrivacidad} sticky />
+    <div className="min-h-svh overflow-x-clip bg-pl-niebla text-pl-tinta">
+      <LandingHeader sticky />
       <main className="flex justify-center px-4 pb-[72px] pt-10">
         <article className="flex w-full max-w-[70ch] flex-col gap-[18px]">
           <Link
@@ -57,14 +56,14 @@ export function PrivacidadScreen() {
 
           <P muted>
             <strong className="font-bold text-nara-tinta">
-              NARA · Programa de acompañamiento post-sismo del Eje Cafetero
+              Parienta · Programa de acompañamiento para personas mayores
             </strong>
             <br />
             Versión 1
           </P>
 
           <P muted>
-            En NARA cuidamos lo que usted nos cuenta. Esta página le explica, en palabras sencillas, qué datos usamos,
+            En Parienta cuidamos lo que usted nos cuenta. Esta página le explica, en palabras sencillas, qué datos usamos,
             para qué, quién puede verlos y qué puede hacer usted con ellos.
           </P>
 
@@ -93,7 +92,7 @@ export function PrivacidadScreen() {
                 quiera.
               </>,
               <>
-                <strong className="font-bold">Detrás de NARA siempre hay un equipo de personas.</strong> TEO es un
+                <strong className="font-bold">Detrás de Parienta siempre hay un equipo de personas.</strong> Aurelia es un
                 acompañante con inteligencia artificial: no diagnostica, no receta y no reemplaza a su psicóloga. Nada
                 cuenta hasta que una persona del equipo lo confirma.
               </>,
@@ -103,7 +102,7 @@ export function PrivacidadScreen() {
           <H2 id="quien-cuida-sus-datos">Quién cuida sus datos</H2>
           <P>
             El responsable de sus datos es{" "}
-            <strong className="font-bold">la entidad que ejecuta el programa NARA</strong>. Su nombre y sus datos
+            <strong className="font-bold">la entidad que ejecuta el programa Parienta</strong>. Su nombre y sus datos
             aparecen en el documento de autorización que usted recibe y firma en la visita.
           </P>
           <P>
@@ -122,7 +121,7 @@ export function PrivacidadScreen() {
               </>,
               <>
                 <strong className="font-bold">Cómo se siente:</strong> sus respuestas a las preguntas sobre su ánimo, lo
-                que conversa con TEO (en texto o en audio) y lo que le cuenta a su psicóloga o a su experto.
+                que conversa con Aurelia (en texto o en audio) y lo que le cuenta a su psicóloga o a su experto.
               </>,
               <>
                 <strong className="font-bold">Cómo prefiere comunicarse:</strong> si tiene celular, si prefiere audios o
@@ -180,12 +179,12 @@ export function PrivacidadScreen() {
               <>
                 <strong className="font-bold">Quienes financian el programa y quienes investigan:</strong> solo informes
                 y datos que <strong className="font-bold">no permiten saber quién es usted</strong>. Los grupos de menos
-                de 10 personas se ocultan. Las conversaciones con TEO no se usan en investigación sin un permiso
+                de 10 personas se ocultan. Las conversaciones con Aurelia no se usan en investigación sin un permiso
                 adicional suyo.
               </>,
               <>
                 <strong className="font-bold">Empresas que nos prestan servicios técnicos</strong> (por ejemplo, para
-                guardar la información, enviar mensajes o hacer funcionar a TEO): solo para lo que nosotros les pedimos
+                guardar la información, enviar mensajes o hacer funcionar a Aurelia): solo para lo que nosotros les pedimos
                 y bajo contrato.
               </>,
               <>
@@ -248,7 +247,7 @@ export function PrivacidadScreen() {
           </P>
 
           <H2 id="esta-pagina-publica">Esta página pública</H2>
-          <P>Esta página de NARA no usa cookies de seguimiento ni herramientas de análisis.</P>
+          <P>Esta página de Parienta no usa cookies de seguimiento ni herramientas de análisis.</P>
 
           <H2 id="cambios">Cambios</H2>
           <P>

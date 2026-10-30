@@ -21,7 +21,7 @@ export const CHECKS: [string, string][] = [
   ["Consentimiento firmado", "Personas inventadas"],
   ["Detección de duplicados", "Persona registrada dos veces o teléfono compartido"],
   ["Patrones de respuesta", "Respuestas idénticas entre visitas"],
-  ["Borradores de TEO confirmados muy rápido", "El experto no revisa lo que propone TEO"],
+  ["Borradores de Aurelia confirmados muy rápido", "El experto no revisa lo que propone Aurelia"],
   ["Llamadas aleatorias del supervisor (~5 %)", "Visitas que no ocurrieron"],
   ["SMS o WhatsApp a la persona", "«¿Le visitó [experto] hoy?»"],
 ];
@@ -30,10 +30,7 @@ export const CHECKS: [string, string][] = [
 export const NOTES: Record<string, string> = {
   mood: "Check-in «¿Cómo se siente hoy?» en la app · Diario, Semanal o Quincenal",
   clin: "Canal según capacidad digital (persona / teléfono / videollamada)",
-  ia: "Botón TEO en la app del paciente",
-  tech: "Respiración, sueño, anclaje",
-  revisit: "Visita en casa",
-  cursos: "Curso y cuentos según nivel de riesgo y capacidad digital",
+  ia: "Botón Aurelia en la app del paciente",
 };
 
 export type AdminUiState = {
@@ -57,17 +54,21 @@ export type AdminUiState = {
   };
   tfErr: string;
   expForm: boolean;
-  ef: { name: string; phone: string; terr: string; target: string };
+  ef: { name: string; phone: string; email: string; terr: string; target: string };
   /** Modal Definición metas (diaria / semanal del equipo). */
   goalsForm: boolean;
   gf: { daily: string; weekly: string };
   gfErr: string;
   sel: string;
   drafts: Record<string, { s: Record<string, string>; months: number; inactiveMinutes?: number }>;
+  /** Borradores tocados en esta sesión (evita que un draft viejo tape el override aprobado). */
+  pathDraftDirty?: Record<string, boolean>;
   scope: string;
   zoom?: number;
   teamTab?: string;
   pathTab?: string;
+  /** Territorio activo en el asistente de Rutas (reglas + matriz). */
+  pathTerr?: string;
   pfPer?: string;
   pfTerr?: string;
   pfSort?: string;
@@ -115,11 +116,18 @@ export const INITIAL_ADMIN_STATE: AdminUiState = {
   },
   tfErr: "",
   expForm: false,
-  ef: { name: "Natalia Loaiza", phone: "310 555 0142", terr: "Filandia", target: "9" },
+  ef: {
+    name: "Natalia Loaiza",
+    phone: "310 555 0142",
+    email: "",
+    terr: "Filandia",
+    target: "9",
+  },
   goalsForm: false,
   gf: { daily: "9", weekly: "45" },
   gfErr: "",
   sel: "P08",
   drafts: {},
+  pathDraftDirty: {},
   scope: "all",
 };

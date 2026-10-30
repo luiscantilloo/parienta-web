@@ -6,7 +6,7 @@ import type { AgendaVM } from "./useAgenda";
 
 const corto = (n: string) => n.replace(/^Paciente /, "P. ");
 
-/** Ventana flotante con la propuesta de TEO: aceptar o descartar. */
+/** Ventana flotante con la propuesta de Aurelia: aceptar o descartar. */
 export function PropuestaTeo({ vm }: { vm: AgendaVM }) {
   const { borrador, conBorrador, citas, hoy } = vm;
   if (!borrador || !conBorrador) return null;
@@ -24,7 +24,7 @@ export function PropuestaTeo({ vm }: { vm: AgendaVM }) {
         <img src={naraAsset("marca/personajes/teo-curiosidad.svg")} alt="" className="h-12 w-auto shrink-0" />
         <div className="min-w-0 flex-1">
           <p id="clin-borrador-titulo" className="m-0 font-titulos text-[18px] font-semibold leading-snug">
-            TEO propone {total} citas para {filas.length === 1 ? "1 paciente" : `${filas.length} pacientes`}
+            Aurelia propone {total} citas para {filas.length === 1 ? "1 paciente" : `${filas.length} pacientes`}
           </p>
           <p className="m-0 mt-0.5 text-[12px] text-nara-tinta/70">{borrador.origen}</p>
         </div>

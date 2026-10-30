@@ -1,12 +1,12 @@
 /** Configuración pública del sitio (dominio, SEO). */
 
-export const SITE_NAME = "NARA";
-export const SITE_TAGLINE = "Programa de salud mental post-sismo del Eje Cafetero";
+export const SITE_NAME = "Parienta";
+export const SITE_TAGLINE = "No hace falta ser familia para sentirse parte";
 export const SITE_DESCRIPTION =
-  "NARA acompaña a comunidades del Eje Cafetero con rutas de cuidado en salud mental después de un sismo. Plataforma para equipos clínicos, de campo y personas atendidas.";
+  "Parienta acompaña a personas mayores y a quienes cuidan: visitas en casa, plan individual, Escuela Parienta y Aurelia con tecnología VITALIA. Entorno de pruebas — acceso restringido.";
 
-/** Dominio de producción. Override con NEXT_PUBLIC_SITE_URL en Vercel/local. */
-export const DEFAULT_SITE_URL = "https://proyectonara.com";
+/** URL de pruebas (no publicar en abierto hasta diseño industrial). */
+export const DEFAULT_SITE_URL = "http://localhost:3003";
 
 export function getSiteUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();

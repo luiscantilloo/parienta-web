@@ -17,7 +17,7 @@ const EXPERT_USER = {
   role: "Experto",
   roleId: "experto",
   terr: "Salento",
-  org: "NARA",
+  org: "Parienta",
   contact: "",
   status: "Activo",
   href: "/experto",

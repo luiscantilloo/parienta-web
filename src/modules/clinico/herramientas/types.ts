@@ -3,9 +3,7 @@ export type HerramientaId =
   | "mood"
   | "clin"
   | "ia"
-  | "tech"
-  | "revisit"
-  | "cursos"
+  | "juegos"
   | string;
 
 export type HerramientaItem = {

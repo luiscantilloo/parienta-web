@@ -123,7 +123,7 @@ export function UserMenu({ compact }: Props) {
               </span>
             </Link>
 
-            <div className="border-t border-[#E6E1D9]" />
+            <div className="border-t border-[#C0DFC8]" />
 
             <button
               type="button"

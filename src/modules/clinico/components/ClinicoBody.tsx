@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useMemo, useState, type ChangeEventHandler, type ReactNode } from "react";
+import { useMemo, useState, type ChangeEventHandler } from "react";
 import Link from "next/link";
 import { IoClose } from "react-icons/io5";
 import { AgentPanel } from "@/components/shared/agent-panel/AgentPanel";
@@ -13,6 +13,7 @@ import {
 } from "@/components/shared/table-search/TableSearch";
 import { UserMenu } from "@/components/shared/user-menu/UserMenu";
 import { HerramientasSection } from "@/modules/clinico/herramientas";
+import { CrisisBoard } from "@/modules/clinico/components/CrisisBoard";
 
 type CrisisHistoryEvent = {
   key: string;
@@ -79,15 +80,15 @@ export function ClinicoTopbar({ v }: { v: Record<string, unknown> }) {
   }));
 
   return (
-    <div className="box-border flex h-16 shrink-0 items-center justify-between gap-3 border-b border-linea bg-nara-blanco px-3 sm:gap-5 sm:px-6 md:px-8">
+    <div className="nara-topbar gap-3 px-3 sm:gap-5 sm:px-6 md:px-8">
         <div className="flex h-full min-w-0 flex-1 items-stretch gap-3 sm:gap-6">
           <Link
             href="/clinico"
-            className="flex shrink-0 items-center gap-2 text-nara-tinta"
+            className="flex shrink-0 items-center gap-2 text-[#27683A]"
           >
             <img
-              src="/nara/marca/logo/nara-logo.svg"
-              alt="NARA"
+              src="/parienta/logo/parienta-horizontal-principal.svg"
+              alt="Parienta"
               className="block h-7 w-auto sm:h-[34px]"
             />
           </Link>
@@ -99,8 +100,8 @@ export function ClinicoTopbar({ v }: { v: Record<string, unknown> }) {
             onClick={() => (v.goAlerts as () => void)?.()}
             className={
               v.hasCrisisPending
-                ? "hidden cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-[#6B0000] bg-[#6B0000] px-3 py-1.5 font-texto text-[13px] font-semibold text-white sm:inline-flex"
-                : "hidden max-w-[180px] cursor-pointer items-center gap-2 truncate rounded-full border-[1.5px] border-linea bg-nara-blanco px-3 py-1.5 font-texto text-[13px] font-medium text-texto-secundario sm:inline-flex"
+                ? "hidden cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-[#B42318] bg-[#B42318] px-3 py-1.5 font-texto text-[13px] font-semibold !text-[#FBFAF3] sm:inline-flex"
+                : "hidden max-w-[180px] cursor-pointer items-center gap-2 truncate rounded-full border border-[#C0DFC8] bg-[#FBFAF3] px-3 py-1.5 font-texto text-[13px] font-medium !text-[#5A5A52] sm:inline-flex"
             }
           >
             {v.hasCrisisPending ? (
@@ -111,24 +112,29 @@ export function ClinicoTopbar({ v }: { v: Record<string, unknown> }) {
           <button
             type="button"
             onClick={() => (v.openAgent as () => void)?.()}
-            aria-label="Abrir TEO"
-            className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-nara-tinta bg-nara-blanco px-2.5 font-texto text-sm font-medium text-nara-tinta sm:h-11 sm:px-4 sm:text-[15px]"
+            aria-label="Abrir Aurelia, asistente de Parienta"
+            className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border border-[#C0DFC8] bg-[#FBFAF3] px-2.5 font-texto text-sm font-medium text-[#27683A] transition hover:bg-[#C0DFC8]/70 sm:h-11 sm:px-4 sm:text-[15px]"
           >
             <img
-              src="/nara/marca/logo/teo-isotipo.svg"
+              src="/parienta/aurelia/aurelia-base.svg"
               alt=""
               className="block h-7 w-7 sm:-ml-2 sm:h-8 sm:w-8"
             />
-            <span className="hidden sm:inline">TEO</span>
+            <span className="hidden flex-col items-start leading-none sm:flex">
+              <span>Aurelia</span>
+              <span className="mt-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-[#5A5A52]">
+                asistente
+              </span>
+            </span>
           </button>
           <UserMenu notifKey="clin" />
           {v.dev ? (
             <span
               style={{
-                fontFamily: "ui-monospace,Menlo,monospace",
+                fontFamily: '"DM Mono", ui-monospace, monospace',
                 fontSize: 11,
-                color: "#5E5750",
-                border: "1px solid #DCD6CD",
+                color: "#5A5A52",
+                border: "1px solid #C0DFC8",
                 padding: "2px 6px",
                 borderRadius: 5,
               }}
@@ -143,251 +149,6 @@ export function ClinicoTopbar({ v }: { v: Record<string, unknown> }) {
 
 
 type CrisisAlert = Record<string, unknown>;
-
-function CrisisSection({
-  title,
-  subtitle,
-  count,
-  accent,
-  children,
-  empty,
-}: {
-  title: string;
-  subtitle?: string;
-  count: number;
-  accent?: "danger" | "warm" | "ok" | "neutral";
-  children: ReactNode;
-  empty?: string;
-}) {
-  const bar =
-    accent === "danger"
-      ? "bg-[#6B0000]"
-      : accent === "warm"
-        ? "bg-[#FDCD22]"
-        : accent === "ok"
-          ? "bg-[#3D7A5A]"
-          : "bg-linea";
-  return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-end justify-between gap-3 border-b border-linea pb-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className={`h-8 w-1.5 shrink-0 rounded-full ${bar}`} />
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="font-titulos text-lg font-semibold text-nara-tinta">{title}</span>
-            {subtitle ? (
-              <span className="text-[13px] text-texto-secundario">{subtitle}</span>
-            ) : null}
-          </div>
-        </div>
-        <span className="shrink-0 rounded-full bg-nara-crema px-2.5 py-0.5 text-sm font-medium text-nara-tinta">
-          {count}
-        </span>
-      </div>
-      {count === 0 ? (
-        <div className="rounded-2xl border border-dashed border-linea bg-nara-blanco/80 px-5 py-6 text-center text-sm text-texto-secundario">
-          {empty || "Nada por aquí."}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">{children}</div>
-      )}
-    </section>
-  );
-}
-
-function CrisisAlertCard({ a }: { a: CrisisAlert }) {
-  return (
-    <article
-      className={
-        a.isNewCrisis
-          ? "flex flex-col gap-4 rounded-[20px] border-[1.5px] border-[#6B0000] bg-nara-blanco p-5"
-          : a.isMine
-            ? "flex flex-col gap-4 rounded-[20px] border border-nara-tinta/20 bg-nara-blanco p-5 ring-1 ring-[#FDCD22]/50"
-            : "flex flex-col gap-3.5 rounded-[20px] border border-linea bg-nara-blanco p-5"
-      }
-    >
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
-              style={{ background: a.tagBg as string, color: a.tagFg as string }}
-            >
-              {a.sevLabel as string}
-            </span>
-            {a.isLate ? (
-              <span className="rounded-md bg-[#6B0000] px-2 py-0.5 text-[11px] font-semibold text-white">
-                Fuera de tiempo
-              </span>
-            ) : null}
-            {a.profile && a.profile !== "—" ? (
-              <span className="rounded-md border border-linea bg-nara-crema px-2 py-0.5 text-[11px] font-medium text-nara-tinta">
-                {a.profile as string}
-              </span>
-            ) : null}
-          </div>
-          <span className="font-titulos text-[22px] font-semibold leading-tight text-nara-tinta">
-            {a.name as string}
-          </span>
-          <span className="text-[14px] text-texto-secundario">
-            {(a.metaLine as string) || "—"}
-          </span>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
-          <span className="text-[13px] text-texto-secundario">{a.ago as string}</span>
-          {a.cd ? (
-            <span className="max-w-[11rem] text-[13px] font-medium leading-snug" style={{ color: a.cdFg as string }}>
-              {a.cd as string}
-            </span>
-          ) : null}
-        </div>
-      </div>
-
-      <p className="m-0 text-[15px] leading-snug text-nara-tinta">{a.what as string}</p>
-      {a.source ? (
-        <span className="text-[13px] text-texto-secundario">{a.source as string}</span>
-      ) : null}
-
-      {a.canTake ? (
-        <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-          {a.hasFile ? (
-            <button
-              type="button"
-              onClick={() => (a.open as () => void)?.()}
-              className="h-11 cursor-pointer rounded-xl border-[1.5px] border-nara-tinta bg-transparent px-4 font-texto text-sm font-medium text-nara-tinta"
-            >
-              Ver ficha
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => (a.take as () => void)?.()}
-            className="h-11 cursor-pointer rounded-xl border-0 bg-[#6B0000] px-5 font-texto text-sm font-semibold text-white"
-          >
-            Tomar caso
-          </button>
-        </div>
-      ) : null}
-
-      {a.isOther ? (
-        <div className="flex justify-end">
-          <span className="rounded-xl bg-nara-crema px-3.5 py-2 text-sm font-medium text-nara-tinta">
-            En atención · {a.takenBy as string}
-          </span>
-        </div>
-      ) : null}
-
-      {a.isMine ? (
-        <div className="flex flex-col gap-4 border-t border-linea pt-4">
-          <div className="flex flex-col gap-2 rounded-2xl bg-nara-crema px-4 py-3.5">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-texto-secundario">
-              Llamar ahora
-            </span>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="select-all font-titulos text-[26px] font-semibold tracking-wide text-nara-tinta">
-                {a.phone as string}
-              </span>
-              <button
-                type="button"
-                onClick={() => (a.copy as () => void)?.()}
-                className="h-9 cursor-pointer rounded-lg border border-linea bg-nara-blanco px-3 font-texto text-[13px] font-medium text-nara-tinta"
-              >
-                {a.copyLabel as string}
-              </button>
-              {a.hasFile ? (
-                <button
-                  type="button"
-                  onClick={() => (a.open as () => void)?.()}
-                  className="h-9 cursor-pointer border-0 bg-transparent p-0 font-texto text-[13px] font-medium text-nara-tinta underline"
-                >
-                  Abrir ficha
-                </button>
-              ) : null}
-            </div>
-            {a.retryText ? (
-              <span className="text-sm text-nara-tinta">{a.retryText as string}</span>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-texto-secundario">
-              Resultado
-            </span>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {(
-                a.outcomes as {
-                  label: string;
-                  selected: boolean;
-                  pick: () => void;
-                }[]
-              )?.map((o, j) => (
-                <button
-                  key={j}
-                  type="button"
-                  onClick={() => o.pick?.()}
-                  className={
-                    o.selected
-                      ? "flex cursor-pointer items-start gap-3 rounded-2xl border-[1.5px] border-nara-tinta bg-[#FDCD22]/40 px-3.5 py-3 text-left font-texto"
-                      : "flex cursor-pointer items-start gap-3 rounded-2xl border border-linea bg-nara-crema/40 px-3.5 py-3 text-left font-texto hover:bg-nara-crema"
-                  }
-                >
-                  <span
-                    className={
-                      o.selected
-                        ? "mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 border-nara-tinta bg-nara-tinta"
-                        : "mt-0.5 h-[18px] w-[18px] shrink-0 rounded-full border-2 border-linea bg-nara-blanco"
-                    }
-                  >
-                    {o.selected ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#FDCD22]" />
-                    ) : null}
-                  </span>
-                  <span className="text-[14px] leading-snug text-nara-tinta">{o.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => (a.close as () => void)?.()}
-              disabled={!a.hasOutcome}
-              className={
-                a.hasOutcome
-                  ? "h-12 cursor-pointer rounded-xl border-0 bg-[#FDCD22] px-6 font-texto text-[15px] font-semibold text-nara-tinta"
-                  : "h-12 cursor-not-allowed rounded-xl border-0 bg-[#E6E1D9] px-6 font-texto text-[15px] font-medium text-texto-secundario"
-              }
-            >
-              {a.closeLabel as string}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {a.isInfo ? (
-        <div className="flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => (a.dismiss as () => void)?.()}
-            className="h-11 cursor-pointer rounded-xl border-[1.5px] border-linea bg-nara-blanco px-4 font-texto text-sm text-nara-tinta"
-          >
-            Marcar como vista
-          </button>
-          {a.hasFile ? (
-            <button
-              type="button"
-              onClick={() => (a.open as () => void)?.()}
-              className="h-11 cursor-pointer rounded-xl border-0 bg-[#FDCD22] px-5 font-texto text-sm font-medium text-nara-tinta"
-            >
-              Abrir ficha
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
 
 export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
   const as = (v.as as Record<string, unknown>) || {};
@@ -430,6 +191,8 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
         mine?: CrisisAlert[];
         others?: CrisisAlert[];
         info?: CrisisAlert[];
+        awaiting?: CrisisAlert[];
+        closed?: CrisisAlert[];
       }
     | undefined;
   const crisisToTake = useMemo(
@@ -448,15 +211,31 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
     () => filterRowsBySearch(crisisBoard?.info || [], crisisQ),
     [crisisBoard?.info, crisisQ],
   );
+  const crisisAwaiting = useMemo(
+    () =>
+      filterRowsBySearch(
+        (crisisBoard?.awaiting as CrisisAlert[] | undefined) ||
+          (v.awaiting as CrisisAlert[] | undefined) ||
+          [],
+        crisisQ,
+      ),
+    [crisisBoard?.awaiting, v.awaiting, crisisQ],
+  );
   const crisisClosed = useMemo(
-    () => filterRowsBySearch((v.closed as CrisisAlert[] | undefined) || [], crisisQ),
-    [v.closed, crisisQ],
+    () =>
+      filterRowsBySearch(
+        (crisisBoard?.closed as CrisisAlert[] | undefined) ||
+          (v.closed as CrisisAlert[] | undefined) ||
+          [],
+        crisisQ,
+      ),
+    [crisisBoard?.closed, v.closed, crisisQ],
   );
 
   return (
     <div
       data-screen-label="Clínico"
-      className="min-w-0 w-full bg-nara-crema font-texto text-[15px] text-nara-tinta"
+      className="min-w-0 w-full bg-[#FBFAF3] font-texto text-[15px] text-[#27683A]"
     >
       <div className="nara-page">
         <NaraMsgAlert
@@ -480,22 +259,22 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                 onClick={() => (v.goAlerts as () => void)?.()}
                 className={
                   v.hasCrisisPending
-                    ? "flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-[#6B0000] bg-[#6B0000] px-[18px] py-[18px] text-left font-texto text-white"
-                    : "flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-linea bg-nara-blanco px-[18px] py-[18px] text-left font-texto text-nara-tinta"
+                    ? "flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-[#B42318] bg-[#B42318] px-[18px] py-[18px] text-left font-texto !text-[#FBFAF3] transition hover:bg-[#9C2F25]"
+                    : "flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-[#C0DFC8] bg-white px-[18px] py-[18px] text-left font-texto !text-[#27683A] transition hover:bg-[#C0DFC8]/30"
                 }
               >
-                <span className="font-medium">
+                <span className="font-titulos text-base font-extrabold">
                   {v.hasCrisisPending ? "Crisis · atender ahora" : "Cola de crisis"}
                 </span>
                 <span
-                  className="text-sm font-medium"
-                  style={{ color: v.hasCrisisPending ? "#fff" : (v.critFg as string) }}
+                  className="font-mono text-sm font-medium"
+                  style={{ color: v.hasCrisisPending ? "#FBFAF3" : (v.critFg as string) }}
                 >
                   {v.critText as string}
                 </span>
                 <span
-                  className="text-[13px]"
-                  style={{ color: v.hasCrisisPending ? "rgba(255,255,255,.85)" : "#5E5750" }}
+                  className="font-mono text-[12px]"
+                  style={{ color: v.hasCrisisPending ? "rgba(251,250,243,.85)" : "#5A5A52" }}
                 >
                   {v.openCount as number} en Mis pacientes · estado Crisis
                 </span>
@@ -503,68 +282,47 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
               <button
                 type="button"
                 onClick={() => (v.goApprovals as () => void)?.()}
-                className="flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-linea bg-nara-blanco px-[18px] py-[18px] text-left font-texto text-nara-tinta"
+                className="flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-[#C0DFC8] bg-white px-[18px] py-[18px] text-left font-texto !text-[#27683A] transition hover:bg-[#C0DFC8]/30"
               >
-                <span className="font-medium">Aprobaciones</span>
-                <span className="text-sm font-medium text-nara-tinta">
+                <span className="font-titulos text-base font-extrabold">Aprobaciones</span>
+                <span className="font-mono text-sm font-medium">
                   {(v.approvalsAll as unknown[] | undefined)?.length
                     ? (v.approvalsAll as unknown[]).length + " pendientes"
                     : "Sin pendientes"}
                 </span>
-                <span className="text-[13px] text-texto-secundario">
+                <span className="font-mono text-[12px] text-[#5A5A52]">
                   Evaluaciones, rutas y reglas
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => (v.goCrisisHistory as () => void)?.()}
-                className="flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-linea bg-nara-blanco px-[18px] py-[18px] text-left font-texto text-nara-tinta"
+                className="flex cursor-pointer flex-col gap-1.5 rounded-2xl border-[1.5px] border-[#C0DFC8] bg-white px-[18px] py-[18px] text-left font-texto !text-[#27683A] transition hover:bg-[#C0DFC8]/30"
               >
-                <span className="font-medium">Historial de crisis</span>
-                <span className="text-sm font-medium text-nara-tinta">
+                <span className="font-titulos text-base font-extrabold">Historial de crisis</span>
+                <span className="font-mono text-sm font-medium">
                   {((v.crisisHistory as unknown[]) || []).length
                     ? ((v.crisisHistory as unknown[]).length) + " eventos"
                     : "Sin eventos aún"}
                 </span>
-                <span className="text-[13px] text-texto-secundario">
+                <span className="font-mono text-[12px] text-[#5A5A52]">
                   Creación, toma, respuesta y cierre
                 </span>
               </button>
-              <div
-                style={{
-                  background: "#fff",
-                  border: "1px solid #DCD6CD",
-                  borderRadius: 20,
-                  padding: "18px 18px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
-                <span style={{ fontWeight: 500 }}>Próximas sesiones</span>
+              <div className="flex flex-col gap-2.5 rounded-2xl border border-[#C0DFC8] bg-white px-[18px] py-[18px]">
+                <span className="font-titulos text-base font-extrabold text-[#27683A]">
+                  Próximas sesiones
+                </span>
                 {(v.upcoming as { name: string; next: string; open: () => void }[] | undefined)?.map(
                   (u, i) => (
                     <button
                       key={i}
                       type="button"
                       onClick={() => u.open?.()}
-                      style={{
-                        fontFamily: "Figtree,system-ui,sans-serif",
-                        textAlign: "left",
-                        border: "none",
-                        borderTop: "1px solid #E6E1D9",
-                        background: "none",
-                        padding: "8px 0 0",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                        cursor: "pointer",
-                        color: "#161413",
-                        whiteSpace: "normal",
-                      }}
+                      className="flex cursor-pointer flex-col gap-0.5 border-0 border-t border-[#C0DFC8] bg-transparent pt-2 text-left font-texto !text-[#27683A]"
                     >
-                      <span style={{ fontWeight: 500 }}>{u.name}</span>
-                      <span style={{ fontSize: 13, color: "#5E5750" }}>{u.next}</span>
+                      <span className="font-titulos text-[15px] font-extrabold">{u.name}</span>
+                      <span className="font-mono text-[12px] text-[#5A5A52]">{u.next}</span>
                     </button>
                   ),
                 )}
@@ -615,8 +373,6 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                     className="h-11 rounded-[10px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] text-nara-tinta outline-none"
                   >
                     <option value="">Todos los tipos</option>
-                    <option value="cuento">Cuentos</option>
-                    <option value="curso">Cursos</option>
                     <option value="video">Videos</option>
                     <option value="tecnica">Técnicas</option>
                   </select>
@@ -690,7 +446,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                   )?.map((it, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 border-t border-[#E6E1D9] py-2.5"
+                      className="flex items-center gap-3 border-t border-[#C0DFC8] py-2.5"
                     >
                       {it.hasCover ? (
                         <img
@@ -729,187 +485,37 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
         ) : null}
 
         {v.isAlerts ? (
-          <div className="flex flex-col gap-6">
-            <div className="nara-page-head flex flex-col gap-4">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex flex-col gap-1">
-                  <span className="font-titulos text-[28px] font-semibold text-nara-tinta">Crisis</span>
-                  <span className="text-[15px] text-texto-secundario">
-                    Organizado por estado: por tomar, en atención y resueltas
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => (v.goCrisisHistory as () => void)?.()}
-                  className="cursor-pointer self-start border-0 bg-transparent p-0 font-texto text-[14px] font-medium text-nara-tinta underline sm:self-auto"
-                >
-                  Historial completo →
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {(
-                  (v.crisisBoard as { tabs: { id: string; label: string; n: number; active: boolean; pick: () => void; hint: string }[] })
-                    ?.tabs || []
-                ).map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => t.pick?.()}
-                    className={
-                      t.active
-                        ? "flex cursor-pointer flex-col gap-0.5 rounded-2xl border-[1.5px] border-nara-tinta bg-[#FDCD22]/35 px-3.5 py-3 text-left"
-                        : "flex cursor-pointer flex-col gap-0.5 rounded-2xl border border-linea bg-nara-blanco px-3.5 py-3 text-left hover:bg-nara-crema/60"
-                    }
-                  >
-                    <span className="font-titulos text-2xl font-semibold text-nara-tinta">{t.n}</span>
-                    <span className="text-sm font-medium text-nara-tinta">{t.label}</span>
-                    <span className="text-[12px] text-texto-secundario">{t.hint}</span>
-                  </button>
-                ))}
-              </div>
-
-              {((v.crisisBoard as { counts?: { late?: number } })?.counts?.late || 0) > 0 ? (
-                <div className="rounded-2xl border border-[#6B0000]/30 bg-[#6B0000]/10 px-4 py-3 text-sm text-[#6B0000]">
-                  Hay {(v.crisisBoard as { counts: { late: number } }).counts.late} alerta
-                  {(v.crisisBoard as { counts: { late: number } }).counts.late === 1 ? "" : "s"} fuera
-                  de la meta de 30 minutos.
-                </div>
-              ) : null}
-
-              <TableSearch
-                value={crisisQ}
-                onChange={setCrisisQ}
-                placeholder="Buscar crisis por paciente, lugar, estado…"
-                className="sm:max-w-md"
-              />
-            </div>
-
-            {v.crisisTab === "take" || v.crisisTab === "all" ? (
-              <CrisisSection
-                title="Por tomar"
-                subtitle="Crisis nuevas que aún nadie atendió"
-                count={crisisToTake.length}
-                accent="danger"
-                empty={
-                  crisisQ.trim()
-                    ? "Ninguna crisis coincide con la búsqueda."
-                    : "No hay crisis pendientes de toma. Bien."
-                }
-              >
-                {crisisToTake.map((a, i) => (
-                  <CrisisAlertCard key={String(a.id || i)} a={a} />
-                ))}
-              </CrisisSection>
-            ) : null}
-
-            {v.crisisTab === "mine" || v.crisisTab === "all" ? (
-              <CrisisSection
-                title="En atención (usted)"
-                subtitle="Casos que tomó · elija resultado y cierre"
-                count={crisisMine.length}
-                accent="warm"
-                empty={
-                  crisisQ.trim()
-                    ? "Ninguna crisis coincide con la búsqueda."
-                    : "Aún no tiene casos en atención. Tome uno de «Por tomar»."
-                }
-              >
-                {crisisMine.map((a, i) => (
-                  <CrisisAlertCard key={String(a.id || i)} a={a} />
-                ))}
-              </CrisisSection>
-            ) : null}
-
-            {v.crisisTab === "all" ? (
-              <>
-                <CrisisSection
-                  title="En atención (colegas)"
-                  subtitle="Tomados por otro clínico del turno"
-                  count={crisisOthers.length}
-                  accent="neutral"
-                  empty={
-                    crisisQ.trim()
-                      ? "Ninguna crisis coincide con la búsqueda."
-                      : "Ningún colega tiene un caso abierto ahora."
-                  }
-                >
-                  {crisisOthers.map((a, i) => (
-                    <CrisisAlertCard key={String(a.id || i)} a={a} />
-                  ))}
-                </CrisisSection>
-                <CrisisSection
-                  title="Otras alertas"
-                  subtitle="Revisiones e informativas"
-                  count={crisisInfo.length}
-                  accent="neutral"
-                  empty={
-                    crisisQ.trim()
-                      ? "Ninguna alerta coincide con la búsqueda."
-                      : "Sin alertas informativas abiertas."
-                  }
-                >
-                  {crisisInfo.map((a, i) => (
-                    <CrisisAlertCard key={String(a.id || i)} a={a} />
-                  ))}
-                </CrisisSection>
-              </>
-            ) : null}
-
-            {v.crisisTab === "done" || v.crisisTab === "all" ? (
-              <CrisisSection
-                title="Gestionadas hoy"
-                subtitle="Atendidas por usted · pasan a Cerrada solo cuando el paciente confirma «estoy bien»"
-                count={crisisClosed.length}
-                accent="ok"
-                empty={
-                  crisisQ.trim()
-                    ? "Ninguna alerta coincide con la búsqueda."
-                    : "Todavía no ha gestionado alertas hoy."
-                }
-              >
-                {crisisClosed.map((c, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col gap-1.5 rounded-2xl border border-linea bg-nara-blanco px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                  >
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="font-titulos text-lg font-semibold text-nara-tinta">
-                        {c.name as string}
-                      </span>
-                      <span className="text-[14px] text-nara-tinta">{c.outcome as string}</span>
-                      <span className="text-[13px] text-texto-secundario">{c.meta as string}</span>
-                      {c.statusHint ? (
-                        <span className="text-[12px] text-texto-secundario">
-                          {c.statusHint as string}
-                        </span>
-                      ) : null}
-                    </div>
-                    {c.canReopen ? (
-                      <button
-                        type="button"
-                        onClick={() => (c.reopen as () => void)?.()}
-                        className="h-9 shrink-0 cursor-pointer rounded-lg border-[1.5px] border-nara-tinta bg-nara-blanco px-3 font-texto text-[13px] font-medium text-nara-tinta"
-                      >
-                        {(c.reopenLabel as string) || "Reabrir"}
-                      </button>
-                    ) : (
-                      <span
-                        className={
-                          c.waiting
-                            ? "shrink-0 rounded-full bg-[#FFF4CC] px-2.5 py-1 text-xs font-medium text-nara-tinta"
-                            : "shrink-0 rounded-full bg-[#E3F1E8] px-2.5 py-1 text-xs font-medium text-nara-tinta"
-                        }
-                      >
-                        {(c.statusLabel as string) ||
-                          (c.waiting ? "Esperando al paciente" : "Cerrada")}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </CrisisSection>
-            ) : null}
-          </div>
+          <CrisisBoard
+            crisisTab={String(v.crisisTab || "take")}
+            tabs={
+              (
+                (v.crisisBoard as {
+                  tabs?: {
+                    id: string;
+                    label: string;
+                    n: number;
+                    active: boolean;
+                    pick: () => void;
+                    hint: string;
+                  }[];
+                })?.tabs || []
+              )
+            }
+            lateCount={
+              Number(
+                (v.crisisBoard as { counts?: { late?: number } })?.counts?.late || 0,
+              )
+            }
+            crisisQ={crisisQ}
+            setCrisisQ={setCrisisQ}
+            goCrisisHistory={() => (v.goCrisisHistory as () => void)?.()}
+            toTake={crisisToTake}
+            mine={crisisMine}
+            others={crisisOthers}
+            info={crisisInfo}
+            awaiting={crisisAwaiting}
+            closed={crisisClosed}
+          />
         ) : null}
 
         {v.isCrisisHistory ? (
@@ -1070,7 +676,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
               <div className="nara-scroll-x">
               <div style={{ minWidth: 1020 }}>
               <div
-                className="grid items-center gap-0 bg-superficie-2 text-sm font-medium text-texto-secundario"
+                className="grid items-center gap-0 border-b border-[#C0DFC8] bg-[#FBFAF3] text-sm font-medium text-[#5A5A52]"
                 style={{
                   gridTemplateColumns:
                     "96px minmax(0,1.5fr) minmax(0,1.2fr) 90px 120px minmax(0,1fr) 100px minmax(0,1fr)",
@@ -1264,7 +870,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                 </span>
               </div>
               <img
-                src="/nara/marca/personajes/nara-curiosidad.svg"
+                src="/parienta/aurelia/aurelia-escucha.svg"
                 alt=""
                 className="hidden h-14 w-auto shrink-0 sm:block"
               />
@@ -1333,7 +939,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                 key={(ap.pid || ap.code || ap.title) + String(i)}
                 className="overflow-hidden rounded-[24px] border border-linea bg-nara-blanco shadow-[0_10px_30px_rgba(22,20,19,0.04)]"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-linea bg-[linear-gradient(135deg,#FFF9E3_0%,#F0ECE6_55%,#FFFFFF_100%)] px-5 py-4 sm:px-7">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-linea bg-[linear-gradient(135deg,#FFF9E3_0%,#FBFAF3_55%,#FFFFFF_100%)] px-5 py-4 sm:px-7">
                   <div className="flex min-w-0 flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-nara-amarillo px-2.5 py-1 font-texto text-xs font-semibold text-nara-tinta">
@@ -1356,7 +962,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                     <div className="flex flex-col items-end gap-1.5">
                       <span
                         className="rounded-full px-3 py-1 font-texto text-xs font-semibold text-nara-blanco"
-                        style={{ background: ap.riskColor || "#161413" }}
+                        style={{ background: ap.riskColor || "#27683A" }}
                       >
                         {ap.riskLabel}
                       </span>
@@ -1398,7 +1004,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                             {ap.changed.map((x) => (
                               <div
                                 key={"c-" + x.name}
-                                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#FFF4CC] px-3.5 py-3"
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#FDF2B3] px-3.5 py-3"
                               >
                                 <span className="text-[15px] font-medium text-nara-tinta">{x.name}</span>
                                 <span className="text-sm text-texto-secundario">
@@ -1483,7 +1089,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
             ))}
             {!approvalsRows.length ? (
               <div className="flex flex-col items-start gap-3 rounded-[24px] border border-linea bg-nara-blanco px-6 py-8">
-                <img src="/nara/marca/personajes/nara-calma.svg" alt="" className="h-12 w-auto" />
+                <img src="/parienta/aurelia/aurelia-base.svg" alt="" className="h-12 w-auto" />
                 <span className="font-titulos text-lg font-semibold text-nara-tinta">
                   {approvalsQ.trim()
                     ? "Ninguna aprobación coincide"
@@ -1506,12 +1112,12 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
               onClick={() => (v.fileBack as () => void)?.()}
               style={{
                 alignSelf: "flex-start",
-                fontFamily: "Figtree,system-ui,sans-serif",
+                fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                 fontSize: 15,
                 fontWeight: 500,
                 border: "none",
                 background: "none",
-                color: "#161413",
+                color: "#27683A",
                 cursor: "pointer",
                 padding: 0,
               }}
@@ -1522,7 +1128,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
             <div
               style={{
                 background: "#fff",
-                border: f.inCrisis ? "1.5px solid #B42318" : "1px solid #DCD6CD",
+                border: f.inCrisis ? "1.5px solid #B42318" : "1px solid #C0DFC8",
                 borderRadius: 20,
                 padding: "20px 24px",
                 display: "flex",
@@ -1535,14 +1141,14 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <span
                   style={{
-                    fontFamily: "Fredoka,Figtree,system-ui,sans-serif",
+                    fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
                     fontWeight: 600,
                     fontSize: 28,
                   }}
                 >
                   {f.name as string}
                 </span>
-                <span style={{ color: "#5E5750" }}>
+                <span style={{ color: "#5A5A52" }}>
                   {f.age as number} años · {f.place as string}
                 </span>
               </div>
@@ -1558,7 +1164,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                     fontWeight: 500,
                     padding: "6px 12px",
                     borderRadius: 8,
-                    border: "1px solid #DCD6CD",
+                    border: "1px solid #C0DFC8",
                   }}
                 >
                   {f.profile as string}
@@ -1795,8 +1401,8 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                             textAnchor="end"
                             dominantBaseline="central"
                             fontSize={10}
-                            fill="#5E5750"
-                            fontFamily="Figtree, system-ui, sans-serif"
+                            fill="#5A5A52"
+                            fontFamily="Bricolage Grotesque, system-ui, sans-serif"
                           >
                             {b.k}
                           </text>
@@ -1806,7 +1412,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                     <polyline
                       points={f.phqLine as string}
                       fill="none"
-                      stroke="#161413"
+                      stroke="#27683A"
                       strokeWidth="2.5"
                       strokeLinejoin="round"
                     />
@@ -1818,7 +1424,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                             cy={pt.y}
                             r={5}
                             fill="#fff"
-                            stroke="#161413"
+                            stroke="#27683A"
                             strokeWidth="2.5"
                           />
                           <text
@@ -1827,8 +1433,8 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                             textAnchor="middle"
                             fontSize={13}
                             fontWeight={500}
-                            fill="#161413"
-                            fontFamily="Figtree, system-ui, sans-serif"
+                            fill="#27683A"
+                            fontFamily="Bricolage Grotesque, system-ui, sans-serif"
                           >
                             {pt.v}
                           </text>
@@ -1837,8 +1443,8 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                             y={226}
                             textAnchor="middle"
                             fontSize={11}
-                            fill="#5E5750"
-                            fontFamily="Figtree, system-ui, sans-serif"
+                            fill="#5A5A52"
+                            fontFamily="Bricolage Grotesque, system-ui, sans-serif"
                           >
                             {pt.d}
                           </text>
@@ -1853,7 +1459,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
             <div
               style={{
                 background: "#fff",
-                border: "1px solid #DCD6CD",
+                border: "1px solid #C0DFC8",
                 borderRadius: 20,
                 padding: "16px 20px",
                 display: "flex",
@@ -1876,12 +1482,12 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
                       display: "flex",
                       flexDirection: "column",
                       gap: 1,
-                      borderTop: "1px solid #E6E1D9",
+                      borderTop: "1px solid #C0DFC8",
                       paddingTop: 6,
                     }}
                   >
                     <span style={{ fontWeight: 500, fontSize: 14 }}>{r.name}</span>
-                    <span style={{ fontSize: 13, color: "#5E5750" }}>{r.freq}</span>
+                    <span style={{ fontSize: 13, color: "#5A5A52" }}>{r.freq}</span>
                   </div>
                 ))}
               </div>
@@ -1942,7 +1548,7 @@ export function ClinicoBody({ v }: { v: Record<string, unknown> }) {
               {(f.timeline as { d: string; t: string; x: string }[] | undefined)?.map((t, i) => (
                 <div
                   key={i}
-                  className="nara-label-row gap-3.5 border-t border-[#E6E1D9] py-2.5"
+                  className="nara-label-row gap-3.5 border-t border-[#C0DFC8] py-2.5"
                 >
                   <span className="text-texto-secundario">{t.d}</span>
                   <div className="flex flex-col gap-0.5">

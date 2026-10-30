@@ -45,10 +45,10 @@ export function BreathExercise({ onDone }: Props) {
         flexDirection: "column",
         alignItems: "center",
         gap: 12,
-        fontFamily: "Figtree, system-ui, sans-serif",
+        fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
       }}
     >
-      <span style={{ fontSize: 13, color: "#5E5750" }}>
+      <span style={{ fontSize: 13, color: "#5A5A52" }}>
         Respiración 4-6 · ciclo {s.cycle} de 3
       </span>
       <div style={{ width: 150, height: 150, display: "grid", placeItems: "center" }}>
@@ -57,8 +57,8 @@ export function BreathExercise({ onDone }: Props) {
             width: 140,
             height: 140,
             borderRadius: "50%",
-            background: "#12E6FF",
-            border: "3px solid #161413",
+            background: "#359A54",
+            border: "3px solid #27683A",
             transform: rm ? "none" : big ? "scale(1)" : "scale(0.55)",
             transition: rm ? "none" : big ? "transform 4s ease-in-out" : "transform 6s ease-in-out",
             display: "grid",
@@ -68,9 +68,9 @@ export function BreathExercise({ onDone }: Props) {
           <span
             style={{
               fontSize: 26,
-              fontFamily: "Fredoka, Figtree, system-ui, sans-serif",
+              fontFamily: "Bricolage Grotesque, system-ui, sans-serif",
               fontWeight: 600,
-              color: "#161413",
+              color: "#27683A",
               transform: rm ? "none" : big ? "scale(1)" : "scale(1.8)",
               transition: rm ? "none" : big ? "transform 4s ease-in-out" : "transform 6s ease-in-out",
             }}

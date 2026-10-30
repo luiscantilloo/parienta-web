@@ -1,12 +1,10 @@
 import type { ComponentType } from "react";
 import type { HerramientaCardProps, HerramientaId } from "../types";
 import { ClinToolCard } from "./clin/ClinToolCard";
-import { CursosToolCard } from "./cursos/CursosToolCard";
 import { IaToolCard } from "./ia/IaToolCard";
+import { JuegosToolCard } from "./juegos/JuegosToolCard";
 import { MoodToolCard } from "./mood/MoodToolCard";
 import { PlaceholderToolCard } from "./PlaceholderToolCard";
-import { RevisitToolCard } from "./revisit/RevisitToolCard";
-import { TechToolCard } from "./tech/TechToolCard";
 
 /**
  * Registro de herramientas.
@@ -18,9 +16,7 @@ export const HERRAMIENTA_CARDS: Partial<
   mood: MoodToolCard,
   clin: ClinToolCard,
   ia: IaToolCard,
-  tech: TechToolCard,
-  revisit: RevisitToolCard,
-  cursos: CursosToolCard,
+  juegos: JuegosToolCard,
 };
 
 export function resolveHerramientaCard(

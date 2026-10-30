@@ -1,6 +1,6 @@
 :root {
   /* NARA · marca (fuente: manual de marca v0.1) */
-  --nara-amarillo: #FDCD22;
+  --nara-amarillo: #F26B3A; /* Parienta naranja */
   --nara-rosa: #FFA3D0;
   --nara-crema: #F0ECE6;
   --nara-tinta: #161413;
@@ -19,7 +19,7 @@
   --personaje-nara-energia: #FF9FD0;
 
   /* Emociones de TEO (vivo · conversa) */
-  --teo-calma: #12E6FF;
+  --teo-calma: #359A54;
   --teo-curiosidad: #3FEA73;
   --teo-duda: #FF8A00;
   --teo-energia: #F75CB4;
@@ -43,11 +43,11 @@
   --digital-media: #8C857C;
   --digital-alta: #161413;
   --estado-al-dia: #4E9A6B;
-  --exito-suave: #E3F1E8;     /* fondo de Validada / Al día, texto tinta */
+  --exito-suave: #C0DFC8; /* menta Parienta */     /* fondo de Validada / Al día, texto tinta */
   --estado-bajo-meta: #E0A526;
   --estado-revisar: #D9692B;
 
-  /* Tipografía */
-  --fuente-titulos: 'Fredoka', 'Figtree', system-ui, sans-serif;
-  --fuente-texto: 'Figtree', system-ui, sans-serif;
+  /* Tipografía (Parienta remapea en plateado-tokens.css) */
+  --fuente-titulos: "Bricolage Grotesque", system-ui, sans-serif;
+  --fuente-texto: "Bricolage Grotesque", system-ui, sans-serif;
 }

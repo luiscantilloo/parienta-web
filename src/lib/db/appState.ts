@@ -25,6 +25,8 @@ export const APP_STATE_SLICES = [
   "aiLog",
   /** Check-ins de ánimo por paciente (clínico lee el historial desde aquí). */
   "moodLogs",
+  /** Partidas de juegos (Sudoku) por paciente. */
+  "gameLogs",
   "recursos",
   "activity",
   "accessLog",

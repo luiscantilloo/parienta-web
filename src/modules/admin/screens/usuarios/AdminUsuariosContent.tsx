@@ -46,7 +46,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
             Usuarios y permisos
           </span>
           <span className="text-[15px] text-texto-secundario">
-            Quién entra a NARA, con qué rol y qué puede ver
+            Quién entra a Parienta, con qué rol y qué puede ver
           </span>
         </div>
         <button
@@ -156,8 +156,8 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                   gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,.9fr) 100px",
                   gap: 12,
                   padding: "10px 20px",
-                  background: "#F0ECE6",
-                  color: "#5E5750",
+                  background: "#FBFAF3",
+                  color: "#5A5A52",
                   fontSize: 13,
                   fontWeight: 500,
                 }}
@@ -172,20 +172,20 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                 <div
                   key={u.key}
                   onClick={() => u.pick()}
-                  style={ix`display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,.9fr) 100px;gap:12px;padding:11px 20px;border-top:1px solid #E6E1D9;align-items:center;font-size:14px;cursor:pointer;background:${u.bg}`}
+                  style={ix`display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,.9fr) 100px;gap:12px;padding:11px 20px;border-top:1px solid #C0DFC8;align-items:center;font-size:14px;cursor:pointer;background:${u.bg}`}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                     <span style={{ fontWeight: 500 }}>
                       {u.role === "Observador" ? u.org || u.name : u.name}
                     </span>
-                    <span style={{ fontSize: 12, color: "#5E5750" }}>
+                    <span style={{ fontSize: 12, color: "#5A5A52" }}>
                       {u.role === "Observador" ? u.mods || u.contact : u.contact}
                     </span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                     <span>{u.role}</span>
                     {u.role !== "Observador" && u.mods ? (
-                      <span style={{ fontSize: 12, color: "#5E5750" }}>{u.mods}</span>
+                      <span style={{ fontSize: 12, color: "#5A5A52" }}>{u.mods}</span>
                     ) : null}
                   </div>
                   <span style={{ minWidth: 0 }}>{u.role === "Observador" ? u.terr : u.org}</span>
@@ -197,7 +197,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                 </div>
               ))}
               {v.noUsers ? (
-                <span style={{ display: "block", padding: 20, color: "#5E5750" }}>
+                <span style={{ display: "block", padding: 20, color: "#5A5A52" }}>
                   Ningún usuario coincide con la búsqueda.
                 </span>
               ) : null}
@@ -217,7 +217,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
         open={!!v.hasForm}
         onClose={() => v.closeForm()}
         title={String(v.formTitle || "Usuario")}
-        description={String(v.formDesc || "Quién entra a NARA, con qué rol y qué puede ver.")}
+        description={String(v.formDesc || "Quién entra a Parienta, con qué rol y qué puede ver.")}
         size={(v.formSize as "sm" | "md" | "lg") || "md"}
         footer={(
           <>
@@ -269,72 +269,13 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
               onChange={v.fSet.role}
               className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] font-normal text-nara-tinta"
             >
-              <option>Administrador</option>
-              <option>Experto de campo</option>
-              <option>Clínico</option>
-              <option>Paciente</option>
-              <option>Observador</option>
+              {(v.roles || []).map((r: string) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
             </select>
           </label>
-
-          {v.isPaciente && !v.isEdit ? (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-nara-tinta">Cómo crear al paciente</span>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => v.setPatientPath?.("campo")}
-                  className={`cursor-pointer rounded-[12px] border-[1.5px] px-3 py-3 text-left font-texto text-sm ${
-                    v.patientPath === "campo"
-                      ? "border-nara-tinta bg-nara-crema"
-                      : "border-linea bg-nara-blanco"
-                  }`}
-                >
-                  <span className="block font-medium text-nara-tinta">Desde campo</span>
-                  <span className="mt-0.5 block text-xs text-texto-secundario">
-                    Persona ya registrada por el experto
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => v.setPatientPath?.("manual")}
-                  className={`cursor-pointer rounded-[12px] border-[1.5px] px-3 py-3 text-left font-texto text-sm ${
-                    v.patientPath === "manual"
-                      ? "border-nara-tinta bg-nara-crema"
-                      : "border-linea bg-nara-blanco"
-                  }`}
-                >
-                  <span className="block font-medium text-nara-tinta">Manual</span>
-                  <span className="mt-0.5 block text-xs text-texto-secundario">
-                    Misma ficha que Nueva persona · sin evaluación
-                  </span>
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {v.isCampoPatient ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
-              Persona
-              <select
-                value={v.personId ?? ""}
-                onChange={v.pickPerson}
-                className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] font-normal text-nara-tinta"
-              >
-                <option value="">Seleccione la persona…</option>
-                {v.personOpts?.map((o: { id: string; label: string }) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              {!v.personOpts?.length ? (
-                <span className="text-xs font-normal text-texto-secundario">
-                  No hay personas pendientes de credenciales.
-                </span>
-              ) : null}
-            </label>
-          ) : null}
 
           {v.isManualPatient ? (
             <>
@@ -367,6 +308,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                       onChange={v.fSet.birthDate}
                       className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
                     />
+                    <span className="text-xs font-normal text-texto-secundario">Mínimo 60 años</span>
                   </label>
                   <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
                     Edad
@@ -418,13 +360,22 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                   </label>
                   <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
                     Correo
-                    <input
-                      type="email"
-                      value={v.f.contact ?? ""}
-                      onChange={v.fSet.contact}
-                      placeholder="correo@ejemplo.com"
-                      className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
-                    />
+                    <div className="relative">
+                      <input
+                        type="email"
+                        value={v.f.contact ?? ""}
+                        onChange={v.fSet.contact}
+                        placeholder="nombre.apellido@parienta.co"
+                        className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => v.genEmail?.()}
+                        className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+                      >
+                        Generar
+                      </button>
+                    </div>
                   </label>
                 </div>
               </section>
@@ -471,7 +422,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
             </>
           ) : null}
 
-          {v.isCampoPatient || (v.isPaciente && v.isEdit) ? (
+          {v.isPaciente && v.isEdit ? (
             <>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
@@ -479,11 +430,8 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                   <input
                     value={v.f.firstName ?? ""}
                     onChange={v.fSet.firstName}
-                    readOnly={!!v.fieldsReadonly}
                     placeholder="Nombre"
-                    className={`box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea px-3 font-texto text-[15px] font-normal text-nara-tinta ${
-                      v.fieldsReadonly ? "bg-nara-crema" : "bg-nara-blanco"
-                    }`}
+                    className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
                   />
                 </label>
                 <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
@@ -491,31 +439,29 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                   <input
                     value={v.f.lastName ?? ""}
                     onChange={v.fSet.lastName}
-                    readOnly={!!v.fieldsReadonly}
                     placeholder="Apellidos"
-                    className={`box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea px-3 font-texto text-[15px] font-normal text-nara-tinta ${
-                      v.fieldsReadonly ? "bg-nara-crema" : "bg-nara-blanco"
-                    }`}
+                    className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
                   />
                 </label>
               </div>
               <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
                 Correo
-                <input
-                  type="email"
-                  value={v.f.contact ?? ""}
-                  onChange={v.fSet.contact}
-                  readOnly={!v.emailEditable}
-                  placeholder="nombre@nara.com"
-                  className={`box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea px-3 font-texto text-[15px] font-normal text-nara-tinta ${
-                    v.emailEditable ? "bg-nara-blanco" : "bg-nara-crema"
-                  }`}
-                />
-                {v.fieldsReadonly && v.emailEditable ? (
-                  <span className="text-xs font-normal text-texto-secundario">
-                    Esta persona no tiene correo en la ficha; escríbalo para el acceso.
-                  </span>
-                ) : null}
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={v.f.contact ?? ""}
+                    onChange={v.fSet.contact}
+                    placeholder="nombre.apellido@parienta.co"
+                    className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => v.genEmail?.()}
+                    className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+                  >
+                    Generar
+                  </button>
+                </div>
               </label>
             </>
           ) : null}
@@ -532,53 +478,219 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
               </label>
               <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
                 Correo
-                <input
-                  type="email"
-                  value={v.f.contact ?? ""}
-                  onChange={v.fSet.contact}
-                  placeholder="nombre@nara.com"
-                  className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
-                />
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={v.f.contact ?? ""}
+                    onChange={v.fSet.contact}
+                    placeholder="nombre.apellido@parienta.co"
+                    className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => v.genEmail?.()}
+                    className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+                  >
+                    Generar
+                  </button>
+                </div>
               </label>
             </>
           ) : null}
 
           <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
             Contraseña
-            {v.isPaciente ? (
-              <div className="relative">
-                <input
-                  type="text"
-                  value={v.f.password ?? ""}
-                  onChange={v.fSet.password}
-                  placeholder={v.isEdit ? "Dejar vacío para no cambiarla" : (v.passwordHint || "Mínimo 8 caracteres")}
-                  autoComplete="new-password"
-                  className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
-                />
-                <button
-                  type="button"
-                  onClick={() => v.genPassword?.()}
-                  className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
-                >
-                  Generar
-                </button>
-              </div>
-            ) : (
+            <div className="relative">
               <input
-                type="password"
+                type="text"
                 value={v.f.password ?? ""}
                 onChange={v.fSet.password}
                 placeholder={v.isEdit ? "Dejar vacío para no cambiarla" : (v.passwordHint || "Mínimo 8 caracteres")}
                 autoComplete="new-password"
-                className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
+                className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
               />
-            )}
+              <button
+                type="button"
+                onClick={() => v.genPassword?.()}
+                className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+              >
+                Generar
+              </button>
+            </div>
             <span className="text-xs font-normal text-texto-secundario">
               {v.isEdit
                 ? "Solo complete si quiere cambiar la contraseña. No use el correo ni el nombre dentro de la clave."
                 : "Esta contraseña se usa en Ingreso. No debe contener el correo ni el nombre; Admin/Clínico: mínimo 12."}
             </span>
           </label>
+
+          {v.isPaciente ? (
+            <section className="flex flex-col gap-3 border-t border-linea pt-3">
+              <h3 className="font-titulos text-base font-semibold text-nara-tinta">Cuidador</h3>
+              {v.hasLinkedCaregiver ? (
+                <p className="font-texto text-[15px] text-nara-tinta">
+                  Ya tiene cuidador vinculado
+                  {v.f.caregiverFirstName || v.f.caregiverLastName || v.f.caregiverEmail
+                    ? `: ${[
+                        [v.f.caregiverFirstName, v.f.caregiverLastName].filter(Boolean).join(" "),
+                        v.f.caregiverEmail,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}`
+                    : "."}
+                </p>
+              ) : (
+                <>
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                    ¿Tiene cuidador?
+                    <select
+                      value={v.f.tieneCuidador ?? ""}
+                      onChange={v.fSet.tieneCuidador}
+                      className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] font-normal text-nara-tinta"
+                    >
+                      <option value="">Seleccione…</option>
+                      <option value="no">No</option>
+                      <option value="si">Sí</option>
+                    </select>
+                  </label>
+                  {v.showCaregiverForm ? (
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Nombre
+                        <input
+                          value={v.f.caregiverFirstName ?? ""}
+                          onChange={v.fSet.caregiverFirstName}
+                          placeholder="Nombre"
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Apellido
+                        <input
+                          value={v.f.caregiverLastName ?? ""}
+                          onChange={v.fSet.caregiverLastName}
+                          placeholder="Apellidos"
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Fecha de nacimiento
+                        <input
+                          type="date"
+                          value={v.f.caregiverBirthDate ?? ""}
+                          onChange={v.fSet.caregiverBirthDate}
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Edad
+                        <input
+                          value={v.f.caregiverAge ?? ""}
+                          readOnly
+                          placeholder="Se calcula sola"
+                          className="box-border h-[42px] w-full cursor-default rounded-[9px] border-[1.5px] border-linea bg-nara-crema px-3 font-texto text-[15px] font-normal text-nara-tinta"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Género
+                        <select
+                          value={v.f.caregiverGenero ?? ""}
+                          onChange={v.fSet.caregiverGenero}
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] font-normal text-nara-tinta"
+                        >
+                          <option value="">Seleccione…</option>
+                          {(v.generoOpts || []).map((o: string) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Estado civil
+                        <select
+                          value={v.f.caregiverEstadoCivil ?? ""}
+                          onChange={v.fSet.caregiverEstadoCivil}
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] font-normal text-nara-tinta"
+                        >
+                          <option value="">Seleccione…</option>
+                          {(v.civilOpts || []).map((o: string) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Teléfono
+                        <PhoneInput
+                          value={v.f.caregiverPhone ?? ""}
+                          onChange={v.fSet.caregiverPhone}
+                          placeholder="3xx xxx xxxx"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Correo
+                        <div className="relative">
+                          <input
+                            type="email"
+                            value={v.f.caregiverEmail ?? ""}
+                            onChange={v.fSet.caregiverEmail}
+                            placeholder="nombre.apellido@parienta.co"
+                            className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => v.genCaregiverEmail?.()}
+                            className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+                          >
+                            Generar
+                          </button>
+                        </div>
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Vereda o barrio
+                        <input
+                          value={v.f.caregiverPlace ?? ""}
+                          onChange={v.fSet.caregiverPlace}
+                          placeholder="Ej.: Vereda Cocora"
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-3 font-texto text-[15px] font-normal text-nara-tinta"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
+                        Estrato
+                        <select
+                          value={v.f.caregiverEstrato ?? ""}
+                          onChange={v.fSet.caregiverEstrato}
+                          className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco px-2 font-texto text-[15px] font-normal text-nara-tinta"
+                        >
+                          <option value="">Seleccione…</option>
+                          {(v.estratoOpts || []).map((o: string) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta sm:col-span-2">
+                        Contraseña de acceso
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={v.f.caregiverPassword ?? ""}
+                            onChange={v.fSet.caregiverPassword}
+                            placeholder="Mínimo 8 caracteres"
+                            className="box-border h-[42px] w-full rounded-[9px] border-[1.5px] border-linea bg-nara-blanco py-0 pl-3 pr-[5.5rem] font-texto text-[15px] font-normal text-nara-tinta"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => v.genCaregiverPassword?.()}
+                            className="absolute right-1.5 top-1/2 h-8 -translate-y-1/2 cursor-pointer rounded-lg border-none bg-nara-crema px-2.5 font-texto text-xs font-medium text-nara-tinta"
+                          >
+                            Generar
+                          </button>
+                        </div>
+                      </label>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </section>
+          ) : null}
 
           {!v.isPaciente ? (
             <label className="flex flex-col gap-1.5 text-sm font-medium text-nara-tinta">
@@ -609,7 +721,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
                 />
               </label>
               <span className="text-[13px] leading-snug text-texto-secundario">
-                Observador es un solo rol. Por ahora la app muestra topbar y TEO; las vistas se armarán después.
+                Observador es un solo rol. Por ahora la app muestra topbar y Aurelia; las vistas se armarán después.
               </span>
             </div>
           ) : null}
@@ -620,7 +732,7 @@ export function AdminUsuariosContent({ v }: { v: Record<string, any> }) {
               {v.activity?.map((a: any) => (
                 <div
                   key={a.key}
-                  className="grid grid-cols-[110px_minmax(0,1fr)] gap-2.5 border-t border-[#F0ECE6] py-1 text-sm"
+                  className="grid grid-cols-[110px_minmax(0,1fr)] gap-2.5 border-t border-[#C0DFC8] py-1 text-sm"
                 >
                   <span className="text-texto-secundario">{a.when}</span>
                   <span>{a.text}</span>

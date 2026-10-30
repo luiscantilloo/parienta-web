@@ -17,8 +17,8 @@ export const PATIENT_STATES = [
   {
     id: "sin_evaluacion",
     label: "Sin evaluación",
-    bg: "#FFF4CC",
-    fg: "#161413",
+    bg: "#FDF2B3",
+    fg: "#27683A",
   },
   {
     id: "por_aprobar",
@@ -29,8 +29,8 @@ export const PATIENT_STATES = [
   {
     id: "aprobado",
     label: "Aprobado",
-    bg: "#E3F1E8",
-    fg: "#161413",
+    bg: "#C0DFC8",
+    fg: "#27683A",
   },
   {
     id: "rechazado",
@@ -41,25 +41,25 @@ export const PATIENT_STATES = [
   {
     id: "activo",
     label: "Activo",
-    bg: "#E3F1E8",
-    fg: "#161413",
+    bg: "#C0DFC8",
+    fg: "#27683A",
   },
   {
     id: "inactivo",
     label: "Inactivo",
-    bg: "#F0ECE6",
-    fg: "#5E5750",
+    bg: "#FBFAF3",
+    fg: "#5A5A52",
   },
   {
     id: "terminado_blanco",
     label: "Terminado blanco",
     bg: "#F7F5F1",
-    fg: "#161413",
+    fg: "#27683A",
   },
   {
     id: "terminado_negro",
     label: "Terminado negro",
-    bg: "#161413",
+    bg: "#27683A",
     fg: "#F7F5F1",
   },
   {

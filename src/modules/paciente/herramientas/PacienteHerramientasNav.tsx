@@ -34,8 +34,8 @@ function NavIcon({
 }
 
 /**
- * Barra inferior: las 6 herramientas.
- * tech / revisit / cursos en gris (próximamente), mismos logos que el clínico.
+ * Barra inferior: herramientas activas en la ruta.
+ * tech / revisit en gris (próximamente), mismos logos que el clínico.
  */
 export function PacienteHerramientasNav({ items }: { items: NavItem[] }) {
   const n = items.length;
@@ -53,7 +53,7 @@ export function PacienteHerramientasNav({ items }: { items: NavItem[] }) {
   return (
     <div
       role="tablist"
-      className="grid w-full shrink-0 border-t border-linea bg-nara-blanco px-0.5 pt-1.5"
+      className="grid w-full shrink-0 border-t border-[#C0DFC8] bg-white px-0.5 pt-1.5"
       style={{
         paddingBottom: 10,
         gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`,
@@ -69,12 +69,12 @@ export function PacienteHerramientasNav({ items }: { items: NavItem[] }) {
           disabled={t.disabled}
           onClick={t.go}
           title={t.disabled ? "Próximamente" : t.name}
-          className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 border-0 bg-transparent px-0.5 font-texto outline-none after:pointer-events-none after:absolute after:right-1 after:bottom-0 after:left-1 after:h-[3px] after:content-[''] ${
+          className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 border-0 bg-transparent px-0.5 font-mono outline-none after:pointer-events-none after:absolute after:right-1 after:bottom-0 after:left-1 after:h-[3px] after:content-[''] ${
             t.disabled
-              ? "cursor-not-allowed text-texto-secundario/50 after:bg-transparent"
+              ? "cursor-not-allowed text-[#5A5A52]/50 after:bg-transparent"
               : t.on
-                ? "cursor-pointer font-semibold text-nara-tinta after:bg-[#FDCD22]"
-                : "cursor-pointer font-medium text-texto-secundario after:bg-transparent"
+                ? "cursor-pointer font-semibold !text-[#27683A] after:bg-[#F26B3A]"
+                : "cursor-pointer font-medium text-[#5A5A52] after:bg-transparent"
           }`}
         >
           <span className="grid h-7 place-items-center">

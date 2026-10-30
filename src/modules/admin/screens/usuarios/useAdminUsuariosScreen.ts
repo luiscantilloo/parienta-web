@@ -8,15 +8,22 @@ import { adminPathForView } from "@/modules/admin/routes";
 import { useNaraLive, useNaraStore } from "@/providers/nara-provider";
 import { DEFAULT_PATIENT_MODULES } from "@/lib/db/patientModules";
 import { minPasswordLengthForRole, passwordPolicyError } from "@/lib/auth/passwordPolicy";
+import {
+  generateAccessPassword,
+  generateParientaEmail,
+} from "@/lib/auth/generateCredentials";
+import {
+  ACCOUNT_ROLE_LABELS,
+  PROGRAM_ORG,
+  isGestorRole,
+  isPersonaRole,
+} from "@/lib/db/roles";
 
-const ROLES = ["Administrador", "Experto de campo", "Clínico", "Paciente", "Observador"];
+const ROLES = [...ACCOUNT_ROLE_LABELS];
 const PAGE_SIZE = 5;
 const GENERO_OPTS = ["Femenino", "Masculino", "No binario", "Otro", "Prefiere no decir"];
 const CIVIL_OPTS = ["Soltero/a", "Casado/a", "Unión libre", "Separado/a", "Divorciado/a", "Viudo/a"];
 const ESTRATO_OPTS = ["1", "2", "3", "4", "5", "6"];
-
-/** Caminos de alta de paciente desde admin (importación queda fuera por ahora). */
-type PatientPath = "campo" | "manual";
 
 type FormState = {
   id: string | null;
@@ -31,8 +38,6 @@ type FormState = {
   modules: string[];
   patientModules: string[];
   personId?: string;
-  /** campo = persona ya registrada por experto; manual = ficha igual a Nueva persona */
-  patientPath?: PatientPath;
   birthDate?: string;
   age?: string;
   phone?: string;
@@ -42,6 +47,20 @@ type FormState = {
   estrato?: string;
   status?: string;
   derived?: boolean;
+  /** si | no | '' — solo aplica a persona acompañada */
+  tieneCuidador?: "" | "si" | "no";
+  caregiverAccountId?: string;
+  caregiverFirstName?: string;
+  caregiverLastName?: string;
+  caregiverBirthDate?: string;
+  caregiverAge?: string;
+  caregiverGenero?: string;
+  caregiverEstadoCivil?: string;
+  caregiverEstrato?: string;
+  caregiverPlace?: string;
+  caregiverEmail?: string;
+  caregiverPhone?: string;
+  caregiverPassword?: string;
 };
 
 function ageFromBirth(iso: string): number {
@@ -57,7 +76,6 @@ function ageFromBirth(iso: string): number {
 
 function emptyPatientFicha(): Partial<FormState> {
   return {
-    patientPath: "campo",
     personId: "",
     firstName: "",
     lastName: "",
@@ -70,6 +88,35 @@ function emptyPatientFicha(): Partial<FormState> {
     estrato: "",
     contact: "",
     terr: "",
+    tieneCuidador: "",
+    caregiverAccountId: "",
+    caregiverFirstName: "",
+    caregiverLastName: "",
+    caregiverBirthDate: "",
+    caregiverAge: "",
+    caregiverGenero: "",
+    caregiverEstadoCivil: "",
+    caregiverEstrato: "",
+    caregiverPlace: "",
+    caregiverEmail: "",
+    caregiverPhone: "",
+    caregiverPassword: "",
+  };
+}
+
+function emptyCaregiverFields(): Partial<FormState> {
+  return {
+    caregiverFirstName: "",
+    caregiverLastName: "",
+    caregiverBirthDate: "",
+    caregiverAge: "",
+    caregiverGenero: "",
+    caregiverEstadoCivil: "",
+    caregiverEstrato: "",
+    caregiverPlace: "",
+    caregiverEmail: "",
+    caregiverPhone: "",
+    caregiverPassword: "",
   };
 }
 
@@ -142,44 +189,56 @@ const INITIAL: UiState = {
   pendingAsk: "",
 };
 
-function genPassword(len = 10): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const bytes = new Uint8Array(len);
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < len; i++) bytes[i] = Math.floor(Math.random() * 256);
-  }
-  let out = "";
-  for (let i = 0; i < len; i++) out += alphabet[bytes[i]! % alphabet.length];
-  return out;
+function looksLikeEmail(v: unknown): boolean {
+  return /@/.test(String(v || ""));
 }
 
 function allUsers(A: any, S: any) {
   const acc = S.accounts.slice();
+  const byAccountId = new Set(acc.map((a: any) => a.id).filter(Boolean));
   const names = new Set(acc.map((a: any) => a.name));
   A.experts(S).forEach((e: any) => {
-    if (!names.has(e.name)) {
-      acc.push({
-        id: e.id,
-        name: e.name,
-        contact: e.phone,
-        role: "Experto de campo",
-        org: "Programa NARA",
-        terr: e.terr,
-        status: e.active === false ? "Inactivo" : "Activo",
-        derived: true,
-      });
-    }
+    const linked =
+      (e.accountId && acc.find((a: any) => a.id === e.accountId)) ||
+      acc.find((a: any) => a.name === e.name);
+    if (linked) return;
+    if (e.accountId && byAccountId.has(e.accountId)) return;
+    if (names.has(e.name)) return;
+    const email = looksLikeEmail(e.email)
+      ? String(e.email)
+      : looksLikeEmail(e.contact)
+        ? String(e.contact)
+        : "";
+    acc.push({
+      id: e.accountId || e.id,
+      name: e.name,
+      email,
+      contact: email,
+      phone: e.phone || "",
+      role: "Gestor de campo",
+      org: PROGRAM_ORG,
+      terr: e.terr,
+      status: e.active === false ? "Inactivo" : "Activo",
+      derived: true,
+    });
   });
   return acc.map((a: any) => {
-    const e = A.experts(S).find((x: any) => x.name === a.name);
-    return e
-      ? Object.assign({}, a, {
-          terr: e.terr,
-          status: e.active === false ? "Inactivo" : a.status,
-        })
-      : a;
+    const e =
+      A.experts(S).find((x: any) => x.accountId && x.accountId === a.id) ||
+      A.experts(S).find((x: any) => x.name === a.name);
+    if (!e) return a;
+    const email =
+      (looksLikeEmail(a.email) && String(a.email)) ||
+      (looksLikeEmail(a.contact) && String(a.contact)) ||
+      (looksLikeEmail(e.email) && String(e.email)) ||
+      "";
+    return Object.assign({}, a, {
+      terr: e.terr,
+      phone: a.phone || e.phone || "",
+      email,
+      contact: email,
+      status: e.active === false ? "Inactivo" : a.status,
+    });
   });
 }
 
@@ -213,21 +272,37 @@ export function useAdminUsuariosScreen() {
     const pageList = list.slice(pageStart, pageStart + PAGE_SIZE);
     const f = st.f;
     const isEdit = !!(f && f.id);
-    const isPaciente = !!f && f.role === "Paciente";
-    const patientPath: PatientPath =
-      f?.patientPath === "manual" ? "manual" : "campo";
-    const isManualPatient = isPaciente && !isEdit && patientPath === "manual";
-    const isCampoPatient = isPaciente && !isEdit && patientPath === "campo";
+    const isPaciente = !!f && isPersonaRole(f.role);
+    /** Alta de persona acompañada en admin = solo ficha manual (como Nueva persona). */
+    const isManualPatient = isPaciente && !isEdit;
     const setF = (k: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const value = e.target.value;
       const next = Object.assign({}, f, { [k]: value }) as FormState;
       if (k === "birthDate") {
         next.age = value ? String(ageFromBirth(value)) : "";
       }
+      if (k === "caregiverBirthDate") {
+        next.caregiverAge = value ? String(ageFromBirth(value)) : "";
+      }
+      if (k === "tieneCuidador" && value !== "si") {
+        Object.assign(next, emptyCaregiverFields());
+      }
       setState({ f: next, err: "" });
     };
     const open = (u: any) => {
       const { firstName, lastName } = splitFullName(u.name || "");
+      const peopleList = A.people ? A.people(S) : S.people || [];
+      const linkedPerson = peopleList.find(
+        (p: any) =>
+          p.id === (u.personId || u.patientId) ||
+          p.accountId === u.id ||
+          (u.personId && p.code === u.personId),
+      );
+      const hasCg = !!(
+        linkedPerson?.caregiverAccountId ||
+        linkedPerson?.caregiverId ||
+        linkedPerson?.tieneCuidador
+      );
       setState({
         sel: u.id,
         err: "",
@@ -236,131 +311,62 @@ export function useAdminUsuariosScreen() {
           name: u.name,
           firstName: u.firstName || firstName,
           lastName: u.lastName || lastName,
-          contact: u.email || u.contact || "",
+          contact:
+            (looksLikeEmail(u.email) && String(u.email)) ||
+            (looksLikeEmail(u.contact) && String(u.contact)) ||
+            "",
+          phone: u.phone || (!looksLikeEmail(u.contact) ? String(u.contact || "") : ""),
           password: "",
           role: u.role,
           terr: u.terr,
           org: u.org,
           modules: (u.modules || A.OBS_DEFAULT_MODULES || []).slice(),
           patientModules: (u.patientModules || u.modulesEnabled || DEFAULT_PATIENT_MODULES).slice(),
-          personId: u.personId || u.patientId || "",
-          patientPath: "campo",
+          personId: u.personId || u.patientId || linkedPerson?.id || "",
           status: u.status,
           derived: u.derived,
+          tieneCuidador: hasCg ? "si" : "",
+          caregiverAccountId: String(
+            linkedPerson?.caregiverAccountId || linkedPerson?.caregiverId || "",
+          ),
+          caregiverFirstName: String(
+            linkedPerson?.caregiverFirstName ||
+              String(linkedPerson?.caregiverName || "").split(/\s+/)[0] ||
+              "",
+          ),
+          caregiverLastName: String(
+            linkedPerson?.caregiverLastName ||
+              String(linkedPerson?.caregiverName || "").split(/\s+/).slice(1).join(" ") ||
+              "",
+          ),
+          caregiverBirthDate: String(linkedPerson?.caregiverBirthDate || ""),
+          caregiverAge: String(linkedPerson?.caregiverAge || ""),
+          caregiverGenero: String(linkedPerson?.caregiverGenero || ""),
+          caregiverEstadoCivil: String(linkedPerson?.caregiverEstadoCivil || ""),
+          caregiverEstrato: String(linkedPerson?.caregiverEstrato || ""),
+          caregiverPlace: String(linkedPerson?.caregiverPlace || ""),
+          caregiverEmail: String(linkedPerson?.caregiverEmail || ""),
+          caregiverPhone: String(linkedPerson?.caregiverPhone || ""),
+          caregiverPassword: "",
         },
       });
     };
     const allTerrNames = territoryNames(A, S);
-    const isExpertoCampo = f?.role === "Experto de campo";
+    const isExpertoCampo = isGestorRole(f?.role);
     const terrOpts = isExpertoCampo
       ? allTerrNames
       : Array.from(new Set(["Todos"].concat(allTerrNames)));
 
-    const accountEmails = new Set(
-      (S.accounts || [])
-        .filter((a: any) => /paciente/i.test(String(a.role || a.roleId || "")))
-        .map((a: any) => String(a.email || a.contact || "").trim().toLowerCase())
-        .filter(Boolean),
-    );
-    const accountPersonIds = new Set(
-      (S.accounts || [])
-        .map((a: any) => String(a.personId || a.patientId || "").trim())
-        .filter(Boolean),
-    );
-    const peopleList = A.people ? A.people(S) : S.people || [];
-    const personOpts = peopleList
-      .filter((p: any) => {
-        const pid = String(p.id || p.code || "");
-        if (!pid || !p.name) return false;
-        if (isEdit && f?.personId && (pid === f.personId || p.code === f.personId)) return true;
-        if (accountPersonIds.has(pid) || (p.code && accountPersonIds.has(String(p.code)))) return false;
-        const em = String(p.email || "").trim().toLowerCase();
-        if (em && accountEmails.has(em)) return false;
-        return true;
-      })
-      .map((p: any) => {
-        const split = splitFullName(p.name || "");
-        const firstName = String(p.firstName || split.firstName);
-        const lastName = String(p.lastName || split.lastName);
-        return {
-          id: String(p.id || p.code),
-          label: `${p.name}${p.code ? ` · ${p.code}` : ""}${p.place ? ` · ${p.place}` : ""}`,
-          name: String(p.name || ""),
-          firstName,
-          lastName,
-          email: String(p.email || "").trim(),
-          terr: String(p.terr || "Todos"),
-          phone: String(p.phone || ""),
-          clin: String(p.clin || ""),
-        };
-      })
-      .sort((a: { name: string }, b: { name: string }) =>
-        a.name.localeCompare(b.name, "es"),
-      );
-
-    const pickPerson = (personId: string) => {
-      const p = personOpts.find((x: { id: string }) => x.id === personId);
-      if (!p || !f) return;
-      setState({
-        f: Object.assign({}, f, {
-          patientPath: "campo" as PatientPath,
-          personId: p.id,
-          name: p.name,
-          firstName: p.firstName,
-          lastName: p.lastName,
-          contact: p.email,
-          terr: p.terr || f.terr || "",
-          role: "Paciente",
-          org: "Programa NARA",
-          patientModules: DEFAULT_PATIENT_MODULES.slice(),
-        }),
-        err: "",
-      });
-    };
-
-    const setPatientPath = (path: PatientPath) => {
-      if (!f) return;
-      const names = territoryNames(A, S);
-      if (path === "manual") {
-        setState({
-          f: Object.assign({}, f, emptyPatientFicha(), {
-            patientPath: "manual" as PatientPath,
-            role: "Paciente",
-            org: "Programa NARA",
-            patientModules: DEFAULT_PATIENT_MODULES.slice(),
-            terr: names[0] || f.terr || "",
-            password: f.password || "",
-          }),
-          err: "",
-        });
-        return;
-      }
-      setState({
-        f: Object.assign({}, f, emptyPatientFicha(), {
-          patientPath: "campo" as PatientPath,
-          role: "Paciente",
-          org: "Programa NARA",
-          patientModules: DEFAULT_PATIENT_MODULES.slice(),
-          password: f.password || "",
-        }),
-        err: "",
-      });
-    };
-
     const save = async () => {
       if (!f) return;
-      const path: PatientPath = f.patientPath === "manual" ? "manual" : "campo";
-      if (f.role === "Paciente" && !isEdit && path === "campo" && !String(f.personId || "").trim()) {
-        return setState({ err: "Seleccione la persona a la que se le crean las credenciales." });
-      }
       const fullName =
-        f.role === "Paciente"
+        isPersonaRole(f.role)
           ? joinName(String(f.firstName || ""), String(f.lastName || ""), f.name)
           : f.name.trim();
-      if (f.role === "Paciente" && (!String(f.firstName || "").trim() || !String(f.lastName || "").trim())) {
+      if (isPersonaRole(f.role) && (!String(f.firstName || "").trim() || !String(f.lastName || "").trim())) {
         return setState({ err: "La persona debe tener nombre y apellido." });
       }
-      if (f.role === "Paciente" && !isEdit && path === "manual") {
+      if (isPersonaRole(f.role) && !isEdit) {
         const missing: string[] = [];
         if (!String(f.firstName || "").trim()) missing.push("nombre");
         if (!String(f.lastName || "").trim()) missing.push("apellido");
@@ -378,16 +384,56 @@ export function useAdminUsuariosScreen() {
                 : "Faltan datos: " + missing.join(", ") + ".",
           });
         }
+        const edadAlta = ageFromBirth(String(f.birthDate || "").trim());
+        if (!(edadAlta >= 60 && edadAlta <= 110)) {
+          return setState({ err: "La edad debe estar entre 60 y 110 años." });
+        }
+      }
+      const addingCaregiver =
+        isPersonaRole(f.role) &&
+        f.tieneCuidador === "si" &&
+        !String(f.caregiverAccountId || "").trim();
+      if (addingCaregiver) {
+        const cgFirst = String(f.caregiverFirstName || "").trim();
+        const cgLast = String(f.caregiverLastName || "").trim();
+        const cgBirth = String(f.caregiverBirthDate || "").trim();
+        const cgAge = cgBirth ? ageFromBirth(cgBirth) : Number(f.caregiverAge) || 0;
+        if (!cgFirst || !cgLast) {
+          return setState({ err: "Escriba nombre y apellido del cuidador." });
+        }
+        if (!cgBirth) {
+          return setState({ err: "Indique la fecha de nacimiento del cuidador." });
+        }
+        if (!(cgAge >= 18 && cgAge <= 110)) {
+          return setState({ err: "La edad del cuidador debe estar entre 18 y 110 años." });
+        }
+        if (!String(f.caregiverPlace || "").trim()) {
+          return setState({ err: "Indique vereda o barrio del cuidador." });
+        }
+        if (!/@/.test(String(f.caregiverEmail || ""))) {
+          return setState({ err: "Use un correo válido para el cuidador." });
+        }
+        if (!(f.caregiverPassword || "").trim()) {
+          return setState({ err: "Defina una contraseña para el cuidador." });
+        }
+        const cgPass = String(f.caregiverPassword || "").trim();
+        const cgPolicy = passwordPolicyError({
+          password: cgPass,
+          email: String(f.caregiverEmail || ""),
+          name: [cgFirst, cgLast].join(" "),
+          role: "Cuidadora / familiar",
+        });
+        if (cgPolicy) return setState({ err: cgPolicy });
       }
       if (!fullName || !f.contact.trim()) {
         return setState({
-          err: f.role === "Paciente"
+          err: isPersonaRole(f.role)
             ? "La persona debe tener nombre, apellido y correo. Complete el correo si falta."
             : "Escriba el nombre y el correo.",
         });
       }
       if (!/@/.test(f.contact))
-        return setState({ err: "Use un correo válido (ej. nombre@nara.com) para el acceso." });
+        return setState({ err: "Use un correo válido (ej. nombre@parienta.co) para el acceso." });
       if (!isEdit && !(f.password || "").trim())
         return setState({ err: "Defina una contraseña para el nuevo usuario." });
       const passTrim = (f.password || "").trim();
@@ -402,13 +448,13 @@ export function useAdminUsuariosScreen() {
       }
       if (f.role === "Observador" && !f.org.trim())
         return setState({ err: "Escriba la organización del observador." });
-      if (f.role === "Experto de campo") {
+      if (isGestorRole(f.role)) {
         const oneTerr = String(f.terr || "")
           .split(/\s*[,;/|]\s*|\s+y\s+/i)
           .map((x) => x.trim())
           .filter(Boolean)[0];
         if (!oneTerr || /^todos$/i.test(oneTerr)) {
-          return setState({ err: "El experto de campo debe tener un único territorio asignado." });
+          return setState({ err: "El gestor de campo debe tener un único territorio asignado." });
         }
         f.terr = oneTerr;
       }
@@ -419,41 +465,60 @@ export function useAdminUsuariosScreen() {
       const payload: any = {
         id: f.id || undefined,
         name: fullName,
-        firstName: f.role === "Paciente" ? String(f.firstName || "").trim() : undefined,
-        lastName: f.role === "Paciente" ? String(f.lastName || "").trim() : undefined,
+        firstName: isPersonaRole(f.role) ? String(f.firstName || "").trim() : undefined,
+        lastName: isPersonaRole(f.role) ? String(f.lastName || "").trim() : undefined,
         contact: f.contact.trim(),
         email: f.contact.trim(),
         password: (f.password || "").trim() || undefined,
         role: f.role,
         terr: f.terr,
-        org: f.role === "Observador" ? f.org.trim() : "Programa NARA",
+        org: f.role === "Observador" ? f.org.trim() : PROGRAM_ORG,
         modules: f.role === "Observador" ? (A.OBS_DEFAULT_MODULES || []).slice() : undefined,
-        patientModules: f.role === "Paciente" ? DEFAULT_PATIENT_MODULES.slice() : undefined,
-        personId:
-          f.role === "Paciente" && path === "campo"
-            ? String(f.personId || "").trim() || undefined
-            : undefined,
-        patientId:
-          f.role === "Paciente" && path === "campo"
-            ? String(f.personId || "").trim() || undefined
-            : undefined,
+        patientModules: isPersonaRole(f.role) ? DEFAULT_PATIENT_MODULES.slice() : undefined,
+        personId: isPersonaRole(f.role) && isEdit
+          ? String(f.personId || "").trim() || undefined
+          : undefined,
+        patientId: isPersonaRole(f.role) && isEdit
+          ? String(f.personId || "").trim() || undefined
+          : undefined,
         status: f.status || "Activo",
+        phone: String(f.phone || "").trim() || undefined,
       };
 
-      if (f.role === "Paciente" && !isEdit) {
-        payload.origin = path === "manual" ? "manual" : "admin";
-        payload.source = path === "manual" ? "admin-manual" : "admin-campo";
-        if (path === "manual") {
-          // Alta admin/manual: nace sin evaluación. Campo: respeta estado de la ficha.
-          payload.patientStatus = "Sin evaluación";
-          payload.birthDate = birthDate;
-          payload.age = age;
-          payload.place = place;
-          payload.phone = String(f.phone || "").trim();
-          payload.genero = String(f.genero || "").trim();
-          payload.estadoCivil = String(f.estadoCivil || "").trim();
-          payload.estrato = String(f.estrato || "").trim();
-          payload.rural = /vereda/i.test(place);
+      if (isPersonaRole(f.role) && !isEdit) {
+        payload.origin = "manual";
+        payload.source = "admin-manual";
+        payload.patientStatus = "Sin evaluación";
+        payload.birthDate = birthDate;
+        payload.age = age;
+        payload.place = place;
+        payload.phone = String(f.phone || "").trim();
+        payload.genero = String(f.genero || "").trim();
+        payload.estadoCivil = String(f.estadoCivil || "").trim();
+        payload.estrato = String(f.estrato || "").trim();
+        payload.rural = /vereda/i.test(place);
+      }
+
+      if (isPersonaRole(f.role)) {
+        payload.tieneCuidador = f.tieneCuidador === "si";
+        if (addingCaregiver) {
+          const cgFirst = String(f.caregiverFirstName || "").trim();
+          const cgLast = String(f.caregiverLastName || "").trim();
+          const cgBirth = String(f.caregiverBirthDate || "").trim();
+          payload.caregiver = {
+            firstName: cgFirst,
+            lastName: cgLast,
+            name: [cgFirst, cgLast].filter(Boolean).join(" "),
+            birthDate: cgBirth,
+            age: cgBirth ? ageFromBirth(cgBirth) : Number(f.caregiverAge) || 0,
+            email: String(f.caregiverEmail || "").trim().toLowerCase(),
+            phone: String(f.caregiverPhone || "").trim(),
+            password: String(f.caregiverPassword || "").trim(),
+            place: String(f.caregiverPlace || "").trim(),
+            genero: String(f.caregiverGenero || "").trim(),
+            estadoCivil: String(f.caregiverEstadoCivil || "").trim(),
+            estrato: String(f.caregiverEstrato || "").trim(),
+          };
         }
       }
 
@@ -481,11 +546,12 @@ export function useAdminUsuariosScreen() {
           if (i >= 0) list[i] = { ...list[i], ...acc };
           else list.push({ ...acc, created: true });
           s.accounts = list;
-          if (acc.role === "Experto de campo") {
+          if (isGestorRole(acc.role)) {
             s.expertOv = s.expertOv || {};
             s.expertOv[acc.name] = Object.assign({}, s.expertOv[acc.name], {
               terr: acc.terr,
-              phone: acc.contact,
+              phone: acc.phone || f.phone || "",
+              email: acc.email || f.contact || "",
             });
           }
           const linkId =
@@ -543,7 +609,7 @@ export function useAdminUsuariosScreen() {
                 ...(clinName ? { clin: clinName } : {}),
                 ...(terrForExpert ? { terr: terrForExpert } : {}),
               });
-              if (path === "manual") {
+              if (!isEdit) {
                 Object.assign(pe, {
                   name: fullName,
                   firstName: payload.firstName,
@@ -552,21 +618,58 @@ export function useAdminUsuariosScreen() {
                 });
               }
             }
+            if (person) {
+              Object.assign(pe, {
+                tieneCuidador: person.tieneCuidador === true,
+                caregiverAccountId: person.caregiverAccountId || null,
+                caregiverName: person.caregiverName || "",
+                caregiverFirstName: person.caregiverFirstName || "",
+                caregiverLastName: person.caregiverLastName || "",
+                caregiverEmail: person.caregiverEmail || "",
+                caregiverPhone: person.caregiverPhone || "",
+                caregiverBirthDate: person.caregiverBirthDate || "",
+                caregiverAge: person.caregiverAge || 0,
+              });
+            }
+          }
+          if (addingCaregiver && payload.caregiver?.email) {
+            const cgEmail = payload.caregiver.email;
+            const cgName = payload.caregiver.name;
+            if (!list.some((a: any) => String(a.email || "").toLowerCase() === cgEmail)) {
+              list.push({
+                id: person?.caregiverAccountId || `cg-local-${Date.now().toString(36)}`,
+                name: cgName,
+                email: cgEmail,
+                contact: cgEmail,
+                phone: payload.caregiver.phone || "",
+                role: "Cuidadora / familiar",
+                roleId: "cuidador",
+                terr: terrForExpert || f.terr,
+                org: PROGRAM_ORG,
+                status: "Activo",
+                created: true,
+              });
+              s.accounts = list;
+            }
           }
           A.logActivity(s, A.session()?.id || "admin", (isEdit ? "Editó" : "Creó") + " el usuario " + acc.name);
         });
 
+        const cgHint = addingCaregiver
+          ? " Cuidador creado con " + String(f.caregiverEmail || "") + "."
+          : "";
         setState({
           f: null,
           sel: null,
           err: "",
           msg: isEdit
-            ? "Cambios guardados para " + acc.name + " en MongoDB."
+            ? "Cambios guardados para " + acc.name + " en MongoDB." + cgHint
             : "Usuario " +
               acc.name +
               " creado en MongoDB. Puede ingresar con " +
               acc.email +
-              (payload.password ? " y la contraseña que definió." : "."),
+              (payload.password ? " y la contraseña que definió." : ".") +
+              cgHint,
         });
       } catch {
         setState({ err: "No se pudo conectar con la base de datos." });
@@ -574,10 +677,20 @@ export function useAdminUsuariosScreen() {
     };
 
     const act = f && isEdit ? S.activity.filter((a: any) => a.uid === f.id) : [];
-    const personLocked = isCampoPatient && !!String(f?.personId || "").trim();
-    const emailFromPerson = personLocked && !!String(f?.contact || "").trim();
+    const hasLinkedCaregiver = !!(f && String(f.caregiverAccountId || "").trim());
+    const showCaregiverForm = !!(isPaciente && f?.tieneCuidador === "si" && !hasLinkedCaregiver);
+    const createRoles = ROLES as readonly string[];
+    const filterRoles = Array.from(
+      new Set([
+        ...createRoles,
+        ...all
+          .map((u: any) => String(u.role || ""))
+          .filter((r: string) => !!r && !createRoles.includes(r)),
+      ]),
+    );
 
     return {
+      roles: ROLES,
       zoom: z,
       agentOpen: st.agentOpen,
       openAgent: () => setState({ agentOpen: true }),
@@ -594,13 +707,13 @@ export function useAdminUsuariosScreen() {
       msg: st.msg,
       clearMsg: () => setState({ msg: "" }),
       roleChips: ([["", "Todos"]] as [string, string][])
-        .concat(ROLES.map((r) => [r, r] as [string, string]))
+        .concat(filterRoles.map((r) => [r, r] as [string, string]))
         .map(([val, label]) => ({
           key: val || "all",
           label,
           n: val ? all.filter((u: any) => u.role === val).length : all.length,
           bd: st.rf === val ? C.verde : C.lineas,
-          bg: st.rf === val ? "#FFF4CC" : "#fff",
+          bg: st.rf === val ? "#FDF2B3" : "#fff",
           go: () => setState({ rf: val, page: 0 }),
         })),
       q: st.q,
@@ -619,7 +732,7 @@ export function useAdminUsuariosScreen() {
         terr: u.terr,
         status: u.status,
         sc: u.status === "Activo" ? C.alDia : "#8C857C",
-        bg: st.sel === u.id ? "#FFF4CC" : "#fff",
+        bg: st.sel === u.id ? "#FDF2B3" : "#fff",
         pick: () => open(u),
       })),
       noUsers: !list.length,
@@ -657,11 +770,11 @@ export function useAdminUsuariosScreen() {
       hasForm: !!f,
       formTitle: isEdit && f ? f.name : "Nuevo usuario",
       formDesc: isPaciente && !isEdit
-        ? isManualPatient
-          ? "Alta manual: mismos datos que Nueva persona en campo. Estado inicial: sin evaluación."
-          : "Persona ya registrada en campo. Solo define la contraseña de acceso."
-        : "Quién entra a NARA, con qué rol y qué puede ver.",
-      formSize: isManualPatient ? "lg" : "md",
+        ? "Alta de persona acompañada: misma ficha que en campo. Estado inicial: sin evaluación. El cuidador solo se crea aquí si lo indica."
+        : isPaciente && isEdit
+          ? "Puede añadir cuidador si la persona aún no tiene uno."
+          : "Quién entra a Parienta, con qué rol y qué puede ver.",
+      formSize: isPaciente ? "lg" : "md",
       closeForm: () => setState({ f: null, sel: null, err: "" }),
       f: f || ({} as FormState),
       fSet: {
@@ -676,65 +789,107 @@ export function useAdminUsuariosScreen() {
         genero: setF("genero"),
         estadoCivil: setF("estadoCivil"),
         estrato: setF("estrato"),
+        tieneCuidador: setF("tieneCuidador"),
+        caregiverFirstName: setF("caregiverFirstName"),
+        caregiverLastName: setF("caregiverLastName"),
+        caregiverBirthDate: setF("caregiverBirthDate"),
+        caregiverGenero: setF("caregiverGenero"),
+        caregiverEstadoCivil: setF("caregiverEstadoCivil"),
+        caregiverEstrato: setF("caregiverEstrato"),
+        caregiverPlace: setF("caregiverPlace"),
+        caregiverEmail: setF("caregiverEmail"),
+        caregiverPhone: setF("caregiverPhone"),
+        caregiverPassword: setF("caregiverPassword"),
         role: (e: ChangeEvent<HTMLSelectElement>) => {
           const role = e.target.value;
           const next: FormState = Object.assign({}, f, {
             role,
-            personId: role === "Paciente" ? f?.personId || "" : "",
-            patientPath: role === "Paciente" ? (f?.patientPath || "campo") : undefined,
+            personId: isPersonaRole(role) ? f?.personId || "" : "",
             patientModules: DEFAULT_PATIENT_MODULES.slice(),
           }) as FormState;
-          if (role === "Paciente") {
+          if (isPersonaRole(role)) {
+            const names = territoryNames(A, S);
             Object.assign(next, emptyPatientFicha(), {
-              role: "Paciente",
-              patientPath: "campo" as PatientPath,
+              role: "Persona acompañada",
               password: f?.password || "",
               patientModules: DEFAULT_PATIENT_MODULES.slice(),
+              terr: names[0] || f?.terr || "",
             });
           }
           if (role === "Observador") {
             next.modules = (A.OBS_DEFAULT_MODULES || []).slice();
             if (!next.terr) next.terr = "Todos";
           }
-          if (role === "Experto de campo") {
+          if (isGestorRole(role)) {
             const names = territoryNames(A, S);
             if (!next.terr || /^todos$/i.test(next.terr) || !names.includes(next.terr)) {
               next.terr = names[0] || "";
             }
           }
-          if (role !== "Paciente") {
+          if (!isPersonaRole(role)) {
             next.personId = "";
-            next.patientPath = undefined;
+            Object.assign(next, emptyCaregiverFields(), { tieneCuidador: "" });
           }
           setState({ f: next, err: "" });
         },
         terr: setF("terr"),
         org: setF("org"),
       },
-      terrOpts: isManualPatient || isExpertoCampo ? allTerrNames : terrOpts,
+      terrOpts: isManualPatient || isExpertoCampo || (isPaciente && isEdit) ? allTerrNames : terrOpts,
       generoOpts: GENERO_OPTS,
       civilOpts: CIVIL_OPTS,
       estratoOpts: ESTRATO_OPTS,
       isObs: !!f && f.role === "Observador",
       isPaciente,
       isManualPatient,
-      isCampoPatient,
-      patientPath,
-      setPatientPath,
-      personOpts,
-      personId: f?.personId || "",
-      pickPerson: (e: ChangeEvent<HTMLSelectElement>) => pickPerson(e.target.value),
-      personLocked,
-      fieldsReadonly: personLocked,
-      emailEditable: isCampoPatient ? !emailFromPerson : true,
+      hasLinkedCaregiver,
+      showCaregiverForm,
+      canAddCaregiver: !!(isPaciente && !hasLinkedCaregiver),
+      fieldsReadonly: false,
+      emailEditable: true,
       genPassword: () => {
         if (!f) return;
-        const len = Math.max(12, minPasswordLengthForRole(f.role));
-        setState({ f: Object.assign({}, f, { password: genPassword(len) }), err: "" });
+        const len = Math.max(8, minPasswordLengthForRole(f.role));
+        setState({
+          f: Object.assign({}, f, { password: generateAccessPassword(len) }),
+          err: "",
+        });
+      },
+      genEmail: () => {
+        if (!f) return;
+        const email = isPersonaRole(f.role)
+          ? generateParientaEmail(String(f.firstName || ""), String(f.lastName || ""))
+          : generateParientaEmail(String(f.name || ""));
+        if (!email) {
+          return setState({
+            err: isPersonaRole(f.role)
+              ? "Escriba nombre y apellido para generar el correo."
+              : "Escriba el nombre para generar el correo.",
+          });
+        }
+        setState({ f: Object.assign({}, f, { contact: email }), err: "" });
+      },
+      genCaregiverEmail: () => {
+        if (!f) return;
+        const email = generateParientaEmail(
+          String(f.caregiverFirstName || ""),
+          String(f.caregiverLastName || ""),
+        );
+        if (!email) {
+          return setState({ err: "Escriba nombre y apellido del cuidador para generar el correo." });
+        }
+        setState({ f: Object.assign({}, f, { caregiverEmail: email }), err: "" });
+      },
+      genCaregiverPassword: () => {
+        if (!f) return;
+        setState({
+          f: Object.assign({}, f, { caregiverPassword: generateAccessPassword(10) }),
+          err: "",
+        });
       },
       passwordHint: f
         ? minPasswordLengthForRole(f.role) >= 12
-          ? "Mínimo 12 caracteres (Administrador / Clínico)"
+          ? "Mínimo 12 caracteres (Administrador / Clínica)"
           : "Mínimo 8 caracteres"
         : "Mínimo 8 caracteres",
       hasErr: !!st.err,
@@ -800,7 +955,7 @@ export function useAdminUsuariosScreen() {
             if (i >= 0) list[i] = { ...list[i], ...acc };
             else list.push(acc);
             s.accounts = list;
-            if (acc.role === "Experto de campo" || acc.roleId === "experto") {
+            if (isGestorRole(acc.role) || acc.roleId === "experto") {
               s.expertOv = s.expertOv || {};
               s.expertOv[acc.name] = Object.assign({}, s.expertOv[acc.name], {
                 active: nv === "Activo",

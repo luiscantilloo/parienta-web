@@ -105,7 +105,7 @@ export function Calendario({ vm }: { vm: AgendaVM }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <img
-            src={naraAsset("marca/personajes/nara-calma.svg")}
+            src={naraAsset("marca/teo/teo-calma.svg")}
             alt=""
             className="h-8 w-auto shrink-0"
           />
@@ -129,7 +129,7 @@ export function Calendario({ vm }: { vm: AgendaVM }) {
               <span className="absolute inset-0 rounded-full border-[3px] border-superficie-2" />
               <span className="clin-spin absolute inset-0 rounded-full border-[3px] border-transparent border-r-nara-amarillo border-t-nara-amarillo" />
               <span className="relative flex flex-col items-center pt-2">
-                <img src={naraAsset("marca/personajes/nara-curiosidad.svg")} alt="" className="clin-salta h-[42px] w-auto" />
+                <img src={naraAsset("marca/teo/teo-curiosidad.svg")} alt="" className="clin-salta h-[42px] w-auto" />
                 <span className="clin-sombra mt-0.5 h-1 w-7 rounded-full bg-nara-tinta" />
               </span>
             </span>

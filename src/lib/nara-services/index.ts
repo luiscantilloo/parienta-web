@@ -7,9 +7,7 @@ export type NaraServiceId =
   | "mood"
   | "clin"
   | "ia"
-  | "tech"
-  | "revisit"
-  | "cursos";
+  | "juegos";
 
 export type NaraServiceDef = {
   id: NaraServiceId | string;

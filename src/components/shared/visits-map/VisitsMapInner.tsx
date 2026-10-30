@@ -18,6 +18,8 @@ type Props = {
   center: [number, number];
   markers: VisitMapMarker[];
   emptyLabel?: string;
+  /** Clases del contenedor (por defecto altura fija 380px). */
+  className?: string;
 };
 
 function circleIcon(color: string, alert: boolean, kind: "place" | "visit") {
@@ -33,7 +35,13 @@ function circleIcon(color: string, alert: boolean, kind: "place" | "visit") {
   });
 }
 
-export default function VisitsMapInner({ center, markers, emptyLabel }: Props) {
+export default function VisitsMapInner({
+  center,
+  markers,
+  emptyLabel,
+  className,
+}: Props) {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
@@ -90,6 +98,17 @@ export default function VisitsMapInner({ center, markers, emptyLabel }: Props) {
   }, []);
 
   useEffect(() => {
+    const wrap = wrapRef.current;
+    const map = mapRef.current;
+    if (!wrap || !map || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
     if (!map || !layer) return;
@@ -101,7 +120,7 @@ export default function VisitsMapInner({ center, markers, emptyLabel }: Props) {
         title: m.tip,
       });
       marker.bindPopup(
-        `<div style="font-family:Figtree,system-ui,sans-serif;font-size:13px;line-height:1.4">${m.tip}</div>`,
+        `<div style="font-family:Bricolage Grotesque, system-ui, sans-serif;font-size:13px;line-height:1.4">${m.tip}</div>`,
       );
       marker.addTo(layer);
     });
@@ -115,7 +134,13 @@ export default function VisitsMapInner({ center, markers, emptyLabel }: Props) {
   }, [markers, center]);
 
   return (
-    <div className="relative h-[380px] w-full overflow-hidden rounded-[10px] bg-nara-crema">
+    <div
+      ref={wrapRef}
+      className={
+        className ||
+        "relative h-[380px] w-full overflow-hidden rounded-[10px] bg-nara-crema"
+      }
+    >
       <div ref={elRef} className="absolute inset-0 z-0 h-full w-full" />
       {emptyLabel ? (
         <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-lg bg-nara-blanco/90 px-3 py-1.5 text-sm text-texto-secundario shadow-sm">
