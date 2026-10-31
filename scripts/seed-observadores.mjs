@@ -98,17 +98,9 @@ async function main() {
 
   await client.close();
 
-  console.log("\n--- Credenciales ---\n");
+  console.log("\n--- Cuentas observador (contraseñas solo en env, no se imprimen) ---\n");
   for (const u of users) {
-    console.log(`## ${u.orgType}`);
-    console.log(`Campo\tValor`);
-    console.log(`Correo\t${u.email}`);
-    console.log(`Contraseña\t${u.password}`);
-    console.log(`Nombre\t${u.name}`);
-    console.log(`Rol\tObservador`);
-    console.log(`Tipo\t${u.orgType}`);
-    console.log(`Organización\t${u.org}`);
-    console.log("");
+    console.log(`OK\t${u.email}\t${u.orgType}\t(password desde env)`);
   }
 }
 
