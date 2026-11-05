@@ -608,6 +608,13 @@ function CrisisLockScreen({ vm }: { vm: Vm }) {
             Necesitamos acceso a su ubicación (iPhone o Android) para que el clínico
             pueda verla en el mapa mientras dura la crisis.
           </p>
+          <button
+            type="button"
+            onClick={() => (vm.closeHelp as (() => void) | undefined)?.()}
+            className="min-h-12 w-full max-w-[18rem] cursor-pointer rounded-full border-2 border-white/80 bg-transparent px-6 py-3 font-texto text-[15px] font-semibold text-white active:scale-[0.98]"
+          >
+            Cancelar
+          </button>
         </>
       ) : (
         <>
